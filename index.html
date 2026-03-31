@@ -34,7 +34,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-p:hover{background:var(--ad)}
 .btn-sm{padding:5px 10px;font-size:11px}
 .btn-warn{background:#FAEEDA;color:#854F0B;border-color:#EF9F27}
-.btn-danger{border-color:var(--dn);color:var(--dn)}
+.btn-danger{background:#FCEBEB;color:var(--dn);border-color:var(--dn)}
+.btn-danger:hover{background:#F7C1C1}
 .content{flex:1;overflow-y:auto;padding:20px}
 .screen{display:none}
 .screen.active{display:block}
@@ -65,8 +66,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ctbl{width:100%;border-collapse:collapse}
 .ctbl th{font-size:10px;font-weight:600;color:var(--mu);text-align:left;padding:8px 10px;border-bottom:.5px solid var(--bd);background:var(--bg);text-transform:uppercase;letter-spacing:.05em}
 .ctbl td{padding:10px;border-bottom:.5px solid var(--bd);font-size:12px;color:var(--tx);vertical-align:middle}
-.ctbl tr:hover td{background:var(--bg);cursor:pointer}
-.ctbl tr:last-child td{border-bottom:none}
+.ctbl tr:hover td{background:var(--bg)}
+.ctbl tr.selected td{background:#E1F5EE}
 .panel{background:var(--sf);border:.5px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:12px}
 .ptitle{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
 .tl-item{display:flex;gap:10px;padding:8px 0;border-bottom:.5px solid var(--bd)}
@@ -102,6 +103,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .dup-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 10px;background:var(--bg);border-radius:7px;margin-bottom:6px;border:.5px solid #EF9F27}
 .dup-info{font-size:11px;color:var(--tx)}
 .dup-sub{font-size:10px;color:var(--mu);margin-top:2px}
+.bulk-bar{background:var(--nav);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:12px;border-radius:8px;margin-bottom:12px}
+.confirm-box{background:#FCEBEB;border:1px solid var(--dn);border-radius:9px;padding:16px;margin-bottom:12px}
+.confirm-title{font-size:13px;font-weight:600;color:var(--dn);margin-bottom:6px}
+.confirm-sub{font-size:11px;color:#712B13;margin-bottom:12px;line-height:1.6}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2332;color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;z-index:999;white-space:nowrap;pointer-events:none;animation:fadeup .2s ease}
 @keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 @media(max-width:768px){.app{grid-template-columns:1fr}.nav{display:none}.metrics{grid-template-columns:1fr 1fr}}
@@ -157,7 +162,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <div class="screen" id="s-contacts">
       <div class="shdr">
-        <div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="sel-all" onchange="toggleSelAll(this.checked)" title="Select all visible">
+          <span id="sel-count" style="font-size:11px;color:var(--mu)">0 selected</span>
+        </div>
         <div style="display:flex;gap:8px;align-items:center">
           <input class="fi" style="width:170px" placeholder="Search contacts..." oninput="rcontacts()" id="csrch">
           <select class="fsel" style="width:150px" onchange="rcontacts()" id="cfilt">
@@ -169,9 +177,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </select>
         </div>
       </div>
+      <div id="bulk-bar" style="display:none" class="bulk-bar">
+        <span id="bulk-count">0 contacts selected</span>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-sm btn-warn" onclick="bulkDNC()">Mark DNC</button>
+          <button class="btn btn-sm btn-danger" onclick="bulkDelete()">Delete selected</button>
+          <button class="btn btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3)" onclick="clearSel()">Cancel</button>
+        </div>
+      </div>
       <div class="panel" style="padding:0;overflow:hidden">
         <table class="ctbl">
-          <thead><tr><th>Contact</th><th>Company</th><th>Role</th><th>Tier</th><th>Last touch</th><th>Next</th><th></th></tr></thead>
+          <thead><tr><th style="width:32px"></th><th>Contact</th><th>Company</th><th>Role</th><th>Tier</th><th>Last touch</th><th>Next</th><th></th></tr></thead>
           <tbody id="ctbody"></tbody>
         </table>
       </div>
@@ -200,14 +216,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="screen" id="s-import">
       <div class="panel" style="max-width:580px">
         <div class="ptitle">Bulk import from Excel or CSV</div>
-        <p style="font-size:12px;color:var(--mu);margin-bottom:14px;line-height:1.6">Upload any spreadsheet. The app handles merged company cells (carry-down), auto-maps common column names, checks for duplicates before importing, and saves phone and address to Notes automatically.</p>
+        <p style="font-size:12px;color:var(--mu);margin-bottom:14px;line-height:1.6">Handles merged company cells, auto-maps column names, checks for duplicates, and saves phone/address to Notes.</p>
         <div class="uz" id="uz" onclick="document.getElementById('fi2').click()" ondragover="event.preventDefault();this.style.borderColor='var(--ac)'" ondrop="handleDrop(event)" ondragleave="this.style.borderColor=''">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--mu)" stroke-width="1.5" style="margin:0 auto"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <div class="uz-lbl">Click to upload or drag & drop</div>
-          <div class="uz-sub">Excel (.xlsx, .xls) or CSV — your DFW Builder list, DBA list, or Boutique Builder list</div>
+          <div class="uz-sub">Excel (.xlsx, .xls) or CSV</div>
         </div>
         <input type="file" id="fi2" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this)">
         <div id="imp-preview" style="margin-top:14px"></div>
+      </div>
+
+      <div class="panel" style="max-width:580px;border-color:rgba(226,75,74,0.3)">
+        <div class="ptitle" style="color:var(--dn)">
+          Danger zone
+          <span style="font-size:10px;font-weight:400;color:var(--mu)">These actions cannot be undone</span>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px">Undo last import</div>
+            <div style="font-size:11px;color:var(--mu);margin-bottom:8px;line-height:1.5">Remove all contacts added in your most recent import batch.</div>
+            <button class="btn btn-sm btn-warn" onclick="confirmUndoImport()" id="undo-btn">Undo last import</button>
+            <div id="last-import-info" style="font-size:10px;color:var(--mu);margin-top:4px"></div>
+          </div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px">Clear all contacts</div>
+            <div style="font-size:11px;color:var(--mu);margin-bottom:8px;line-height:1.5">Delete every contact and all activity history. Fresh start.</div>
+            <button class="btn btn-sm btn-danger" onclick="confirmClearAll()">Clear all contacts</button>
+          </div>
+        </div>
+        <div id="danger-confirm" style="margin-top:14px"></div>
       </div>
     </div>
 
@@ -255,7 +292,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             </select>
           </div>
         </div>
-        <div class="ff" style="margin-bottom:14px"><label class="flbl">Notes</label><textarea class="rbox" id="a9" placeholder="Met at DBA event, has a project starting Q3, phone: 972.400.1291..." rows="3"></textarea></div>
+        <div class="ff" style="margin-bottom:14px"><label class="flbl">Notes</label><textarea class="rbox" id="a9" placeholder="Met at DBA event, has a project starting Q3..." rows="3"></textarea></div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-p" onclick="saveContact()">Save contact</button>
           <button class="btn" onclick="go('contacts')">Cancel</button>
@@ -287,37 +324,37 @@ t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nI've reached out a couple 
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nThis is my last outreach \u2014 I don't want to be one of those vendors who never takes the hint.\n\nIf you ever need a precision glass and mirror sub in DFW who shows up, executes cleanly, and makes your project look good \u2014 we'd genuinely love to earn your business. We'll be here when the timing is right.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
 li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. We specialize in precision glass and mirror work for custom and luxury builders in DFW \u2014 frameless showers, staircase glass, wine rooms, pool fencing and more. I'd love to connect and be a resource when glass comes up on a project."},
 "Purchasing":{
-t1:{s:"Competitive glass & mirror pricing for your 2026 builds",b:"Hi [First Name],\n\nPredictable pricing and zero-callback installs are table stakes for a glass sub on custom and luxury builds \u2014 but they're harder to find than they should be.\n\nI'm Erika Harrison, co-founder of Eridion Glass. We work with custom and luxury builders across DFW, and because we also support select production builders, we're able to pass along real cost efficiencies without touching the quality our luxury partners expect.\n\nIf you have an upcoming project with a glass scope, I'd love to offer a complimentary spec review at no charge \u2014 we'll flag any cost savings or quality improvements before a single measurement is taken.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t2:{s:"How Colorback glass added value without adding cost",b:"Hi [First Name],\n\nFollowing up on my earlier introduction \u2014 I wanted to share a project that illustrates how we approach value on a custom build.\n\nA builder brought us in on a large master bathroom where the homeowner wanted the look of tile without the long-term maintenance. Colorback glass \u2014 one of the few DFW shops to offer it \u2014 solved both the design and durability concern in one move. The result photographed well enough for print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's the kind of spec decision that makes everyone look good at the end of a project.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
-t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop on my earlier messages. If there's ever a project where you want a competitive bid or a complimentary spec review \u2014 we're here. No pressure.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one from me. If you ever need a reliable, competitively priced glass sub in DFW \u2014 we'd love the chance to earn your business.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"Competitive glass & mirror pricing for your 2026 builds",b:"Hi [First Name],\n\nPredictable pricing and zero-callback installs are table stakes for a glass sub on custom and luxury builds \u2014 but they're harder to find than they should be.\n\nI'm Erika Harrison, co-founder of Eridion Glass. We work with custom and luxury builders across DFW, and because we also support select production builders, we're able to pass along real cost efficiencies without touching the quality our luxury partners expect.\n\nIf you have an upcoming project with a glass scope, I'd love to offer a complimentary spec review at no charge.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
+t2:{s:"How Colorback glass added value without adding cost",b:"Hi [First Name],\n\nFollowing up on my earlier introduction \u2014 I wanted to share a project that illustrates how we approach value on a custom build.\n\nA builder brought us in on a large master bathroom where the homeowner wanted the look of tile without the long-term maintenance. Colorback glass solved both the design and durability concern in one move. The result ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's the kind of spec decision that makes everyone look good.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop. If there's ever a project where you want a competitive bid or a complimentary spec review \u2014 we're here. No pressure.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
+t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one from me. If you ever need a reliable, competitively priced glass sub in DFW \u2014 we'd love the chance.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. We support custom & luxury builders in DFW with consistent glass pricing and zero-callback installs \u2014 our production-builder relationships let us pass along real cost savings. Happy to connect."},
 "Operations":{
-t1:{s:"A glass sub that makes your job easier",b:"Hi [First Name],\n\nA glass sub who shows up on time, communicates clearly, keeps the site clean, and doesn't generate callbacks \u2014 that's not a high bar, but it's surprisingly rare.\n\nI'm Erika Harrison, co-founder of Eridion Glass. My husband Dion leads our field operations with 25+ years as a master glazier, and our entire model is built around being the kind of sub that makes an ops team's life easier, not harder.\n\nIf you have an upcoming project with a glass scope, I'd love to offer a complimentary spec review at no charge.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t2:{s:"A recent project \u2014 this is what we do",b:"Hi [First Name],\n\nFollowing up on my earlier note. Figured I'd share something concrete rather than just talk about ourselves.\n\nThis bathroom came together because the builder brought us in early and gave us room to problem-solve. Clean execution, on schedule, and it ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's how we operate on every project.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
-t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop on my earlier messages. If glass ever comes up on a project and you want a sub who won't make your life harder \u2014 we're here.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"A glass sub that makes your job easier",b:"Hi [First Name],\n\nA glass sub who shows up on time, communicates clearly, keeps the site clean, and doesn't generate callbacks \u2014 that's not a high bar, but it's surprisingly rare.\n\nI'm Erika Harrison, co-founder of Eridion Glass. My husband Dion leads our field operations with 25+ years as a master glazier. If you have an upcoming project with a glass scope, I'd love to offer a complimentary spec review at no charge.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
+t2:{s:"A recent project \u2014 this is what we do",b:"Hi [First Name],\n\nFollowing up with something concrete. This bathroom came together because the builder brought us in early. Clean execution, on schedule, ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's how we operate on every project.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop. If glass ever comes up and you want a sub who won't make your life harder \u2014 we're here.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If you ever need a reliable glass sub in DFW \u2014 we'd love to earn a spot on your list.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
-li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. We're a DFW glass and mirror sub known for clean installs, reliable schedules, and zero drama for ops teams. My husband Dion has 25+ years in the field. Happy to connect."},
+li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. DFW glass & mirror sub known for clean installs, reliable schedules, zero drama. Dion has 25+ years in the field. Happy to connect."},
 "Supervisor":{
-t1:{s:"Glass sub who respects your schedule and your site",b:"Hi [First Name],\n\nYou know better than anyone that a sub who doesn't communicate, shows up late, or leaves a mess doesn't just slow down one trade \u2014 they slow down everyone behind them.\n\nI'm Erika Harrison, co-founder of Eridion Glass. My husband Dion runs our field operations and has been in the glass trade for 25+ years as a master glazier. He's been on the other side of enough job sites to know exactly what a project supervisor needs from a sub: show up when you say you will, do the work right, keep the site clean, and communicate before problems become surprises.\n\nWe'd love to get on your radar for upcoming projects.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com\n\nP.S. If you ever recommend us to another super, we promise to make you look good."},
-t2:{s:"A recent project \u2014 this is what we do",b:"Hi [First Name],\n\nFollowing up on my earlier note with something concrete.\n\nThis project came together because the builder brought us in early. On schedule, clean execution, no surprises \u2014 it ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's how we operate every time.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"Glass sub who respects your schedule and your site",b:"Hi [First Name],\n\nYou know better than anyone that a sub who doesn't communicate, shows up late, or leaves a mess doesn't just slow down one trade \u2014 they slow down everyone behind them.\n\nI'm Erika Harrison, co-founder of Eridion Glass. My husband Dion runs field operations with 25+ years as a master glazier. We show up when we say we will, keep the site clean, and communicate before problems become surprises.\n\nWe'd love to get on your radar for upcoming projects.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com\n\nP.S. If you ever recommend us, we promise to make you look good."},
+t2:{s:"A recent project \u2014 this is what we do",b:"Hi [First Name],\n\nFollowing up with something concrete. On schedule, no surprises \u2014 ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's how we operate every time.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop. If you ever need a glass sub who treats your schedule like it's ours \u2014 we're here.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If glass comes up and you need someone reliable \u2014 we'd love to earn the call.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
-li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. My husband Dion has 25+ years as a master glazier and we've built our whole operation around being the glass sub that makes a supervisor's day easier \u2014 on time, clean, and no surprises. Happy to connect."},
+li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. Dion has 25+ years as a master glazier. We've built our whole operation around being the glass sub that makes a supervisor's day easier \u2014 on time, clean, no surprises."},
 "Designer":{
-t1:{s:"A glass partner who can actually execute your vision",b:"Hi [First Name],\n\nMost glass subs are great at standard work. Where things get complicated is when a project calls for something more \u2014 a custom mirror with a specific profile, an architectural railing that has to feel as good as it looks, or a glass application that doesn't have a catalog number. That's exactly where we thrive.\n\nI'm Erika Harrison, co-founder of Eridion Glass. We're one of the few glaziers in DFW who works extensively with Colorback glass \u2014 a specialty application that gives designers a distinctive, high-end option without overwhelming the palette.\n\nIf you have an upcoming project where glass is part of the story, I'd love to connect early.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com\n\nP.S. If you've ever had a glass sub tell you something \"can't be done\" \u2014 it's worth a second opinion."},
-t2:{s:"Colorback in action \u2014 thought you'd appreciate this",b:"Hi [First Name],\n\nFollowing up on my earlier note \u2014 I wanted to share a project that speaks directly to what we do best.\n\nThe designer on this bathroom had a bold direction: cobalt picket tile, sculptural freestanding tub, brushed gold hardware. Colorback glass in crisp white became the canvas that let the tile be the star.\n\nwww.eridionglass.com/colorback\n\nWe love being brought in early when there's still room to shape the outcome.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"A glass partner who can actually execute your vision",b:"Hi [First Name],\n\nMost glass subs are great at standard work. Where things get complicated is when a project calls for something more \u2014 a custom mirror with a specific profile, an architectural railing that has to feel as good as it looks, or a glass application that doesn't have a catalog number. That's exactly where we thrive.\n\nI'm Erika Harrison, co-founder of Eridion Glass. We're one of the few glaziers in DFW who works extensively with Colorback glass \u2014 a specialty that gives designers a distinctive option without overwhelming the palette.\n\nIf you have an upcoming project where glass is part of the story, I'd love to connect early.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com\n\nP.S. If you've ever had a glass sub tell you something \"can't be done\" \u2014 it's worth a second opinion."},
+t2:{s:"Colorback in action \u2014 thought you'd appreciate this",b:"Hi [First Name],\n\nFollowing up with a project that speaks directly to what we do best.\n\nCobalt picket tile, sculptural freestanding tub, brushed gold hardware. Colorback glass in crisp white became the canvas that let the tile be the star.\n\nwww.eridionglass.com/colorback\n\nWe love being brought in early when there's still room to shape the outcome.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop. If you ever have a project where glass is part of the design and you want a sub who can actually execute the vision \u2014 we'd love to be a resource.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If you've ever had a glass sub tell you something \"can't be done\" \u2014 it's worth a second opinion. We'll be here.\n\nErika Harrison\nCo-Founder, Eridion Glass"},
-li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. We work with designers on custom and luxury residential glass in DFW \u2014 from architectural railings and bespoke mirrors to Colorback glass applications. We love collaborating early when there's still room to make something special."},
+li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. We work with designers on custom and luxury residential glass in DFW \u2014 architectural railings, bespoke mirrors, Colorback glass. We love collaborating early."},
 "Woman-Owned":{
-t1:{s:"One woman-owned business to another",b:"Hi [First Name],\n\nI'll be direct \u2014 I reached out because of what you've built.\n\nRunning a construction-adjacent business as a woman in DFW takes a specific kind of determination, and the work you've done reflects that. I wanted to introduce myself properly.\n\nI'm Erika Harrison, co-founder of Eridion Glass. I came from 20 years in corporate advertising before Dion and I built this together. We focus on precision glass and mirror work for custom and luxury residential projects.\n\nI'd love to explore whether there's a natural fit as trade partners \u2014 or simply connect.\n\nWarmly,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
+t1:{s:"One woman-owned business to another",b:"Hi [First Name],\n\nI'll be direct \u2014 I reached out because of what you've built.\n\nRunning a construction-adjacent business as a woman takes a specific kind of determination, and the work you've done reflects that. I wanted to introduce myself properly.\n\nI'm Erika Harrison, co-founder of Eridion Glass. I came from 20 years in corporate advertising before Dion and I built this together. Precision glass and mirror work for custom and luxury residential projects.\n\nI'd love to explore whether there's a natural fit as trade partners \u2014 or simply connect.\n\nWarmly,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
 t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust following up. No pressure \u2014 I just wanted to leave the door open, whether as trade partners or simply as two people building something in this industry.\n\nWarmly,\nErika Harrison\nCo-Founder, Eridion Glass"},
-t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If glass ever comes up on a project, or you ever want to connect as fellow women in construction \u2014 I'm here. Wishing you a great year.\n\nErika Harrison\nCo-Founder, Eridion Glass"},
-li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. Reaching out woman-founder to woman-founder. We're a precision glass & mirror sub serving custom and luxury builders in DFW. I'd love to connect."},
+t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If glass ever comes up, or you ever want to connect as fellow women in construction \u2014 I'm here.\n\nErika Harrison\nCo-Founder, Eridion Glass"},
+li:"Hi [First Name] \u2014 Erika Harrison, co-founder of Eridion Glass. Reaching out woman-founder to woman-founder. Precision glass & mirror sub serving custom and luxury builders in DFW. I'd love to connect."},
 "DBA":{
-t1:{s:"Fellow DBA member \u2014 glass & mirror sub introduction",b:"Hi [First Name],\n\nOne thing I've noticed about DBA membership is that we're often better at building homes than building relationships with each other. I'd like to fix that.\n\nI'm Erika Harrison, co-founder of Eridion Glass \u2014 glass and mirror subcontractor specializing in custom and luxury residential projects in DFW. If you have an upcoming project with a glass scope, I'd love to offer a complimentary spec review \u2014 no strings attached.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t3:{s:"Still happy to connect \u2014 fellow DBA member",b:"Hi [First Name],\n\nJust closing the loop. If glass ever comes up on a project and you want a reliable DBA partner \u2014 we'd love to be on your list.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"Fellow DBA member \u2014 glass & mirror sub introduction",b:"Hi [First Name],\n\nOne thing I've noticed about DBA membership is that we're often better at building homes than building relationships with each other. I'd like to fix that.\n\nI'm Erika Harrison, co-founder of Eridion Glass. Glass and mirror subcontractor specializing in custom and luxury residential projects in DFW. If you have an upcoming project with a glass scope, I'd love to offer a complimentary spec review \u2014 no strings attached.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
+t3:{s:"Still happy to connect \u2014 fellow DBA member",b:"Hi [First Name],\n\nJust closing the loop. If glass ever comes up and you want a reliable DBA partner \u2014 we'd love to be on your list.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. Hoping our paths cross at a DBA event \u2014 and in the meantime, we'll be here whenever glass comes up.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"}}};
 
 const TD={t1:0,t2:14,t3:28,t4:45};
@@ -329,6 +366,8 @@ const gc=()=>{try{return JSON.parse(localStorage.getItem('eg_c')||'[]')}catch(e)
 const sc=c=>localStorage.setItem('eg_c',JSON.stringify(c));
 const ga=()=>{try{return JSON.parse(localStorage.getItem('eg_a')||'[]')}catch(e){return[]}};
 const sa=a=>localStorage.setItem('eg_a',JSON.stringify(a));
+const getBatch=()=>{try{return JSON.parse(localStorage.getItem('eg_last_batch')||'null')}catch(e){return null}};
+const setBatch=b=>localStorage.setItem('eg_last_batch',JSON.stringify(b));
 const addA=(cid,action,note)=>{const a=ga();a.unshift({id:Date.now(),cid,action,note,date:new Date().toISOString()});sa(a.slice(0,300))};
 const ini=n=>n.split(' ').map(x=>x[0]||'').join('').toUpperCase().slice(0,2);
 const fd=iso=>iso?new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'Never';
@@ -338,6 +377,8 @@ const due=c=>{if(c.dnc)return false;const n=nxt(c);if(!n)return false;if(n==='t1
 const bt=t=>{const m={tier1:'bwarm Tier 1 \u2014 warm',tier2:'bt2t Tier 2 \u2014 touched',tier3:'bt3t Tier 3 \u2014 cold'};const[cls,...lbl]=(m[t]||'bt3t Tier 3 \u2014 cold').split(' ');return`<span class="badge ${cls}">${lbl.join(' ')}</span>`};
 const btouch=t=>{const m={t1:'bt1 Touch 1',t2:'bt2 Touch 2',t3:'bt3 Touch 3',t4:'bt4 Touch 4'};const[cls,...lbl]=(m[t]||'bcold \u2014').split(' ');return`<span class="badge ${cls}">${lbl.join(' ')}</span>`};
 
+let selectedIds=new Set();
+
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
@@ -345,11 +386,13 @@ function go(id){
   document.getElementById('stitle').textContent=SCREENS[id]||id;
   document.getElementById('ssub').textContent=SUBS[id]||'';
   document.querySelectorAll('.ni').forEach(n=>{if((n.getAttribute('onclick')||'').includes("'"+id+"'"))n.classList.add('active')});
+  selectedIds.clear();
   if(id==='dashboard')rdash();
   if(id==='queue')rqueue();
-  if(id==='contacts')rcontacts();
+  if(id==='contacts'){rcontacts();updateLastImportInfo();}
   if(id==='library')rlib();
   if(id==='responses')rpopsel();
+  if(id==='import')updateLastImportInfo();
 }
 
 function rdash(){
@@ -388,12 +431,79 @@ function rcontacts(){
   else cs=cs.filter(c=>!c.dnc);
   if(srch)cs=cs.filter(c=>(c.fn+' '+(c.ln||'')+' '+(c.co||'')).toLowerCase().includes(srch));
   const tb=document.getElementById('ctbody');
-  if(!cs.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty" style="padding:16px">No contacts found. <span style="color:var(--ac);cursor:pointer" onclick="go('add')">Add one \u2192</span></div></td></tr>`;return;}
+  if(!cs.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty" style="padding:16px">No contacts found. <span style="color:var(--ac);cursor:pointer" onclick="go('add')">Add one \u2192</span></div></td></tr>`;updateBulkBar();return;}
   tb.innerHTML=cs.map(c=>{
     const n=nxt(c);
+    const sel=selectedIds.has(c.id);
     const st=c.dnc?'<span class="badge bdnc">DNC</span>':c.responded?'<span class="badge bresp">Responded</span>':n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Complete</span>';
-    return`<tr onclick="openC('${c.id}')"><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:28px;height:28px;font-size:10px">${ini(c.fn+' '+(c.ln||''))}</div><span style="font-weight:500">${c.fn} ${c.ln||''}</span></div></td><td>${c.co||'\u2014'}</td><td style="color:var(--mu)">${c.role||'\u2014'}</td><td>${bt(c.tier||'tier3')}</td><td style="color:var(--mu)">${fd(c.ltd)}</td><td>${st}</td><td><button class="btn btn-sm" onclick="event.stopPropagation();sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button></td></tr>`;
+    return`<tr class="${sel?'selected':''}" id="row-${c.id}">
+      <td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel('${c.id}',this.checked)" onclick="event.stopPropagation()"></td>
+      <td onclick="openC('${c.id}')" style="cursor:pointer"><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:28px;height:28px;font-size:10px">${ini(c.fn+' '+(c.ln||''))}</div><span style="font-weight:500">${c.fn} ${c.ln||''}</span></div></td>
+      <td onclick="openC('${c.id}')" style="cursor:pointer">${c.co||'\u2014'}</td>
+      <td style="color:var(--mu)">${c.role||'\u2014'}</td>
+      <td>${bt(c.tier||'tier3')}</td>
+      <td style="color:var(--mu)">${fd(c.ltd)}</td>
+      <td>${st}</td>
+      <td><button class="btn btn-sm" onclick="sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button></td>
+    </tr>`;
   }).join('');
+  updateBulkBar();
+  updateSelAll(cs);
+}
+
+function toggleSel(id,checked){
+  if(checked)selectedIds.add(id);else selectedIds.delete(id);
+  const row=document.getElementById('row-'+id);
+  if(row)row.classList.toggle('selected',checked);
+  updateBulkBar();
+  updateSelAll();
+}
+
+function toggleSelAll(checked){
+  const filt=document.getElementById('cfilt').value||'all';
+  const srch=(document.getElementById('csrch').value||'').toLowerCase();
+  let cs=gc();
+  if(filt==='tier1')cs=cs.filter(c=>c.tier==='tier1');
+  else if(filt==='tier2')cs=cs.filter(c=>c.tier==='tier2');
+  else if(filt==='tier3')cs=cs.filter(c=>c.tier==='tier3');
+  else if(filt==='dnc')cs=cs.filter(c=>c.dnc);
+  else cs=cs.filter(c=>!c.dnc);
+  if(srch)cs=cs.filter(c=>(c.fn+' '+(c.ln||'')+' '+(c.co||'')).toLowerCase().includes(srch));
+  cs.forEach(c=>{if(checked)selectedIds.add(c.id);else selectedIds.delete(c.id);});
+  rcontacts();
+}
+
+function updateSelAll(cs){
+  const allCs=cs||gc().filter(c=>!c.dnc);
+  const sa=document.getElementById('sel-all');
+  if(sa&&allCs.length){sa.checked=allCs.every(c=>selectedIds.has(c.id));sa.indeterminate=!sa.checked&&allCs.some(c=>selectedIds.has(c.id));}
+  document.getElementById('sel-count').textContent=selectedIds.size+' selected';
+}
+
+function updateBulkBar(){
+  const bar=document.getElementById('bulk-bar');
+  document.getElementById('bulk-count').textContent=selectedIds.size+' contact'+(selectedIds.size!==1?'s':'')+' selected';
+  bar.style.display=selectedIds.size>0?'flex':'none';
+}
+
+function clearSel(){selectedIds.clear();rcontacts();}
+
+function bulkDNC(){
+  if(!selectedIds.size)return;
+  if(!confirm(`Mark ${selectedIds.size} contact(s) as Do Not Contact?`))return;
+  const cs=gc();
+  selectedIds.forEach(id=>{const c=cs.find(x=>x.id===id);if(c){c.dnc=true;addA(id,'Marked DNC (bulk)','');}});
+  sc(cs);selectedIds.clear();rcontacts();toast(selectedIds.size+' contacts marked DNC');
+}
+
+function bulkDelete(){
+  if(!selectedIds.size)return;
+  const count=selectedIds.size;
+  if(!confirm(`Permanently delete ${count} contact(s)? This cannot be undone.`))return;
+  let cs=gc();
+  cs=cs.filter(c=>!selectedIds.has(c.id));
+  sc(cs);selectedIds.clear();rcontacts();rdash();
+  toast(count+' contact(s) deleted');
 }
 
 function rlib(){
@@ -426,20 +536,20 @@ function analyze(){
   if(low.match(/not interested|no thank|remove me|unsubscribe|stop contact|please don't/)){
     tone='Declining';intent='They want to be removed from outreach.';
     reply=`Hi ${name},\n\nAbsolutely understood \u2014 I appreciate you taking the time to reply. I've noted your preference and won't reach out again.\n\nIf anything changes down the road, you know where to find us.\n\nBest,\nErika Harrison\nEridion Glass`;
-    if(c){c.dnc=true;sc(cs);addA(cid,'Marked DNC \u2014 replied asking to opt out','');}
+    if(c){c.dnc=true;sc(cs);addA(cid,'Marked DNC \u2014 replied to opt out','');}
   }else if(low.match(/interested|would love|tell me more|send me|let.s connect|schedule|call|meeting|bid|yes|sounds good|reach out/)){
     tone='Interested';intent='They want to connect or learn more.';
     reply=`Hi ${name},\n\nReally glad to hear from you \u2014 thank you for taking the time to reply.\n\nI'd love to set up a quick call or send over our credential sheet and some recent project photos. What works best for you?\n\nAlternatively, if you have an upcoming project with a glass scope, I can put together a complimentary spec review as a starting point \u2014 no obligation, just useful information.\n\nLooking forward to connecting.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;
     if(c){c.tier='tier1';c.responded=true;sc(cs);addA(cid,'Responded \u2014 interested, upgraded to Tier 1','');}
   }else if(low.match(/already have|current vendor|covered|locked in|happy with|have someone/)){
     tone='Has existing vendor';intent='Covered but hasn\'t closed the door.';
-    reply=`Hi ${name},\n\nTotally understood \u2014 glad you're covered.\n\nI'll keep it brief: if your current sub ever has a capacity issue, a lead time problem, or you simply want a second bid \u2014 we'd love to be your first call.\n\nI'll stay in touch without being a pest. Wishing you a great year.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;
+    reply=`Hi ${name},\n\nTotally understood \u2014 glad you're covered.\n\nIf your current sub ever has a capacity issue or you want a second bid \u2014 we'd love to be your first call.\n\nWishing you a great year.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;
   }else if(low.match(/budget|expensive|price|cost|cheaper|quote/)){
     tone='Price sensitive';intent='Cost is a concern or they want pricing.';
-    reply=`Hi ${name},\n\nFair point \u2014 and I want to address it directly. Because we work with both custom luxury and select production builders, we're able to offer pricing that's more competitive than most custom-only shops.\n\nI'd love to put a bid together on a specific project so you can see our numbers. Even a quick spec review costs nothing.\n\nWould that be helpful?\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;
+    reply=`Hi ${name},\n\nFair point \u2014 because we work with both custom luxury and select production builders, we're able to offer pricing that's more competitive than most custom-only shops.\n\nI'd love to put a bid together on a specific project so you can see our numbers. Even a quick spec review costs nothing.\n\nWould that be helpful?\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;
   }else{
     tone='Neutral \u2014 needs context';intent='Conversational or needs more information.';
-    reply=`Hi ${name},\n\nThank you for getting back to me \u2014 I appreciate it.\n\nI'd love to learn more about your current projects and see if there's a natural fit. Would a quick call or a complimentary spec review on an upcoming project be a useful next step?\n\nHappy to work around your schedule.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;
+    reply=`Hi ${name},\n\nThank you for getting back to me \u2014 I appreciate it.\n\nI'd love to learn more about your current projects and see if there's a natural fit. Would a quick call or a complimentary spec review be a useful next step?\n\nHappy to work around your schedule.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;
   }
   if(c)addA(cid,'Inbound '+chan+' analyzed \u2014 '+tone,'');
   document.getElementById('rout').innerHTML=`<div class="panel"><div class="ptitle">Message analysis</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="metric"><div class="mlbl">Tone detected</div><div style="font-size:14px;font-weight:600;margin-top:3px">${tone}</div></div><div class="metric"><div class="mlbl">Intent</div><div style="font-size:12px;margin-top:3px;line-height:1.5">${intent}</div></div></div><div class="ptitle" style="margin-bottom:8px">Suggested reply</div><div class="cprev" style="max-height:200px">${reply.replace(/</g,'&lt;')}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p btn-sm" onclick="clip(\`${reply.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy reply</button><button class="btn btn-sm" onclick="document.getElementById('rout').innerHTML=''">Clear</button></div></div>`;
@@ -459,7 +569,7 @@ function sent(cid,tk){
   if(act&&act.id==='s-contacts')rcontacts();
 }
 
-function skip(cid){addA(cid,'Skipped for today','');toast('Skipped \u2014 won\'t show again today');rqueue();}
+function skip(cid){addA(cid,'Skipped for today','');toast('Skipped \u2014 check back tomorrow');rqueue();}
 
 let curC=null;
 function openC(id){
@@ -492,6 +602,67 @@ function saveContact(){
   toast('Contact saved!');go('contacts');
 }
 
+// ── DANGER ZONE ───────────────────────────────────────────────────────────────
+
+function updateLastImportInfo(){
+  const b=getBatch();
+  const el=document.getElementById('last-import-info');
+  const btn=document.getElementById('undo-btn');
+  if(!el)return;
+  if(b&&b.ids&&b.ids.length){
+    el.textContent=`Last import: ${b.ids.length} contacts on ${fd(b.date)}`;
+    if(btn)btn.disabled=false;
+  }else{
+    el.textContent='No import on record';
+    if(btn)btn.disabled=true;
+  }
+}
+
+function confirmUndoImport(){
+  const b=getBatch();
+  if(!b||!b.ids||!b.ids.length){alert('No import to undo.');return;}
+  document.getElementById('danger-confirm').innerHTML=`
+    <div class="confirm-box">
+      <div class="confirm-title">Undo last import?</div>
+      <div class="confirm-sub">This will permanently delete ${b.ids.length} contacts imported on ${fd(b.date)}. Any outreach you've logged against these contacts will also be removed. This cannot be undone.</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-danger" onclick="doUndoImport()">Yes, undo import</button>
+        <button class="btn btn-sm" onclick="document.getElementById('danger-confirm').innerHTML=''">Cancel</button>
+      </div>
+    </div>`;
+}
+
+function doUndoImport(){
+  const b=getBatch();if(!b||!b.ids)return;
+  const ids=new Set(b.ids);
+  let cs=gc();
+  const removed=cs.filter(c=>ids.has(c.id)).length;
+  cs=cs.filter(c=>!ids.has(c.id));
+  sc(cs);setBatch(null);
+  document.getElementById('danger-confirm').innerHTML='';
+  updateLastImportInfo();rdash();
+  toast(removed+' contacts removed \u2014 import undone');
+}
+
+function confirmClearAll(){
+  document.getElementById('danger-confirm').innerHTML=`
+    <div class="confirm-box">
+      <div class="confirm-title">Clear ALL contacts?</div>
+      <div class="confirm-sub">This will permanently delete every contact (${gc().length} total) and all activity history. This is a complete reset and cannot be undone. Are you absolutely sure?</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-danger" onclick="doClearAll()">Yes, delete everything</button>
+        <button class="btn btn-sm" onclick="document.getElementById('danger-confirm').innerHTML=''">Cancel</button>
+      </div>
+    </div>`;
+}
+
+function doClearAll(){
+  sc([]);sa([]);setBatch(null);
+  document.getElementById('danger-confirm').innerHTML='';
+  updateLastImportInfo();rdash();
+  toast('All contacts cleared \u2014 fresh start');
+}
+
 // ── IMPORT ENGINE ─────────────────────────────────────────────────────────────
 
 let importRows=[];
@@ -517,25 +688,15 @@ function handleFile(input){
       document.getElementById('imp-preview').innerHTML='<div style="color:var(--dn);font-size:12px;padding:10px">Could not read file. Please save as .xlsx or .csv and try again.</div>';return;
     }
     if(!rows||rows.length<2){document.getElementById('imp-preview').innerHTML='<div style="color:var(--dn);font-size:12px;padding:10px">File appears to be empty.</div>';return;}
-
-    // ── CARRY-DOWN: fill blank cells with last non-blank value above ──────────
-    // This handles merged company cells where only the first row has the value
-    const colCount=Math.max(...rows.map(r=>r.length));
-    for(let col=0;col<colCount;col++){
+    for(let col=0;col<Math.max(...rows.map(r=>r.length));col++){
       let last='';
       for(let row=1;row<rows.length;row++){
         const val=String(rows[row][col]||'').trim();
-        if(val){last=val;}
-        else if(last&&col===0){
-          // Only carry down column 0 (company/builder name) automatically
-          // For other columns we don't carry down to avoid false data
-          rows[row][col]=last;
-        }
+        if(val)last=val;
+        else if(last&&col===0)rows[row][col]=last;
       }
     }
-
-    importRows=rows;
-    showMap(rows,file.name);
+    importRows=rows;showMap(rows,file.name);
   };
   if(ext==='csv')reader.readAsText(file);else reader.readAsArrayBuffer(file);
 }
@@ -548,8 +709,8 @@ function handleDrop(e){
 }
 
 const FIELD_AUTO={
-  'First Name':['first name','firstname','fname','first','given name','contact first'],
-  'Last Name':['last name','lastname','lname','last','surname','contact last'],
+  'First Name':['first name','firstname','fname','first','given name'],
+  'Last Name':['last name','lastname','lname','last','surname'],
   'Contact Name':['contact name','contact','name','full name','rep name'],
   'Company':['company','builder','builder name','target builder','target builder(s) / focus','firm','organization','account','lead'],
   'Role':['role','title','job title','position','function'],
@@ -572,39 +733,17 @@ function bestMatch(header){
 function showMap(rows,fname){
   const headers=rows[0].map((h,i)=>String(h||'Column '+(i+1)).trim());
   const crmFields=['Contact Name','First Name','Last Name','Company','Role','Email','LinkedIn','Phone','Address','Notes','Last Outreach Date'];
-  
-  // Auto-detect best match for each header
   const autoMap={};
-  headers.forEach((h,i)=>{
-    const match=bestMatch(h);
-    if(match&&autoMap[match]===undefined)autoMap[match]=i;
-  });
-
+  headers.forEach((h,i)=>{const match=bestMatch(h);if(match&&autoMap[match]===undefined)autoMap[match]=i;});
   const preview=rows.slice(1,4).filter(r=>r.some(c=>String(c).trim()));
-
   document.getElementById('imp-preview').innerHTML=`
     <div class="panel">
       <div class="ptitle">${rows.length-1} contacts found in "${fname}"</div>
-      <p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">
-        Columns auto-detected where possible. Review the mapping below — set any field to "— skip —" to ignore that column.
-        Phone and address will be saved to Notes automatically.
-      </p>
-      ${crmFields.map(f=>`
-        <div class="map-row">
-          <div class="map-lbl">${f}${f==='Phone'||f==='Address'?'<span style="font-size:9px;color:var(--mu)"> → Notes</span>':''}</div>
-          <select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}">
-            <option value="">— skip —</option>
-            ${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}
-          </select>
-        </div>`).join('')}
-      ${preview.length?`
-        <div style="margin:14px 0 10px;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em">Preview (first 3 rows)</div>
-        <div style="overflow-x:auto"><table class="ctbl" style="font-size:10px">
-          <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-          <tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,30)}</td>`).join('')}</tr>`).join('')}</tbody>
-        </table></div>`:''}
+      <p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns are pre-selected. Set any field to "— skip —" to ignore it. Phone and address save to Notes automatically.</p>
+      ${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}${f==='Phone'||f==='Address'?'<span style="font-size:9px;color:var(--mu)"> \u2192 Notes</span>':''}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}
+      ${preview.length?`<div style="margin:14px 0 8px;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em">Preview</div><div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}
       <div style="margin-top:16px;display:flex;gap:8px">
-        <button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import →</button>
+        <button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import \u2192</button>
         <button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button>
       </div>
     </div>`;
@@ -626,10 +765,8 @@ function parseRows(){
     'director of construction':'Operations','vp construction':'Operations',
     'supervisor':'Supervisor','superintendent':'Supervisor','super':'Supervisor',
     'project manager':'Supervisor','director of project management':'Supervisor',
-    'designer':'Designer','interior designer':'Designer','architect':'Designer',
-    'design':'Designer'
+    'designer':'Designer','interior designer':'Designer','architect':'Designer'
   };
-
   const contactNameIdx=getFieldIndex('Contact Name');
   const firstIdx=getFieldIndex('First Name');
   const lastIdx=getFieldIndex('Last Name');
@@ -641,41 +778,25 @@ function parseRows(){
   const addrIdx=getFieldIndex('Address');
   const notesIdx=getFieldIndex('Notes');
   const dateIdx=getFieldIndex('Last Outreach Date');
-
   return importRows.slice(1).filter(r=>r.some(c=>String(c).trim())).map(row=>{
     const get=i=>i!==undefined?String(row[i]||'').trim():'';
-
-    // Smart name parsing — handles "Contact Name" column or separate first/last
     let fn='',ln='';
     if(contactNameIdx!==undefined&&get(contactNameIdx)){
-      const parts=get(contactNameIdx).split(' ');
-      fn=parts[0]||'';ln=parts.slice(1).join(' ')||'';
-    } else {
-      fn=get(firstIdx);ln=get(lastIdx);
-    }
+      const parts=get(contactNameIdx).split(' ');fn=parts[0]||'';ln=parts.slice(1).join(' ')||'';
+    }else{fn=get(firstIdx);ln=get(lastIdx);}
     if(!fn&&!ln){fn=get(coIdx).split(' ')[0]||'Contact';}
-
     const co=get(coIdx);
     const roleRaw=get(roleIdx).toLowerCase();
-    
-    // Smart role detection — partial match
     let role='CEO/Owner';
-    for(const[key,val]of Object.entries(roleMap)){
-      if(roleRaw.includes(key)){role=val;break;}
-    }
-
-    // Build notes — combine phone, address, and any existing notes
+    for(const[key,val]of Object.entries(roleMap)){if(roleRaw.includes(key)){role=val;break;}}
     const noteParts=[];
     if(get(phoneIdx))noteParts.push('Phone: '+get(phoneIdx));
     if(get(addrIdx))noteParts.push('Address: '+get(addrIdx));
     if(get(notesIdx))noteParts.push(get(notesIdx));
     const notes=noteParts.join('\n');
-
-    // Parse outreach date
     let ltd=null;
     const dateRaw=get(dateIdx);
     if(dateRaw){try{const d=new Date(dateRaw);if(!isNaN(d.getTime()))ltd=d.toISOString();}catch(e){}}
-
     return{fn,ln,co,role,email:get(emailIdx),li:get(liIdx),notes,ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[]};
   }).filter(r=>r.fn||r.ln||r.co);
 }
@@ -683,55 +804,27 @@ function parseRows(){
 function checkDupes(){
   const parsed=parseRows();
   if(!parsed.length){alert('No valid contacts found. Please check your column mapping.');return;}
-  
   const existing=gc();
-  const dupes=[];
-  const clean=[];
-
+  const dupes=[],clean=[];
   parsed.forEach(p=>{
-    // Check for duplicate by email (strongest signal) or name+company combo
     const byEmail=p.email&&existing.find(e=>e.email&&e.email.toLowerCase()===p.email.toLowerCase());
     const byName=existing.find(e=>e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()&&(e.co||'').toLowerCase()===(p.co||'').toLowerCase());
     const match=byEmail||byName;
-    if(match){dupes.push({new:p,existing:match});}
-    else{clean.push(p);}
+    if(match)dupes.push({new:p,existing:match});else clean.push(p);
   });
-
-  if(!dupes.length){
-    // No dupes — go straight to import
-    doImport(clean,[],parsed.length);
-    return;
-  }
-
-  // Show duplicate resolution screen
+  if(!dupes.length){doImport(clean,[],parsed.length);return;}
   document.getElementById('imp-preview').innerHTML=`
     <div class="panel">
       <div class="ptitle">${dupes.length} duplicate${dupes.length>1?'s':''} found</div>
-      <p style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6">
-        These contacts already exist in your CRM. Choose what to do with each one.
-        ${clean.length} contacts are new and will be imported automatically.
-      </p>
-      <div id="dupe-list">
-        ${dupes.map((d,i)=>`
-          <div class="dup-row" id="dr-${i}">
-            <div>
-              <div class="dup-info">${d.new.fn} ${d.new.ln||''} \u2014 ${d.new.co||'unknown company'}</div>
-              <div class="dup-sub">${d.new.email||'no email'} \u00b7 ${d.new.role} \u00b7 Already in CRM as Tier ${d.existing.tier}</div>
-            </div>
-            <button class="btn btn-sm" onclick="setDupeAction(${i},'skip',this)">Skip</button>
-            <button class="btn btn-sm btn-warn" onclick="setDupeAction(${i},'overwrite',this)">Overwrite</button>
-          </div>`).join('')}
-      </div>
-      <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+      <p style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6">${clean.length} contacts are new and will import automatically. Choose what to do with each duplicate.</p>
+      <div id="dupe-list">${dupes.map((d,i)=>`<div class="dup-row" id="dr-${i}"><div><div class="dup-info">${d.new.fn} ${d.new.ln||''} \u2014 ${d.new.co||'?'}</div><div class="dup-sub">${d.new.email||'no email'} \u00b7 ${d.new.role} \u00b7 Already in CRM as ${d.existing.tier}</div></div><button class="btn btn-sm" onclick="setDupeAction(${i},'skip',this)" style="font-weight:700">Skip</button><button class="btn btn-sm btn-warn" onclick="setDupeAction(${i},'overwrite',this)">Overwrite</button></div>`).join('')}</div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="btn btn-p" onclick="finalizeDupes(${JSON.stringify(clean).replace(/"/g,'&quot;')},${dupes.length+clean.length})">Import with these choices</button>
-        <button class="btn btn-sm" onclick="setAllDupes('skip')">Skip all dupes</button>
+        <button class="btn btn-sm" onclick="setAllDupes('skip')">Skip all</button>
         <button class="btn btn-sm btn-warn" onclick="setAllDupes('overwrite')">Overwrite all</button>
       </div>
     </div>`;
-  
-  // Store dupes for resolution
-  window._dupes=dupes;
-  window._dupeActions=dupes.map(()=>'skip');
+  window._dupes=dupes;window._dupeActions=dupes.map(()=>'skip');
 }
 
 function setDupeAction(i,action,btn){
@@ -758,25 +851,25 @@ function finalizeDupes(cleanStr,total){
 
 function doImport(clean,overwrites,total){
   const cs=gc();let added=0,updated=0;
-
+  const batchIds=[];
   clean.forEach(p=>{
-    cs.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),...p,dnc:false,responded:false,ca:new Date().toISOString()});
-    added++;
+    const id='c'+Date.now()+Math.random().toString(36).slice(2,6);
+    cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});
+    batchIds.push(id);added++;
   });
-
   overwrites.forEach(p=>{
     const idx=cs.findIndex(e=>(p.email&&e.email&&e.email.toLowerCase()===p.email.toLowerCase())||(e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()));
     if(idx>=0){Object.assign(cs[idx],{co:p.co||cs[idx].co,role:p.role||cs[idx].role,email:p.email||cs[idx].email,notes:p.notes||cs[idx].notes});updated++;}
-    else{cs.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),...p,dnc:false,responded:false,ca:new Date().toISOString()});added++;}
+    else{const id='c'+Date.now()+Math.random().toString(36).slice(2,6);cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});batchIds.push(id);added++;}
   });
-
   sc(cs);
+  // Save batch info for undo
+  setBatch({ids:batchIds,date:new Date().toISOString(),count:added});
   document.getElementById('imp-preview').innerHTML=`
     <div class="panel" style="text-align:center;padding:24px">
       <div style="font-size:20px;font-weight:600;color:var(--ac);margin-bottom:6px">${added} contacts imported${updated?', '+updated+' updated':''}!</div>
       <div style="font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.6">
-        ${added} new contacts added to your list. ${updated?updated+' existing contacts updated. ':''}
-        Contacts with a prior outreach date are Tier 2. All others are Tier 3 \u2014 cold and ready for Touch 1.
+        ${added} new contacts added.${updated?' '+updated+' existing contacts updated.':''} If anything looks wrong, use "Undo last import" below.
       </div>
       <div style="display:flex;gap:8px;justify-content:center">
         <button class="btn btn-p" onclick="go('contacts')">View contacts \u2192</button>
@@ -786,6 +879,7 @@ function doImport(clean,overwrites,total){
   document.getElementById('fi2').value='';
   document.getElementById('qbadge').textContent=gc().filter(due).length;
   window._dupes=null;window._dupeActions=null;
+  updateLastImportInfo();
   toast(added+' imported'+(updated?', '+updated+' updated':'')+'!');
 }
 
