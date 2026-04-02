@@ -91,9 +91,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .empty-icon{font-size:30px;margin-bottom:8px;opacity:.25}
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center}
 .modal-ov.open{display:flex}
-.modal{background:var(--sf);border-radius:12px;padding:20px;width:520px;max-height:600px;overflow-y:auto;border:.5px solid var(--bd)}
+.modal{background:var(--sf);border-radius:12px;padding:20px;width:520px;max-height:620px;overflow-y:auto;border:.5px solid var(--bd)}
 .modal-title{font-size:15px;font-weight:600;margin-bottom:16px}
-.modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:.5px solid var(--bd)}
+.modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:.5px solid var(--bd);flex-wrap:wrap}
 .uz{border:1.5px dashed var(--bd);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border-color .15s}
 .uz:hover{border-color:var(--ac)}
 .uz-lbl{font-size:13px;color:var(--mu);margin-top:8px;font-weight:500}
@@ -101,8 +101,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .map-row{display:grid;grid-template-columns:160px 1fr;gap:10px;margin-bottom:8px;align-items:center}
 .map-lbl{font-size:12px;font-weight:500;color:var(--tx)}
 .dup-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 10px;background:var(--bg);border-radius:7px;margin-bottom:6px;border:.5px solid #EF9F27}
-.dup-info{font-size:11px;color:var(--tx)}
-.dup-sub{font-size:10px;color:var(--mu);margin-top:2px}
 .bulk-bar{background:var(--nav);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:12px;border-radius:8px;margin-bottom:12px}
 .confirm-box{background:#FCEBEB;border:1px solid var(--dn);border-radius:9px;padding:16px;margin-bottom:12px}
 .confirm-title{font-size:13px;font-weight:600;color:var(--dn);margin-bottom:6px}
@@ -225,12 +223,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <input type="file" id="fi2" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this)">
         <div id="imp-preview" style="margin-top:14px"></div>
       </div>
-
       <div class="panel" style="max-width:580px;border-color:rgba(226,75,74,0.3)">
-        <div class="ptitle" style="color:var(--dn)">
-          Danger zone
-          <span style="font-size:10px;font-weight:400;color:var(--mu)">These actions cannot be undone</span>
-        </div>
+        <div class="ptitle" style="color:var(--dn)">Danger zone<span style="font-size:10px;font-weight:400;color:var(--mu);margin-left:8px">These actions cannot be undone</span></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <div style="flex:1;min-width:200px">
             <div style="font-size:12px;font-weight:500;margin-bottom:4px">Undo last import</div>
@@ -307,11 +301,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="modal">
     <div class="modal-title" id="mod-name">Contact</div>
     <div id="mod-body"></div>
-    <div class="modal-acts">
-      <button class="btn btn-sm btn-danger" onclick="doDNC()">Do not contact</button>
-      <button class="btn btn-sm btn-p" onclick="doResp()">Mark responded</button>
-      <button class="btn btn-sm" onclick="closeModal()">Close</button>
-    </div>
+    <div class="modal-acts" id="mod-acts"></div>
   </div>
 </div>
 
@@ -378,6 +368,8 @@ const bt=t=>{const m={tier1:'bwarm Tier 1 \u2014 warm',tier2:'bt2t Tier 2 \u2014
 const btouch=t=>{const m={t1:'bt1 Touch 1',t2:'bt2 Touch 2',t3:'bt3 Touch 3',t4:'bt4 Touch 4'};const[cls,...lbl]=(m[t]||'bcold \u2014').split(' ');return`<span class="badge ${cls}">${lbl.join(' ')}</span>`};
 
 let selectedIds=new Set();
+let curC=null;
+let editMode=false;
 
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -417,7 +409,7 @@ function rcard(c){
 
 function rqueue(){
   const cs=gc().filter(due),el=document.getElementById('q-list');
-  el.innerHTML=cs.length?cs.map(rcard).join(''):'<div class="empty"><div class="empty-icon">\u2713</div><div style="font-weight:600;margin-bottom:6px">All caught up!</div><div>No contacts due for outreach. <span style="color:var(--ac);cursor:pointer" onclick="go(\'add\')">Add new contacts \u2192</span></div></div>';
+  el.innerHTML=cs.length?cs.map(rcard).join(''):'<div class="empty"><div class="empty-icon">\u2713</div><div style="font-weight:600;margin-bottom:6px">All caught up!</div><div>No contacts due. <span style="color:var(--ac);cursor:pointer" onclick="go(\'add\')">Add new contacts \u2192</span></div></div>';
 }
 
 function rcontacts(){
@@ -433,30 +425,17 @@ function rcontacts(){
   const tb=document.getElementById('ctbody');
   if(!cs.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty" style="padding:16px">No contacts found. <span style="color:var(--ac);cursor:pointer" onclick="go('add')">Add one \u2192</span></div></td></tr>`;updateBulkBar();return;}
   tb.innerHTML=cs.map(c=>{
-    const n=nxt(c);
-    const sel=selectedIds.has(c.id);
+    const n=nxt(c);const sel=selectedIds.has(c.id);
     const st=c.dnc?'<span class="badge bdnc">DNC</span>':c.responded?'<span class="badge bresp">Responded</span>':n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Complete</span>';
-    return`<tr class="${sel?'selected':''}" id="row-${c.id}">
-      <td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel('${c.id}',this.checked)" onclick="event.stopPropagation()"></td>
-      <td onclick="openC('${c.id}')" style="cursor:pointer"><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:28px;height:28px;font-size:10px">${ini(c.fn+' '+(c.ln||''))}</div><span style="font-weight:500">${c.fn} ${c.ln||''}</span></div></td>
-      <td onclick="openC('${c.id}')" style="cursor:pointer">${c.co||'\u2014'}</td>
-      <td style="color:var(--mu)">${c.role||'\u2014'}</td>
-      <td>${bt(c.tier||'tier3')}</td>
-      <td style="color:var(--mu)">${fd(c.ltd)}</td>
-      <td>${st}</td>
-      <td><button class="btn btn-sm" onclick="sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button></td>
-    </tr>`;
+    return`<tr class="${sel?'selected':''}" id="row-${c.id}"><td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel('${c.id}',this.checked)" onclick="event.stopPropagation()"></td><td onclick="openC('${c.id}')" style="cursor:pointer"><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:28px;height:28px;font-size:10px">${ini(c.fn+' '+(c.ln||''))}</div><span style="font-weight:500">${c.fn} ${c.ln||''}</span></div></td><td onclick="openC('${c.id}')" style="cursor:pointer">${c.co||'\u2014'}</td><td style="color:var(--mu)">${c.role||'\u2014'}</td><td>${bt(c.tier||'tier3')}</td><td style="color:var(--mu)">${fd(c.ltd)}</td><td>${st}</td><td><button class="btn btn-sm" onclick="sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button></td></tr>`;
   }).join('');
-  updateBulkBar();
-  updateSelAll(cs);
+  updateBulkBar();updateSelAll(cs);
 }
 
 function toggleSel(id,checked){
   if(checked)selectedIds.add(id);else selectedIds.delete(id);
-  const row=document.getElementById('row-'+id);
-  if(row)row.classList.toggle('selected',checked);
-  updateBulkBar();
-  updateSelAll();
+  const row=document.getElementById('row-'+id);if(row)row.classList.toggle('selected',checked);
+  updateBulkBar();updateSelAll();
 }
 
 function toggleSelAll(checked){
@@ -481,9 +460,8 @@ function updateSelAll(cs){
 }
 
 function updateBulkBar(){
-  const bar=document.getElementById('bulk-bar');
   document.getElementById('bulk-count').textContent=selectedIds.size+' contact'+(selectedIds.size!==1?'s':'')+' selected';
-  bar.style.display=selectedIds.size>0?'flex':'none';
+  document.getElementById('bulk-bar').style.display=selectedIds.size>0?'flex':'none';
 }
 
 function clearSel(){selectedIds.clear();rcontacts();}
@@ -492,18 +470,150 @@ function bulkDNC(){
   if(!selectedIds.size)return;
   if(!confirm(`Mark ${selectedIds.size} contact(s) as Do Not Contact?`))return;
   const cs=gc();
-  selectedIds.forEach(id=>{const c=cs.find(x=>x.id===id);if(c){c.dnc=true;addA(id,'Marked DNC (bulk)','');}});
-  sc(cs);selectedIds.clear();rcontacts();toast(selectedIds.size+' contacts marked DNC');
+  selectedIds.forEach(id=>{const c=cs.find(x=>x.id===id);if(c)c.dnc=true;});
+  sc(cs);selectedIds.clear();rcontacts();toast('Contacts marked DNC');
 }
 
 function bulkDelete(){
   if(!selectedIds.size)return;
   const count=selectedIds.size;
   if(!confirm(`Permanently delete ${count} contact(s)? This cannot be undone.`))return;
-  let cs=gc();
-  cs=cs.filter(c=>!selectedIds.has(c.id));
-  sc(cs);selectedIds.clear();rcontacts();rdash();
-  toast(count+' contact(s) deleted');
+  let cs=gc();cs=cs.filter(c=>!selectedIds.has(c.id));
+  sc(cs);selectedIds.clear();rcontacts();rdash();toast(count+' contact(s) deleted');
+}
+
+// ── CONTACT MODAL — view + edit ───────────────────────────────────────────────
+
+function openC(id){
+  curC=id;editMode=false;
+  renderModal(id);
+  document.getElementById('cmodal').classList.add('open');
+}
+
+function renderModal(id){
+  const c=gc().find(x=>x.id===id);if(!c)return;
+  const n=nxt(c),acts=ga().filter(a=>a.cid===id);
+  document.getElementById('mod-name').textContent=editMode?'Edit contact':c.fn+' '+(c.ln||'');
+
+  if(editMode){
+    document.getElementById('mod-body').innerHTML=`
+      <div class="frow">
+        <div class="ff"><label class="flbl">First name *</label><input class="fi" id="e-fn" value="${(c.fn||'').replace(/"/g,'&quot;')}"></div>
+        <div class="ff"><label class="flbl">Last name</label><input class="fi" id="e-ln" value="${(c.ln||'').replace(/"/g,'&quot;')}"></div>
+      </div>
+      <div class="frow">
+        <div class="ff"><label class="flbl">Company</label><input class="fi" id="e-co" value="${(c.co||'').replace(/"/g,'&quot;')}"></div>
+        <div class="ff"><label class="flbl">Role</label>
+          <select class="fsel" id="e-role">
+            ${['CEO/Owner','Purchasing','Operations','Supervisor','Designer','Woman-Owned','DBA'].map(r=>`<option value="${r}"${c.role===r?' selected':''}>${r}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="ff"><label class="flbl">Email</label><input class="fi" id="e-email" value="${(c.email||'').replace(/"/g,'&quot;')}" type="email"></div>
+        <div class="ff"><label class="flbl">LinkedIn URL</label><input class="fi" id="e-li" value="${(c.li||'').replace(/"/g,'&quot;')}"></div>
+      </div>
+      <div class="frow">
+        <div class="ff"><label class="flbl">Tier</label>
+          <select class="fsel" id="e-tier">
+            <option value="tier3"${c.tier==='tier3'?' selected':''}>Tier 3 \u2014 cold</option>
+            <option value="tier2"${c.tier==='tier2'?' selected':''}>Tier 2 \u2014 touched</option>
+            <option value="tier1"${c.tier==='tier1'?' selected':''}>Tier 1 \u2014 warm</option>
+          </select>
+        </div>
+        <div class="ff"><label class="flbl">Source</label><input class="fi" id="e-src" value="${(c.src||'').replace(/"/g,'&quot;')}"></div>
+      </div>
+      <div class="ff" style="margin-bottom:4px"><label class="flbl">Notes</label>
+        <textarea class="rbox" id="e-notes" rows="4">${c.notes||''}</textarea>
+      </div>`;
+    document.getElementById('mod-acts').innerHTML=`
+      <button class="btn btn-p btn-sm" onclick="saveEdit()">Save changes</button>
+      <button class="btn btn-sm" onclick="editMode=false;renderModal('${id}')">Cancel</button>`;
+  }else{
+    document.getElementById('mod-body').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="metric"><div class="mlbl">Company</div><div style="font-size:13px;font-weight:600;margin-top:2px">${c.co||'\u2014'}</div></div>
+        <div class="metric"><div class="mlbl">Role</div><div style="font-size:13px;font-weight:600;margin-top:2px">${c.role||'\u2014'}</div></div>
+        <div class="metric"><div class="mlbl">Email</div><div style="font-size:11px;margin-top:2px;color:var(--in);word-break:break-all">${c.email||'\u2014'}</div></div>
+        <div class="metric"><div class="mlbl">LinkedIn</div><div style="font-size:11px;margin-top:2px;word-break:break-all">${c.li?`<a href="https://${c.li.replace(/^https?:\/\//,'')}" style="color:var(--in)" target="_blank">${c.li}</a>`:'\u2014'}</div></div>
+        <div class="metric"><div class="mlbl">Source</div><div style="font-size:11px;margin-top:2px">${c.src||'\u2014'}</div></div>
+        <div class="metric"><div class="mlbl">Last touch</div><div style="font-size:11px;margin-top:2px">${fd(c.ltd)}</div></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        ${bt(c.tier||'tier3')}
+        ${n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Sequence complete</span>'}
+        ${c.dnc?' <span class="badge bdnc">DNC</span>':''}
+        ${c.responded?' <span class="badge bresp">Responded</span>':''}
+      </div>
+      ${c.notes?`<div style="margin-bottom:14px"><div class="mlbl" style="margin-bottom:4px">Notes</div><div style="font-size:12px;line-height:1.6;background:var(--bg);padding:10px;border-radius:7px;white-space:pre-wrap">${c.notes}</div></div>`:''}
+      <div class="mlbl" style="margin-bottom:8px">Activity timeline</div>
+      ${acts.length?acts.map(a=>`<div class="tl-item"><div class="tl-dot"></div><div><div class="tl-a">${a.action}</div><div class="tl-d">${fd(a.date)}</div></div></div>`).join(''):'<div style="font-size:12px;color:var(--ht)">No activity yet.</div>'}`;
+    document.getElementById('mod-acts').innerHTML=`
+      <button class="btn btn-sm btn-danger" onclick="doDNC()">Do not contact</button>
+      <button class="btn btn-sm btn-warn" onclick="doResp()">Mark responded</button>
+      <button class="btn btn-sm btn-p" onclick="editMode=true;renderModal('${id}')">Edit contact</button>
+      <button class="btn btn-sm" onclick="closeModal()">Close</button>`;
+  }
+}
+
+function saveEdit(){
+  if(!curC)return;
+  const cs=gc(),c=cs.find(x=>x.id===curC);if(!c)return;
+  const fn=document.getElementById('e-fn').value.trim();
+  if(!fn){alert('First name is required.');return;}
+  c.fn=fn;
+  c.ln=document.getElementById('e-ln').value.trim();
+  c.co=document.getElementById('e-co').value.trim();
+  c.role=document.getElementById('e-role').value;
+  c.email=document.getElementById('e-email').value.trim();
+  c.li=document.getElementById('e-li').value.trim();
+  c.tier=document.getElementById('e-tier').value;
+  c.src=document.getElementById('e-src').value.trim();
+  c.notes=document.getElementById('e-notes').value.trim();
+  sc(cs);
+  addA(curC,'Contact updated','');
+  editMode=false;
+  renderModal(curC);
+  rcontacts();
+  toast('Contact saved!');
+}
+
+function closeModal(){document.getElementById('cmodal').classList.remove('open');curC=null;editMode=false;}
+document.getElementById('cmodal').addEventListener('click',e=>{if(e.target.id==='cmodal')closeModal()});
+function doDNC(){if(!curC)return;const cs=gc(),c=cs.find(x=>x.id===curC);if(c){c.dnc=true;sc(cs);addA(curC,'Marked do not contact','');}closeModal();toast('Marked do not contact');rcontacts();}
+function doResp(){if(!curC)return;const cs=gc(),c=cs.find(x=>x.id===curC);if(c){c.responded=true;c.tier='tier1';sc(cs);addA(curC,'Marked as responded \u2014 upgraded to Tier 1','');}closeModal();toast('Marked as responded!');rcontacts();}
+
+function mailto_(cid,tk){
+  const c=gc().find(x=>x.id===cid);if(!c)return;
+  const role=c.role||'CEO/Owner',block=(COPY[role]||COPY['CEO/Owner'])[tk];if(!block)return;
+  const body=(block.b||block).replace(/\[First Name\]/g,c.fn);
+  window.open(`mailto:${c.email||''}?subject=${encodeURIComponent(block.s||'')}&body=${encodeURIComponent(body)}`);
+}
+
+function sent(cid,tk){
+  if(!tk||tk==='null'||tk==='undefined')return;
+  const cs=gc(),c=cs.find(x=>x.id===cid);if(!c)return;
+  if(!c.ts)c.ts=[];
+  if(!c.ts.includes(tk))c.ts.push(tk);
+  c.ltd=new Date().toISOString();
+  if(c.tier==='tier3')c.tier='tier2';
+  sc(cs);addA(cid,(TL[tk]||tk)+' sent',c.co||'');
+  toast('Marked as sent \u2713');rdash();
+  const act=document.querySelector('.screen.active');
+  if(act&&act.id==='s-queue')rqueue();
+  if(act&&act.id==='s-contacts')rcontacts();
+}
+
+function skip(cid){addA(cid,'Skipped for today','');toast('Skipped');rqueue();}
+
+function saveContact(){
+  const fn=document.getElementById('a1').value.trim();
+  if(!fn){alert('Please enter at least a first name.');return;}
+  const cs=gc();
+  const c={id:'c'+Date.now()+Math.random().toString(36).slice(2,6),fn,ln:document.getElementById('a2').value.trim(),co:document.getElementById('a3').value.trim(),role:document.getElementById('a4').value,email:document.getElementById('a5').value.trim(),li:document.getElementById('a6').value.trim(),tier:document.getElementById('a7').value,src:document.getElementById('a8').value,notes:document.getElementById('a9').value.trim(),ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString()};
+  cs.push(c);sc(cs);addA(c.id,'Contact added',c.co);
+  ['a1','a2','a3','a5','a6','a9'].forEach(id=>document.getElementById(id).value='');
+  toast('Contact saved!');go('contacts');
 }
 
 function rlib(){
@@ -555,112 +665,38 @@ function analyze(){
   document.getElementById('rout').innerHTML=`<div class="panel"><div class="ptitle">Message analysis</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="metric"><div class="mlbl">Tone detected</div><div style="font-size:14px;font-weight:600;margin-top:3px">${tone}</div></div><div class="metric"><div class="mlbl">Intent</div><div style="font-size:12px;margin-top:3px;line-height:1.5">${intent}</div></div></div><div class="ptitle" style="margin-bottom:8px">Suggested reply</div><div class="cprev" style="max-height:200px">${reply.replace(/</g,'&lt;')}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p btn-sm" onclick="clip(\`${reply.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy reply</button><button class="btn btn-sm" onclick="document.getElementById('rout').innerHTML=''">Clear</button></div></div>`;
 }
 
-function sent(cid,tk){
-  if(!tk||tk==='null'||tk==='undefined')return;
-  const cs=gc(),c=cs.find(x=>x.id===cid);if(!c)return;
-  if(!c.ts)c.ts=[];
-  if(!c.ts.includes(tk))c.ts.push(tk);
-  c.ltd=new Date().toISOString();
-  if(c.tier==='tier3')c.tier='tier2';
-  sc(cs);addA(cid,(TL[tk]||tk)+' sent',c.co||'');
-  toast('Marked as sent \u2713');rdash();
-  const act=document.querySelector('.screen.active');
-  if(act&&act.id==='s-queue')rqueue();
-  if(act&&act.id==='s-contacts')rcontacts();
-}
-
-function skip(cid){addA(cid,'Skipped for today','');toast('Skipped \u2014 check back tomorrow');rqueue();}
-
-let curC=null;
-function openC(id){
-  curC=id;const c=gc().find(x=>x.id===id);if(!c)return;
-  document.getElementById('mod-name').textContent=c.fn+' '+(c.ln||'');
-  const n=nxt(c),acts=ga().filter(a=>a.cid===id);
-  document.getElementById('mod-body').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="metric"><div class="mlbl">Company</div><div style="font-size:13px;font-weight:600;margin-top:2px">${c.co||'\u2014'}</div></div><div class="metric"><div class="mlbl">Role</div><div style="font-size:13px;font-weight:600;margin-top:2px">${c.role||'\u2014'}</div></div><div class="metric"><div class="mlbl">Email</div><div style="font-size:11px;margin-top:2px;color:var(--in);word-break:break-all">${c.email||'\u2014'}</div></div><div class="metric"><div class="mlbl">Source</div><div style="font-size:11px;margin-top:2px">${c.src||'\u2014'}</div></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${bt(c.tier||'tier3')} ${n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Sequence complete</span>'}${c.dnc?' <span class="badge bdnc">DNC</span>':''}${c.responded?' <span class="badge bresp">Responded</span>':''}</div>${c.notes?`<div style="margin-bottom:14px"><div class="mlbl" style="margin-bottom:4px">Notes</div><div style="font-size:12px;line-height:1.6;background:var(--bg);padding:10px;border-radius:7px;white-space:pre-wrap">${c.notes}</div></div>`:''}<div class="mlbl" style="margin-bottom:8px">Activity timeline</div>${acts.length?acts.map(a=>`<div class="tl-item"><div class="tl-dot"></div><div><div class="tl-a">${a.action}</div><div class="tl-d">${fd(a.date)}</div></div></div>`).join(''):'<div style="font-size:12px;color:var(--ht)">No activity yet.</div>'}`;
-  document.getElementById('cmodal').classList.add('open');
-}
-
-function closeModal(){document.getElementById('cmodal').classList.remove('open');curC=null;}
-document.getElementById('cmodal').addEventListener('click',e=>{if(e.target.id==='cmodal')closeModal()});
-function doDNC(){if(!curC)return;const cs=gc(),c=cs.find(x=>x.id===curC);if(c){c.dnc=true;sc(cs);addA(curC,'Marked do not contact','');}closeModal();toast('Marked do not contact');rcontacts();}
-function doResp(){if(!curC)return;const cs=gc(),c=cs.find(x=>x.id===curC);if(c){c.responded=true;c.tier='tier1';sc(cs);addA(curC,'Marked as responded \u2014 upgraded to Tier 1','');}closeModal();toast('Marked as responded!');rcontacts();}
-
-function mailto_(cid,tk){
-  const c=gc().find(x=>x.id===cid);if(!c)return;
-  const role=c.role||'CEO/Owner',block=(COPY[role]||COPY['CEO/Owner'])[tk];if(!block)return;
-  const body=(block.b||block).replace(/\[First Name\]/g,c.fn);
-  window.open(`mailto:${c.email||''}?subject=${encodeURIComponent(block.s||'')}&body=${encodeURIComponent(body)}`);
-}
-
-function saveContact(){
-  const fn=document.getElementById('a1').value.trim();
-  if(!fn){alert('Please enter at least a first name.');return;}
-  const cs=gc();
-  const c={id:'c'+Date.now()+Math.random().toString(36).slice(2,6),fn,ln:document.getElementById('a2').value.trim(),co:document.getElementById('a3').value.trim(),role:document.getElementById('a4').value,email:document.getElementById('a5').value.trim(),li:document.getElementById('a6').value.trim(),tier:document.getElementById('a7').value,src:document.getElementById('a8').value,notes:document.getElementById('a9').value.trim(),ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString()};
-  cs.push(c);sc(cs);addA(c.id,'Contact added',c.co);
-  ['a1','a2','a3','a5','a6','a9'].forEach(id=>document.getElementById(id).value='');
-  toast('Contact saved!');go('contacts');
-}
-
 // ── DANGER ZONE ───────────────────────────────────────────────────────────────
 
 function updateLastImportInfo(){
-  const b=getBatch();
-  const el=document.getElementById('last-import-info');
-  const btn=document.getElementById('undo-btn');
+  const b=getBatch(),el=document.getElementById('last-import-info'),btn=document.getElementById('undo-btn');
   if(!el)return;
-  if(b&&b.ids&&b.ids.length){
-    el.textContent=`Last import: ${b.ids.length} contacts on ${fd(b.date)}`;
-    if(btn)btn.disabled=false;
-  }else{
-    el.textContent='No import on record';
-    if(btn)btn.disabled=true;
-  }
+  if(b&&b.ids&&b.ids.length){el.textContent=`Last import: ${b.ids.length} contacts on ${fd(b.date)}`;if(btn)btn.disabled=false;}
+  else{el.textContent='No import on record';if(btn)btn.disabled=true;}
 }
 
 function confirmUndoImport(){
-  const b=getBatch();
-  if(!b||!b.ids||!b.ids.length){alert('No import to undo.');return;}
-  document.getElementById('danger-confirm').innerHTML=`
-    <div class="confirm-box">
-      <div class="confirm-title">Undo last import?</div>
-      <div class="confirm-sub">This will permanently delete ${b.ids.length} contacts imported on ${fd(b.date)}. Any outreach you've logged against these contacts will also be removed. This cannot be undone.</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-sm btn-danger" onclick="doUndoImport()">Yes, undo import</button>
-        <button class="btn btn-sm" onclick="document.getElementById('danger-confirm').innerHTML=''">Cancel</button>
-      </div>
-    </div>`;
+  const b=getBatch();if(!b||!b.ids||!b.ids.length){alert('No import to undo.');return;}
+  document.getElementById('danger-confirm').innerHTML=`<div class="confirm-box"><div class="confirm-title">Undo last import?</div><div class="confirm-sub">This will permanently delete ${b.ids.length} contacts imported on ${fd(b.date)}. This cannot be undone.</div><div style="display:flex;gap:8px"><button class="btn btn-sm btn-danger" onclick="doUndoImport()">Yes, undo import</button><button class="btn btn-sm" onclick="document.getElementById('danger-confirm').innerHTML=''">Cancel</button></div></div>`;
 }
 
 function doUndoImport(){
   const b=getBatch();if(!b||!b.ids)return;
-  const ids=new Set(b.ids);
-  let cs=gc();
+  const ids=new Set(b.ids);let cs=gc();
   const removed=cs.filter(c=>ids.has(c.id)).length;
   cs=cs.filter(c=>!ids.has(c.id));
   sc(cs);setBatch(null);
   document.getElementById('danger-confirm').innerHTML='';
-  updateLastImportInfo();rdash();
-  toast(removed+' contacts removed \u2014 import undone');
+  updateLastImportInfo();rdash();toast(removed+' contacts removed \u2014 import undone');
 }
 
 function confirmClearAll(){
-  document.getElementById('danger-confirm').innerHTML=`
-    <div class="confirm-box">
-      <div class="confirm-title">Clear ALL contacts?</div>
-      <div class="confirm-sub">This will permanently delete every contact (${gc().length} total) and all activity history. This is a complete reset and cannot be undone. Are you absolutely sure?</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-sm btn-danger" onclick="doClearAll()">Yes, delete everything</button>
-        <button class="btn btn-sm" onclick="document.getElementById('danger-confirm').innerHTML=''">Cancel</button>
-      </div>
-    </div>`;
+  document.getElementById('danger-confirm').innerHTML=`<div class="confirm-box"><div class="confirm-title">Clear ALL contacts?</div><div class="confirm-sub">This will permanently delete every contact (${gc().length} total) and all activity history. This cannot be undone.</div><div style="display:flex;gap:8px"><button class="btn btn-sm btn-danger" onclick="doClearAll()">Yes, delete everything</button><button class="btn btn-sm" onclick="document.getElementById('danger-confirm').innerHTML=''">Cancel</button></div></div>`;
 }
 
 function doClearAll(){
   sc([]);sa([]);setBatch(null);
   document.getElementById('danger-confirm').innerHTML='';
-  updateLastImportInfo();rdash();
-  toast('All contacts cleared \u2014 fresh start');
+  updateLastImportInfo();rdash();toast('All contacts cleared \u2014 fresh start');
 }
 
 // ── IMPORT ENGINE ─────────────────────────────────────────────────────────────
@@ -674,26 +710,19 @@ function handleFile(input){
     let rows=[];
     try{
       if(ext==='csv'){
-        rows=e.target.result.split('\n').map(r=>{
-          const out=[];let cur='',inQ=false;
-          for(const ch of r){if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){out.push(cur.trim());cur=''}else cur+=ch;}
-          out.push(cur.trim());return out;
-        });
+        rows=e.target.result.split('\n').map(r=>{const out=[];let cur='',inQ=false;for(const ch of r){if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){out.push(cur.trim());cur=''}else cur+=ch;}out.push(cur.trim());return out;});
       }else{
         const wb=XLSX.read(e.target.result,{type:'array'});
         const ws=wb.Sheets[wb.SheetNames[0]];
         rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
       }
-    }catch(err){
-      document.getElementById('imp-preview').innerHTML='<div style="color:var(--dn);font-size:12px;padding:10px">Could not read file. Please save as .xlsx or .csv and try again.</div>';return;
-    }
+    }catch(err){document.getElementById('imp-preview').innerHTML='<div style="color:var(--dn);font-size:12px;padding:10px">Could not read file. Please save as .xlsx or .csv and try again.</div>';return;}
     if(!rows||rows.length<2){document.getElementById('imp-preview').innerHTML='<div style="color:var(--dn);font-size:12px;padding:10px">File appears to be empty.</div>';return;}
     for(let col=0;col<Math.max(...rows.map(r=>r.length));col++){
       let last='';
       for(let row=1;row<rows.length;row++){
         const val=String(rows[row][col]||'').trim();
-        if(val)last=val;
-        else if(last&&col===0)rows[row][col]=last;
+        if(val)last=val;else if(last&&col===0)rows[row][col]=last;
       }
     }
     importRows=rows;showMap(rows,file.name);
@@ -705,7 +734,7 @@ function handleDrop(e){
   e.preventDefault();document.getElementById('uz').style.borderColor='';
   const file=e.dataTransfer.files[0];if(!file)return;
   const dt=new DataTransfer();dt.items.add(file);
-  const inp=document.getElementById('fi2');inp.files=dt.files;handleFile(inp);
+  document.getElementById('fi2').files=dt.files;handleFile(document.getElementById('fi2'));
 }
 
 const FIELD_AUTO={
@@ -722,11 +751,9 @@ const FIELD_AUTO={
   'Last Outreach Date':['date','last touch','last outreach','outreach date','day 0','day 1','day 1 - email','first contact','sent date']
 };
 
-function bestMatch(header){
-  const h=header.toLowerCase().trim();
-  for(const[field,variants]of Object.entries(FIELD_AUTO)){
-    if(variants.some(v=>h===v||h.startsWith(v)||v.startsWith(h)))return field;
-  }
+function bestMatch(h){
+  const hl=h.toLowerCase().trim();
+  for(const[field,variants]of Object.entries(FIELD_AUTO)){if(variants.some(v=>hl===v||hl.startsWith(v)||v.startsWith(hl)))return field;}
   return null;
 }
 
@@ -734,19 +761,9 @@ function showMap(rows,fname){
   const headers=rows[0].map((h,i)=>String(h||'Column '+(i+1)).trim());
   const crmFields=['Contact Name','First Name','Last Name','Company','Role','Email','LinkedIn','Phone','Address','Notes','Last Outreach Date'];
   const autoMap={};
-  headers.forEach((h,i)=>{const match=bestMatch(h);if(match&&autoMap[match]===undefined)autoMap[match]=i;});
+  headers.forEach((h,i)=>{const m=bestMatch(h);if(m&&autoMap[m]===undefined)autoMap[m]=i;});
   const preview=rows.slice(1,4).filter(r=>r.some(c=>String(c).trim()));
-  document.getElementById('imp-preview').innerHTML=`
-    <div class="panel">
-      <div class="ptitle">${rows.length-1} contacts found in "${fname}"</div>
-      <p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns are pre-selected. Set any field to "— skip —" to ignore it. Phone and address save to Notes automatically.</p>
-      ${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}${f==='Phone'||f==='Address'?'<span style="font-size:9px;color:var(--mu)"> \u2192 Notes</span>':''}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}
-      ${preview.length?`<div style="margin:14px 0 8px;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em">Preview</div><div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}
-      <div style="margin-top:16px;display:flex;gap:8px">
-        <button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import \u2192</button>
-        <button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button>
-      </div>
-    </div>`;
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns are pre-selected. Set any field to "— skip —" to ignore it. Phone and address save to Notes automatically.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}${f==='Phone'||f==='Address'?'<span style="font-size:9px;color:var(--mu)"> \u2192 Notes</span>':''}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}${preview.length?`<div style="margin:14px 0 8px;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em">Preview</div><div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import \u2192</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
 }
 
 function getFieldIndex(field){
@@ -755,75 +772,37 @@ function getFieldIndex(field){
 }
 
 function parseRows(){
-  const roleMap={
-    'ceo':'CEO/Owner','owner':'CEO/Owner','founder':'CEO/Owner','president':'CEO/Owner',
-    'principal':'CEO/Owner','co-owner':'CEO/Owner','partner':'CEO/Owner',
-    'purchasing':'Purchasing','procurement':'Purchasing','buyer':'Purchasing',
-    'purchasing manager':'Purchasing','director of purchasing':'Purchasing',
-    'vp of purchasing':'Purchasing','purchasing agent':'Purchasing',
-    'operations':'Operations','ops manager':'Operations','vp of construction':'Operations',
-    'director of construction':'Operations','vp construction':'Operations',
-    'supervisor':'Supervisor','superintendent':'Supervisor','super':'Supervisor',
-    'project manager':'Supervisor','director of project management':'Supervisor',
-    'designer':'Designer','interior designer':'Designer','architect':'Designer'
-  };
-  const contactNameIdx=getFieldIndex('Contact Name');
-  const firstIdx=getFieldIndex('First Name');
-  const lastIdx=getFieldIndex('Last Name');
-  const coIdx=getFieldIndex('Company');
-  const roleIdx=getFieldIndex('Role');
-  const emailIdx=getFieldIndex('Email');
-  const liIdx=getFieldIndex('LinkedIn');
-  const phoneIdx=getFieldIndex('Phone');
-  const addrIdx=getFieldIndex('Address');
-  const notesIdx=getFieldIndex('Notes');
-  const dateIdx=getFieldIndex('Last Outreach Date');
+  const roleMap={'ceo':'CEO/Owner','owner':'CEO/Owner','founder':'CEO/Owner','president':'CEO/Owner','principal':'CEO/Owner','co-owner':'CEO/Owner','partner':'CEO/Owner','purchasing':'Purchasing','procurement':'Purchasing','buyer':'Purchasing','purchasing manager':'Purchasing','director of purchasing':'Purchasing','vp of purchasing':'Purchasing','purchasing agent':'Purchasing','operations':'Operations','ops manager':'Operations','vp of construction':'Operations','director of construction':'Operations','supervisor':'Supervisor','superintendent':'Supervisor','project manager':'Supervisor','director of project management':'Supervisor','designer':'Designer','interior designer':'Designer','architect':'Designer'};
+  const ci=getFieldIndex('Contact Name'),fi=getFieldIndex('First Name'),li2=getFieldIndex('Last Name'),coi=getFieldIndex('Company'),ri=getFieldIndex('Role'),ei=getFieldIndex('Email'),lii=getFieldIndex('LinkedIn'),pi=getFieldIndex('Phone'),ai=getFieldIndex('Address'),ni=getFieldIndex('Notes'),di=getFieldIndex('Last Outreach Date');
   return importRows.slice(1).filter(r=>r.some(c=>String(c).trim())).map(row=>{
     const get=i=>i!==undefined?String(row[i]||'').trim():'';
     let fn='',ln='';
-    if(contactNameIdx!==undefined&&get(contactNameIdx)){
-      const parts=get(contactNameIdx).split(' ');fn=parts[0]||'';ln=parts.slice(1).join(' ')||'';
-    }else{fn=get(firstIdx);ln=get(lastIdx);}
-    if(!fn&&!ln){fn=get(coIdx).split(' ')[0]||'Contact';}
-    const co=get(coIdx);
-    const roleRaw=get(roleIdx).toLowerCase();
-    let role='CEO/Owner';
-    for(const[key,val]of Object.entries(roleMap)){if(roleRaw.includes(key)){role=val;break;}}
+    if(ci!==undefined&&get(ci)){const p=get(ci).split(' ');fn=p[0]||'';ln=p.slice(1).join(' ')||'';}
+    else{fn=get(fi);ln=get(li2);}
+    if(!fn&&!ln){fn=get(coi).split(' ')[0]||'Contact';}
+    const roleRaw=get(ri).toLowerCase();
+    let role='CEO/Owner';for(const[k,v]of Object.entries(roleMap)){if(roleRaw.includes(k)){role=v;break;}}
     const noteParts=[];
-    if(get(phoneIdx))noteParts.push('Phone: '+get(phoneIdx));
-    if(get(addrIdx))noteParts.push('Address: '+get(addrIdx));
-    if(get(notesIdx))noteParts.push(get(notesIdx));
-    const notes=noteParts.join('\n');
-    let ltd=null;
-    const dateRaw=get(dateIdx);
-    if(dateRaw){try{const d=new Date(dateRaw);if(!isNaN(d.getTime()))ltd=d.toISOString();}catch(e){}}
-    return{fn,ln,co,role,email:get(emailIdx),li:get(liIdx),notes,ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[]};
+    if(get(pi))noteParts.push('Phone: '+get(pi));
+    if(get(ai))noteParts.push('Address: '+get(ai));
+    if(get(ni))noteParts.push(get(ni));
+    let ltd=null;const dr=get(di);
+    if(dr){try{const d=new Date(dr);if(!isNaN(d.getTime()))ltd=d.toISOString();}catch(e){}}
+    return{fn,ln,co:get(coi),role,email:get(ei),li:get(lii),notes:noteParts.join('\n'),ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[]};
   }).filter(r=>r.fn||r.ln||r.co);
 }
 
 function checkDupes(){
   const parsed=parseRows();
   if(!parsed.length){alert('No valid contacts found. Please check your column mapping.');return;}
-  const existing=gc();
-  const dupes=[],clean=[];
+  const existing=gc(),dupes=[],clean=[];
   parsed.forEach(p=>{
     const byEmail=p.email&&existing.find(e=>e.email&&e.email.toLowerCase()===p.email.toLowerCase());
     const byName=existing.find(e=>e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()&&(e.co||'').toLowerCase()===(p.co||'').toLowerCase());
-    const match=byEmail||byName;
-    if(match)dupes.push({new:p,existing:match});else clean.push(p);
+    if(byEmail||byName)dupes.push({new:p,existing:byEmail||byName});else clean.push(p);
   });
   if(!dupes.length){doImport(clean,[],parsed.length);return;}
-  document.getElementById('imp-preview').innerHTML=`
-    <div class="panel">
-      <div class="ptitle">${dupes.length} duplicate${dupes.length>1?'s':''} found</div>
-      <p style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6">${clean.length} contacts are new and will import automatically. Choose what to do with each duplicate.</p>
-      <div id="dupe-list">${dupes.map((d,i)=>`<div class="dup-row" id="dr-${i}"><div><div class="dup-info">${d.new.fn} ${d.new.ln||''} \u2014 ${d.new.co||'?'}</div><div class="dup-sub">${d.new.email||'no email'} \u00b7 ${d.new.role} \u00b7 Already in CRM as ${d.existing.tier}</div></div><button class="btn btn-sm" onclick="setDupeAction(${i},'skip',this)" style="font-weight:700">Skip</button><button class="btn btn-sm btn-warn" onclick="setDupeAction(${i},'overwrite',this)">Overwrite</button></div>`).join('')}</div>
-      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-p" onclick="finalizeDupes(${JSON.stringify(clean).replace(/"/g,'&quot;')},${dupes.length+clean.length})">Import with these choices</button>
-        <button class="btn btn-sm" onclick="setAllDupes('skip')">Skip all</button>
-        <button class="btn btn-sm btn-warn" onclick="setAllDupes('overwrite')">Overwrite all</button>
-      </div>
-    </div>`;
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${dupes.length} duplicate${dupes.length>1?'s':''} found</div><p style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6">${clean.length} contacts are new and will import automatically. Choose what to do with each duplicate.</p><div id="dupe-list">${dupes.map((d,i)=>`<div class="dup-row" id="dr-${i}"><div><div style="font-size:11px;font-weight:500">${d.new.fn} ${d.new.ln||''} \u2014 ${d.new.co||'?'}</div><div style="font-size:10px;color:var(--mu);margin-top:2px">${d.new.email||'no email'} \u00b7 ${d.new.role}</div></div><button class="btn btn-sm" onclick="setDupeAction(${i},'skip',this)" style="font-weight:700">Skip</button><button class="btn btn-sm btn-warn" onclick="setDupeAction(${i},'overwrite',this)">Overwrite</button></div>`).join('')}</div><div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="finalizeDupes(${JSON.stringify(clean).replace(/"/g,'&quot;')},${dupes.length+clean.length})">Import with these choices</button><button class="btn btn-sm" onclick="setAllDupes('skip')">Skip all</button><button class="btn btn-sm btn-warn" onclick="setAllDupes('overwrite')">Overwrite all</button></div></div>`;
   window._dupes=dupes;window._dupeActions=dupes.map(()=>'skip');
 }
 
@@ -850,8 +829,7 @@ function finalizeDupes(cleanStr,total){
 }
 
 function doImport(clean,overwrites,total){
-  const cs=gc();let added=0,updated=0;
-  const batchIds=[];
+  const cs=gc();let added=0,updated=0;const batchIds=[];
   clean.forEach(p=>{
     const id='c'+Date.now()+Math.random().toString(36).slice(2,6);
     cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});
@@ -862,20 +840,8 @@ function doImport(clean,overwrites,total){
     if(idx>=0){Object.assign(cs[idx],{co:p.co||cs[idx].co,role:p.role||cs[idx].role,email:p.email||cs[idx].email,notes:p.notes||cs[idx].notes});updated++;}
     else{const id='c'+Date.now()+Math.random().toString(36).slice(2,6);cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});batchIds.push(id);added++;}
   });
-  sc(cs);
-  // Save batch info for undo
-  setBatch({ids:batchIds,date:new Date().toISOString(),count:added});
-  document.getElementById('imp-preview').innerHTML=`
-    <div class="panel" style="text-align:center;padding:24px">
-      <div style="font-size:20px;font-weight:600;color:var(--ac);margin-bottom:6px">${added} contacts imported${updated?', '+updated+' updated':''}!</div>
-      <div style="font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.6">
-        ${added} new contacts added.${updated?' '+updated+' existing contacts updated.':''} If anything looks wrong, use "Undo last import" below.
-      </div>
-      <div style="display:flex;gap:8px;justify-content:center">
-        <button class="btn btn-p" onclick="go('contacts')">View contacts \u2192</button>
-        <button class="btn" onclick="go('queue')">See today's queue \u2192</button>
-      </div>
-    </div>`;
+  sc(cs);setBatch({ids:batchIds,date:new Date().toISOString(),count:added});
+  document.getElementById('imp-preview').innerHTML=`<div class="panel" style="text-align:center;padding:24px"><div style="font-size:20px;font-weight:600;color:var(--ac);margin-bottom:6px">${added} contacts imported${updated?', '+updated+' updated':''}!</div><div style="font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.6">${added} new contacts added.${updated?' '+updated+' existing contacts updated.':''} If anything looks wrong, use "Undo last import" below.</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-p" onclick="go('contacts')">View contacts \u2192</button><button class="btn" onclick="go('queue')">See today's queue \u2192</button></div></div>`;
   document.getElementById('fi2').value='';
   document.getElementById('qbadge').textContent=gc().filter(due).length;
   window._dupes=null;window._dupeActions=null;
@@ -894,7 +860,7 @@ function exportCSV(){
 }
 
 function clip(txt){
-  navigator.clipboard.writeText(txt).then(()=>toast('Copied to clipboard!')).catch(()=>{
+  navigator.clipboard.writeText(txt).then(()=>toast('Copied!')).catch(()=>{
     const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!');
   });
 }
