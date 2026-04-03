@@ -63,6 +63,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bresp{background:#E1F5EE;color:#0F6E56}
 .bt2t{background:#E6F1FB;color:#185FA5}
 .bt3t{background:#F1EFE8;color:#5F5E5A}
+.bcustom{background:#EEEDFE;color:#534AB7}
 .ctbl{width:100%;border-collapse:collapse}
 .ctbl th{font-size:10px;font-weight:600;color:var(--mu);text-align:left;padding:8px 10px;border-bottom:.5px solid var(--bd);background:var(--bg);text-transform:uppercase;letter-spacing:.05em}
 .ctbl td{padding:10px;border-bottom:.5px solid var(--bd);font-size:12px;color:var(--tx);vertical-align:middle}
@@ -76,8 +77,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tl-a{font-size:12px;font-weight:500}
 .tl-d{font-size:10px;color:var(--mu);margin-top:1px}
 .cblock{background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px;border:.5px solid var(--bd)}
-.cblock-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cblock.custom{border-color:rgba(127,119,221,0.4);background:#FAFAFE}
+.cblock-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px}
 .cblock-lbl{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em}
+.cblock-actions{display:flex;gap:6px;flex-shrink:0}
 .ctext{font-size:11px;color:var(--tx);line-height:1.65;white-space:pre-wrap}
 .rbox{background:var(--bg);border:.5px solid var(--bd);border-radius:7px;padding:10px;width:100%;font-size:12px;color:var(--tx);line-height:1.65;resize:vertical;min-height:80px;font-family:inherit}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
@@ -91,7 +94,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .empty-icon{font-size:30px;margin-bottom:8px;opacity:.25}
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center}
 .modal-ov.open{display:flex}
-.modal{background:var(--sf);border-radius:12px;padding:20px;width:520px;max-height:620px;overflow-y:auto;border:.5px solid var(--bd)}
+.modal{background:var(--sf);border-radius:12px;padding:20px;width:540px;max-height:640px;overflow-y:auto;border:.5px solid var(--bd)}
 .modal-title{font-size:15px;font-weight:600;margin-bottom:16px}
 .modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:.5px solid var(--bd);flex-wrap:wrap}
 .uz{border:1.5px dashed var(--bd);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border-color .15s}
@@ -105,6 +108,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .confirm-box{background:#FCEBEB;border:1px solid var(--dn);border-radius:9px;padding:16px;margin-bottom:12px}
 .confirm-title{font-size:13px;font-weight:600;color:var(--dn);margin-bottom:6px}
 .confirm-sub{font-size:11px;color:#712B13;margin-bottom:12px;line-height:1.6}
+.lib-tabs{display:flex;gap:6px;margin-bottom:16px}
+.lib-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--bd);background:var(--sf);color:var(--mu);transition:all .12s}
+.lib-tab.active{background:var(--nav);color:#fff;border-color:var(--nav)}
+.custom-block-form{background:var(--bg);border-radius:10px;padding:16px;border:1px dashed var(--bd);margin-bottom:16px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2332;color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;z-index:999;white-space:nowrap;pointer-events:none;animation:fadeup .2s ease}
 @keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 @media(max-width:768px){.app{grid-template-columns:1fr}.nav{display:none}.metrics{grid-template-columns:1fr 1fr}}
@@ -205,9 +212,71 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div class="screen" id="s-library">
-      <div style="display:grid;grid-template-columns:170px 1fr;gap:16px">
+      <div class="lib-tabs">
+        <div class="lib-tab active" id="tab-standard" onclick="switchLibTab('standard')">Standard library</div>
+        <div class="lib-tab" id="tab-custom" onclick="switchLibTab('custom')">Custom copy <span id="custom-count-badge" style="background:var(--ac);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px;display:none">0</span></div>
+        <div class="lib-tab" id="tab-add" onclick="switchLibTab('add')">+ Add new copy</div>
+      </div>
+
+      <div id="lib-standard" style="display:grid;grid-template-columns:170px 1fr;gap:16px">
         <div class="panel" style="padding:8px;height:fit-content"><div id="lib-nav"></div></div>
         <div id="lib-content"></div>
+      </div>
+
+      <div id="lib-custom" style="display:none">
+        <div id="custom-blocks-list"></div>
+      </div>
+
+      <div id="lib-add" style="display:none">
+        <div class="panel" style="max-width:600px">
+          <div class="ptitle">Add new copy block</div>
+          <div class="frow">
+            <div class="ff"><label class="flbl">Name / label *</label><input class="fi" id="cb-name" placeholder="e.g. FIFA World Cup — GC intro"></div>
+            <div class="ff"><label class="flbl">Role track</label>
+              <select class="fsel" id="cb-role">
+                <option value="CEO/Owner">CEO / Owner</option>
+                <option value="Purchasing">Purchasing</option>
+                <option value="Operations">Operations</option>
+                <option value="Supervisor">Project Supervisor</option>
+                <option value="Designer">Designer</option>
+                <option value="Woman-Owned">Woman-owned</option>
+                <option value="DBA">DBA member</option>
+                <option value="FIFA/World Cup">FIFA / World Cup</option>
+                <option value="Commercial GC">Commercial GC</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="ff"><label class="flbl">Touch / sequence position</label>
+              <select class="fsel" id="cb-touch">
+                <option value="Touch 1 — intro">Touch 1 — intro</option>
+                <option value="Touch 2 — value add">Touch 2 — value add</option>
+                <option value="Touch 3 — check in">Touch 3 — check in</option>
+                <option value="Touch 4 — last one">Touch 4 — last one</option>
+                <option value="LinkedIn">LinkedIn connection request</option>
+                <option value="Spec review offer">Spec review offer</option>
+                <option value="Warm re-engage">Warm re-engage</option>
+                <option value="Custom">Custom / one-off</option>
+              </select>
+            </div>
+            <div class="ff"><label class="flbl">Channel</label>
+              <select class="fsel" id="cb-channel">
+                <option value="Email">Email</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Portal">Portal / online form</option>
+                <option value="Either">Either</option>
+              </select>
+            </div>
+          </div>
+          <div class="ff" style="margin-bottom:12px"><label class="flbl">Subject line <span style="font-weight:400;text-transform:none">(email only — optional)</span></label><input class="fi" id="cb-subj" placeholder="e.g. Glass & mirror partner for your World Cup venue build"></div>
+          <div class="ff" style="margin-bottom:14px"><label class="flbl">Copy body *</label><textarea class="rbox" id="cb-body" rows="12" placeholder="Paste or write your copy here..."></textarea></div>
+          <div class="ff" style="margin-bottom:14px"><label class="flbl">Notes <span style="font-weight:400;text-transform:none">(internal — won't appear in emails)</span></label><input class="fi" id="cb-notes" placeholder="e.g. Use for FIFA hospitality suite GCs, mention KBH convention center"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-p" onclick="saveCustomBlock()">Save to library</button>
+            <button class="btn" onclick="switchLibTab('custom')">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -280,6 +349,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
               <option value="DFW Custom">DFW Custom Builder list</option>
               <option value="DBA">DBA list</option>
               <option value="Boutique">Boutique Builder list</option>
+              <option value="FIFA/World Cup">FIFA / World Cup list</option>
               <option value="Referral">Referral</option>
               <option value="LGN">LGN network</option>
               <option value="Manual">Manual</option>
@@ -350,7 +420,7 @@ t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. Hoping our
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:"Touch 1 \u2014 intro",t2:"Touch 2 \u2014 value add",t3:"Touch 3 \u2014 check in",t4:"Touch 4 \u2014 last one"};
 const SCREENS={dashboard:"Dashboard",queue:"Today's queue",contacts:"Contacts",responses:"Response intake",library:"Copy library",import:"Import from Excel",add:"Add contact"};
-const SUBS={dashboard:"Your outreach at a glance",queue:"Contacts due for outreach today",contacts:"All contacts and their status",responses:"Paste an inbound message for AI reply suggestions",library:"All copy blocks by role \u2014 click to copy",import:"Upload your Excel or CSV contact list",add:"Add a new contact manually"};
+const SUBS={dashboard:"Your outreach at a glance",queue:"Contacts due for outreach today",contacts:"All contacts and their status",responses:"Paste an inbound message for AI reply suggestions",library:"Standard + custom copy blocks",import:"Upload your Excel or CSV contact list",add:"Add a new contact manually"};
 
 const gc=()=>{try{return JSON.parse(localStorage.getItem('eg_c')||'[]')}catch(e){return[]}};
 const sc=c=>localStorage.setItem('eg_c',JSON.stringify(c));
@@ -358,6 +428,8 @@ const ga=()=>{try{return JSON.parse(localStorage.getItem('eg_a')||'[]')}catch(e)
 const sa=a=>localStorage.setItem('eg_a',JSON.stringify(a));
 const getBatch=()=>{try{return JSON.parse(localStorage.getItem('eg_last_batch')||'null')}catch(e){return null}};
 const setBatch=b=>localStorage.setItem('eg_last_batch',JSON.stringify(b));
+const getCustomBlocks=()=>{try{return JSON.parse(localStorage.getItem('eg_custom_copy')||'[]')}catch(e){return[]}};
+const setCustomBlocks=b=>localStorage.setItem('eg_custom_copy',JSON.stringify(b));
 const addA=(cid,action,note)=>{const a=ga();a.unshift({id:Date.now(),cid,action,note,date:new Date().toISOString()});sa(a.slice(0,300))};
 const ini=n=>n.split(' ').map(x=>x[0]||'').join('').toUpperCase().slice(0,2);
 const fd=iso=>iso?new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'Never';
@@ -370,6 +442,7 @@ const btouch=t=>{const m={t1:'bt1 Touch 1',t2:'bt2 Touch 2',t3:'bt3 Touch 3',t4:
 let selectedIds=new Set();
 let curC=null;
 let editMode=false;
+let currentLibTab='standard';
 
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -382,7 +455,7 @@ function go(id){
   if(id==='dashboard')rdash();
   if(id==='queue')rqueue();
   if(id==='contacts'){rcontacts();updateLastImportInfo();}
-  if(id==='library')rlib();
+  if(id==='library'){rlib();updateCustomBadge();}
   if(id==='responses')rpopsel();
   if(id==='import')updateLastImportInfo();
 }
@@ -482,7 +555,141 @@ function bulkDelete(){
   sc(cs);selectedIds.clear();rcontacts();rdash();toast(count+' contact(s) deleted');
 }
 
-// ── CONTACT MODAL — view + edit ───────────────────────────────────────────────
+// ── COPY LIBRARY ──────────────────────────────────────────────────────────────
+
+function switchLibTab(tab){
+  currentLibTab=tab;
+  ['standard','custom','add'].forEach(t=>{
+    document.getElementById('lib-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='standard')rlib();
+  if(tab==='custom')rCustomBlocks();
+  if(tab==='add')clearAddForm();
+}
+
+function updateCustomBadge(){
+  const blocks=getCustomBlocks();
+  const badge=document.getElementById('custom-count-badge');
+  if(blocks.length){badge.textContent=blocks.length;badge.style.display='inline';}
+  else badge.style.display='none';
+}
+
+function rlib(){
+  const roles=Object.keys(COPY);
+  document.getElementById('lib-nav').innerHTML=roles.map((r,i)=>`<div class="ni ${i===0?'active':''}" onclick="showRole('${r}',this)" style="padding:7px 8px;border-radius:6px;font-size:12px">${r}</div>`).join('');
+  showRole(roles[0],document.querySelector('#lib-nav .ni'));
+}
+
+function showRole(role,el){
+  document.querySelectorAll('#lib-nav .ni').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const blocks=COPY[role];
+  document.getElementById('lib-content').innerHTML=Object.entries(blocks).map(([k,v])=>{
+    const lbl=k==='li'?'LinkedIn connection request':TL[k]||k;
+    const body=v.b||v,subj=v.s;
+    return`<div class="cblock"><div class="cblock-hd"><span class="cblock-lbl">${lbl}</span><div class="cblock-actions"><button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button></div></div>${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Subject: <strong style="color:var(--tx)">${subj}</strong></div>`:''}<div class="ctext">${body.replace(/</g,'&lt;')}</div></div>`;
+  }).join('');
+}
+
+function rCustomBlocks(){
+  const blocks=getCustomBlocks();
+  const el=document.getElementById('custom-blocks-list');
+  if(!blocks.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">✦</div><div style="font-weight:600;margin-bottom:6px">No custom copy yet</div><div>Add your first block to get started \u2014 paste in your FIFA World Cup copy, commercial GC outreach, or any other track.</div><div style="margin-top:14px"><button class="btn btn-p btn-sm" onclick="switchLibTab('add')">+ Add first copy block</button></div></div>`;
+    updateCustomBadge();return;
+  }
+  const grouped={};
+  blocks.forEach(b=>{const g=b.role||'General';if(!grouped[g])grouped[g]=[];grouped[g].push(b);});
+  el.innerHTML=Object.entries(grouped).map(([group,items])=>`
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+        ${group} <span style="background:var(--bg);border:.5px solid var(--bd);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:500">${items.length}</span>
+      </div>
+      ${items.map(b=>renderCustomBlock(b)).join('')}
+    </div>`).join('');
+  updateCustomBadge();
+}
+
+function renderCustomBlock(b){
+  const safeBody=(b.body||'').replace(/`/g,'\\`').replace(/\\/g,'\\\\');
+  return`<div class="cblock custom" id="cb-${b.id}">
+    <div class="cblock-hd">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px">${b.name||'Untitled'}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+          <span class="badge bcustom">${b.touch||'Custom'}</span>
+          <span class="badge" style="background:var(--bg);color:var(--mu);border:.5px solid var(--bd)">${b.channel||'Email'}</span>
+          ${b.notes?`<span style="font-size:10px;color:var(--mu);align-self:center">${b.notes}</span>`:''}
+        </div>
+      </div>
+      <div class="cblock-actions">
+        <button class="btn btn-sm" onclick="clip(\`${safeBody}\`)">Copy</button>
+        <button class="btn btn-sm" onclick="editCustomBlock('${b.id}')">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteCustomBlock('${b.id}')">Delete</button>
+      </div>
+    </div>
+    ${b.subject?`<div style="font-size:10px;color:var(--mu);margin-bottom:6px;margin-top:6px">Subject: <strong style="color:var(--tx)">${b.subject}</strong></div>`:''}
+    <div class="ctext" style="margin-top:6px">${(b.body||'').replace(/</g,'&lt;')}</div>
+  </div>`;
+}
+
+function clearAddForm(){
+  ['cb-name','cb-subj','cb-body','cb-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const roleEl=document.getElementById('cb-role');if(roleEl)roleEl.value='CEO/Owner';
+  const touchEl=document.getElementById('cb-touch');if(touchEl)touchEl.value='Touch 1 \u2014 intro';
+  const chanEl=document.getElementById('cb-channel');if(chanEl)chanEl.value='Email';
+  const btn=document.querySelector('#lib-add .btn-p');
+  if(btn){btn.textContent='Save to library';btn.setAttribute('onclick','saveCustomBlock()');}
+  document.getElementById('cb-name').dataset.editId='';
+}
+
+function saveCustomBlock(){
+  const name=document.getElementById('cb-name').value.trim();
+  const body=document.getElementById('cb-body').value.trim();
+  if(!name){alert('Please give this copy block a name.');return;}
+  if(!body){alert('Please add the copy body.');return;}
+  const blocks=getCustomBlocks();
+  const editId=document.getElementById('cb-name').dataset.editId;
+  if(editId){
+    const idx=blocks.findIndex(b=>b.id===editId);
+    if(idx>=0){
+      blocks[idx]={...blocks[idx],name,role:document.getElementById('cb-role').value,touch:document.getElementById('cb-touch').value,channel:document.getElementById('cb-channel').value,subject:document.getElementById('cb-subj').value.trim(),body,notes:document.getElementById('cb-notes').value.trim(),updated:new Date().toISOString()};
+      setCustomBlocks(blocks);toast('Copy block updated!');
+    }
+  }else{
+    blocks.push({id:'cb'+Date.now(),name,role:document.getElementById('cb-role').value,touch:document.getElementById('cb-touch').value,channel:document.getElementById('cb-channel').value,subject:document.getElementById('cb-subj').value.trim(),body,notes:document.getElementById('cb-notes').value.trim(),created:new Date().toISOString()});
+    setCustomBlocks(blocks);toast('Copy block saved to library!');
+  }
+  switchLibTab('custom');
+}
+
+function editCustomBlock(id){
+  const blocks=getCustomBlocks();
+  const b=blocks.find(x=>x.id===id);if(!b)return;
+  switchLibTab('add');
+  setTimeout(()=>{
+    document.getElementById('cb-name').value=b.name||'';
+    document.getElementById('cb-name').dataset.editId=id;
+    document.getElementById('cb-role').value=b.role||'CEO/Owner';
+    document.getElementById('cb-touch').value=b.touch||'Touch 1 \u2014 intro';
+    document.getElementById('cb-channel').value=b.channel||'Email';
+    document.getElementById('cb-subj').value=b.subject||'';
+    document.getElementById('cb-body').value=b.body||'';
+    document.getElementById('cb-notes').value=b.notes||'';
+    const btn=document.querySelector('#lib-add .btn-p');
+    if(btn){btn.textContent='Save changes';btn.setAttribute('onclick','saveCustomBlock()');}
+  },50);
+}
+
+function deleteCustomBlock(id){
+  if(!confirm('Delete this copy block? This cannot be undone.'))return;
+  let blocks=getCustomBlocks();
+  blocks=blocks.filter(b=>b.id!==id);
+  setCustomBlocks(blocks);rCustomBlocks();toast('Copy block deleted');
+}
+
+// ── CONTACT MODAL ─────────────────────────────────────────────────────────────
 
 function openC(id){
   curC=id;editMode=false;
@@ -494,7 +701,6 @@ function renderModal(id){
   const c=gc().find(x=>x.id===id);if(!c)return;
   const n=nxt(c),acts=ga().filter(a=>a.cid===id);
   document.getElementById('mod-name').textContent=editMode?'Edit contact':c.fn+' '+(c.ln||'');
-
   if(editMode){
     document.getElementById('mod-body').innerHTML=`
       <div class="frow">
@@ -561,21 +767,8 @@ function saveEdit(){
   const cs=gc(),c=cs.find(x=>x.id===curC);if(!c)return;
   const fn=document.getElementById('e-fn').value.trim();
   if(!fn){alert('First name is required.');return;}
-  c.fn=fn;
-  c.ln=document.getElementById('e-ln').value.trim();
-  c.co=document.getElementById('e-co').value.trim();
-  c.role=document.getElementById('e-role').value;
-  c.email=document.getElementById('e-email').value.trim();
-  c.li=document.getElementById('e-li').value.trim();
-  c.tier=document.getElementById('e-tier').value;
-  c.src=document.getElementById('e-src').value.trim();
-  c.notes=document.getElementById('e-notes').value.trim();
-  sc(cs);
-  addA(curC,'Contact updated','');
-  editMode=false;
-  renderModal(curC);
-  rcontacts();
-  toast('Contact saved!');
+  c.fn=fn;c.ln=document.getElementById('e-ln').value.trim();c.co=document.getElementById('e-co').value.trim();c.role=document.getElementById('e-role').value;c.email=document.getElementById('e-email').value.trim();c.li=document.getElementById('e-li').value.trim();c.tier=document.getElementById('e-tier').value;c.src=document.getElementById('e-src').value.trim();c.notes=document.getElementById('e-notes').value.trim();
+  sc(cs);addA(curC,'Contact updated','');editMode=false;renderModal(curC);rcontacts();toast('Contact saved!');
 }
 
 function closeModal(){document.getElementById('cmodal').classList.remove('open');curC=null;editMode=false;}
@@ -593,10 +786,8 @@ function mailto_(cid,tk){
 function sent(cid,tk){
   if(!tk||tk==='null'||tk==='undefined')return;
   const cs=gc(),c=cs.find(x=>x.id===cid);if(!c)return;
-  if(!c.ts)c.ts=[];
-  if(!c.ts.includes(tk))c.ts.push(tk);
-  c.ltd=new Date().toISOString();
-  if(c.tier==='tier3')c.tier='tier2';
+  if(!c.ts)c.ts=[];if(!c.ts.includes(tk))c.ts.push(tk);
+  c.ltd=new Date().toISOString();if(c.tier==='tier3')c.tier='tier2';
   sc(cs);addA(cid,(TL[tk]||tk)+' sent',c.co||'');
   toast('Marked as sent \u2713');rdash();
   const act=document.querySelector('.screen.active');
@@ -614,23 +805,6 @@ function saveContact(){
   cs.push(c);sc(cs);addA(c.id,'Contact added',c.co);
   ['a1','a2','a3','a5','a6','a9'].forEach(id=>document.getElementById(id).value='');
   toast('Contact saved!');go('contacts');
-}
-
-function rlib(){
-  const roles=Object.keys(COPY);
-  document.getElementById('lib-nav').innerHTML=roles.map((r,i)=>`<div class="ni ${i===0?'active':''}" onclick="showRole('${r}',this)" style="padding:7px 8px;border-radius:6px;font-size:12px">${r}</div>`).join('');
-  showRole(roles[0],document.querySelector('#lib-nav .ni'));
-}
-
-function showRole(role,el){
-  document.querySelectorAll('#lib-nav .ni').forEach(n=>n.classList.remove('active'));
-  if(el)el.classList.add('active');
-  const blocks=COPY[role];
-  document.getElementById('lib-content').innerHTML=Object.entries(blocks).map(([k,v])=>{
-    const lbl=k==='li'?'LinkedIn connection request':TL[k]||k;
-    const body=v.b||v,subj=v.s;
-    return`<div class="cblock"><div class="cblock-hd"><span class="cblock-lbl">${lbl}</span><button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button></div>${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Subject: <strong style="color:var(--tx)">${subj}</strong></div>`:''}<div class="ctext">${body.replace(/</g,'&lt;')}</div></div>`;
-  }).join('');
 }
 
 function rpopsel(){
@@ -709,22 +883,11 @@ function handleFile(input){
   reader.onload=e=>{
     let rows=[];
     try{
-      if(ext==='csv'){
-        rows=e.target.result.split('\n').map(r=>{const out=[];let cur='',inQ=false;for(const ch of r){if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){out.push(cur.trim());cur=''}else cur+=ch;}out.push(cur.trim());return out;});
-      }else{
-        const wb=XLSX.read(e.target.result,{type:'array'});
-        const ws=wb.Sheets[wb.SheetNames[0]];
-        rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      }
+      if(ext==='csv'){rows=e.target.result.split('\n').map(r=>{const out=[];let cur='',inQ=false;for(const ch of r){if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){out.push(cur.trim());cur=''}else cur+=ch;}out.push(cur.trim());return out;});}
+      else{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});}
     }catch(err){document.getElementById('imp-preview').innerHTML='<div style="color:var(--dn);font-size:12px;padding:10px">Could not read file. Please save as .xlsx or .csv and try again.</div>';return;}
     if(!rows||rows.length<2){document.getElementById('imp-preview').innerHTML='<div style="color:var(--dn);font-size:12px;padding:10px">File appears to be empty.</div>';return;}
-    for(let col=0;col<Math.max(...rows.map(r=>r.length));col++){
-      let last='';
-      for(let row=1;row<rows.length;row++){
-        const val=String(rows[row][col]||'').trim();
-        if(val)last=val;else if(last&&col===0)rows[row][col]=last;
-      }
-    }
+    for(let col=0;col<Math.max(...rows.map(r=>r.length));col++){let last='';for(let row=1;row<rows.length;row++){const val=String(rows[row][col]||'').trim();if(val)last=val;else if(last&&col===0)rows[row][col]=last;}}
     importRows=rows;showMap(rows,file.name);
   };
   if(ext==='csv')reader.readAsText(file);else reader.readAsArrayBuffer(file);
@@ -751,11 +914,7 @@ const FIELD_AUTO={
   'Last Outreach Date':['date','last touch','last outreach','outreach date','day 0','day 1','day 1 - email','first contact','sent date']
 };
 
-function bestMatch(h){
-  const hl=h.toLowerCase().trim();
-  for(const[field,variants]of Object.entries(FIELD_AUTO)){if(variants.some(v=>hl===v||hl.startsWith(v)||v.startsWith(hl)))return field;}
-  return null;
-}
+function bestMatch(h){const hl=h.toLowerCase().trim();for(const[field,variants]of Object.entries(FIELD_AUTO)){if(variants.some(v=>hl===v||hl.startsWith(v)||v.startsWith(hl)))return field;}return null;}
 
 function showMap(rows,fname){
   const headers=rows[0].map((h,i)=>String(h||'Column '+(i+1)).trim());
@@ -763,13 +922,10 @@ function showMap(rows,fname){
   const autoMap={};
   headers.forEach((h,i)=>{const m=bestMatch(h);if(m&&autoMap[m]===undefined)autoMap[m]=i;});
   const preview=rows.slice(1,4).filter(r=>r.some(c=>String(c).trim()));
-  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns are pre-selected. Set any field to "— skip —" to ignore it. Phone and address save to Notes automatically.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}${f==='Phone'||f==='Address'?'<span style="font-size:9px;color:var(--mu)"> \u2192 Notes</span>':''}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}${preview.length?`<div style="margin:14px 0 8px;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em">Preview</div><div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import \u2192</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns are pre-selected. Set any field to "— skip —" to ignore it.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}${f==='Phone'||f==='Address'?'<span style="font-size:9px;color:var(--mu)"> \u2192 Notes</span>':''}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}${preview.length?`<div style="margin:14px 0 8px;font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em">Preview</div><div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import \u2192</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
 }
 
-function getFieldIndex(field){
-  const el=document.getElementById('mp-'+field.replace(/ /g,'_').replace(/[()\/]/g,''));
-  return el&&el.value!==''?parseInt(el.value):undefined;
-}
+function getFieldIndex(field){const el=document.getElementById('mp-'+field.replace(/ /g,'_').replace(/[()\/]/g,''));return el&&el.value!==''?parseInt(el.value):undefined;}
 
 function parseRows(){
   const roleMap={'ceo':'CEO/Owner','owner':'CEO/Owner','founder':'CEO/Owner','president':'CEO/Owner','principal':'CEO/Owner','co-owner':'CEO/Owner','partner':'CEO/Owner','purchasing':'Purchasing','procurement':'Purchasing','buyer':'Purchasing','purchasing manager':'Purchasing','director of purchasing':'Purchasing','vp of purchasing':'Purchasing','purchasing agent':'Purchasing','operations':'Operations','ops manager':'Operations','vp of construction':'Operations','director of construction':'Operations','supervisor':'Supervisor','superintendent':'Supervisor','project manager':'Supervisor','director of project management':'Supervisor','designer':'Designer','interior designer':'Designer','architect':'Designer'};
@@ -780,14 +936,9 @@ function parseRows(){
     if(ci!==undefined&&get(ci)){const p=get(ci).split(' ');fn=p[0]||'';ln=p.slice(1).join(' ')||'';}
     else{fn=get(fi);ln=get(li2);}
     if(!fn&&!ln){fn=get(coi).split(' ')[0]||'Contact';}
-    const roleRaw=get(ri).toLowerCase();
-    let role='CEO/Owner';for(const[k,v]of Object.entries(roleMap)){if(roleRaw.includes(k)){role=v;break;}}
-    const noteParts=[];
-    if(get(pi))noteParts.push('Phone: '+get(pi));
-    if(get(ai))noteParts.push('Address: '+get(ai));
-    if(get(ni))noteParts.push(get(ni));
-    let ltd=null;const dr=get(di);
-    if(dr){try{const d=new Date(dr);if(!isNaN(d.getTime()))ltd=d.toISOString();}catch(e){}}
+    const roleRaw=get(ri).toLowerCase();let role='CEO/Owner';for(const[k,v]of Object.entries(roleMap)){if(roleRaw.includes(k)){role=v;break;}}
+    const noteParts=[];if(get(pi))noteParts.push('Phone: '+get(pi));if(get(ai))noteParts.push('Address: '+get(ai));if(get(ni))noteParts.push(get(ni));
+    let ltd=null;const dr=get(di);if(dr){try{const d=new Date(dr);if(!isNaN(d.getTime()))ltd=d.toISOString();}catch(e){}}
     return{fn,ln,co:get(coi),role,email:get(ei),li:get(lii),notes:noteParts.join('\n'),ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[]};
   }).filter(r=>r.fn||r.ln||r.co);
 }
@@ -802,51 +953,24 @@ function checkDupes(){
     if(byEmail||byName)dupes.push({new:p,existing:byEmail||byName});else clean.push(p);
   });
   if(!dupes.length){doImport(clean,[],parsed.length);return;}
-  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${dupes.length} duplicate${dupes.length>1?'s':''} found</div><p style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6">${clean.length} contacts are new and will import automatically. Choose what to do with each duplicate.</p><div id="dupe-list">${dupes.map((d,i)=>`<div class="dup-row" id="dr-${i}"><div><div style="font-size:11px;font-weight:500">${d.new.fn} ${d.new.ln||''} \u2014 ${d.new.co||'?'}</div><div style="font-size:10px;color:var(--mu);margin-top:2px">${d.new.email||'no email'} \u00b7 ${d.new.role}</div></div><button class="btn btn-sm" onclick="setDupeAction(${i},'skip',this)" style="font-weight:700">Skip</button><button class="btn btn-sm btn-warn" onclick="setDupeAction(${i},'overwrite',this)">Overwrite</button></div>`).join('')}</div><div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="finalizeDupes(${JSON.stringify(clean).replace(/"/g,'&quot;')},${dupes.length+clean.length})">Import with these choices</button><button class="btn btn-sm" onclick="setAllDupes('skip')">Skip all</button><button class="btn btn-sm btn-warn" onclick="setAllDupes('overwrite')">Overwrite all</button></div></div>`;
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${dupes.length} duplicate${dupes.length>1?'s':''} found</div><p style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6">${clean.length} contacts are new and will import automatically.</p><div id="dupe-list">${dupes.map((d,i)=>`<div class="dup-row" id="dr-${i}"><div><div style="font-size:11px;font-weight:500">${d.new.fn} ${d.new.ln||''} \u2014 ${d.new.co||'?'}</div><div style="font-size:10px;color:var(--mu);margin-top:2px">${d.new.email||'no email'} \u00b7 ${d.new.role}</div></div><button class="btn btn-sm" onclick="setDupeAction(${i},'skip',this)" style="font-weight:700">Skip</button><button class="btn btn-sm btn-warn" onclick="setDupeAction(${i},'overwrite',this)">Overwrite</button></div>`).join('')}</div><div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="finalizeDupes(${JSON.stringify(clean).replace(/"/g,'&quot;')},${dupes.length+clean.length})">Import with these choices</button><button class="btn btn-sm" onclick="setAllDupes('skip')">Skip all</button><button class="btn btn-sm btn-warn" onclick="setAllDupes('overwrite')">Overwrite all</button></div></div>`;
   window._dupes=dupes;window._dupeActions=dupes.map(()=>'skip');
 }
 
-function setDupeAction(i,action,btn){
-  window._dupeActions[i]=action;
-  const row=document.getElementById('dr-'+i);
-  row.querySelectorAll('button').forEach(b=>b.style.fontWeight='400');
-  btn.style.fontWeight='700';
-  row.style.borderColor=action==='overwrite'?'var(--dn)':'var(--bd)';
-}
-
-function setAllDupes(action){
-  window._dupeActions=(window._dupeActions||[]).map(()=>action);
-  document.querySelectorAll('[id^="dr-"]').forEach((row,i)=>{
-    row.style.borderColor=action==='overwrite'?'var(--dn)':'var(--bd)';
-    row.querySelectorAll('button').forEach((b,j)=>{b.style.fontWeight=((action==='skip'&&j===0)||(action==='overwrite'&&j===1))?'700':'400';});
-  });
-}
-
-function finalizeDupes(cleanStr,total){
-  const clean=JSON.parse(cleanStr.replace(/&quot;/g,'"'));
-  const overwrites=(window._dupeActions||[]).map((a,i)=>a==='overwrite'?window._dupes[i].new:null).filter(Boolean);
-  doImport(clean,overwrites,total);
-}
+function setDupeAction(i,action,btn){window._dupeActions[i]=action;const row=document.getElementById('dr-'+i);row.querySelectorAll('button').forEach(b=>b.style.fontWeight='400');btn.style.fontWeight='700';row.style.borderColor=action==='overwrite'?'var(--dn)':'var(--bd)';}
+function setAllDupes(action){window._dupeActions=(window._dupeActions||[]).map(()=>action);document.querySelectorAll('[id^="dr-"]').forEach((row,i)=>{row.style.borderColor=action==='overwrite'?'var(--dn)':'var(--bd)';row.querySelectorAll('button').forEach((b,j)=>{b.style.fontWeight=((action==='skip'&&j===0)||(action==='overwrite'&&j===1))?'700':'400';});});}
+function finalizeDupes(cleanStr,total){const clean=JSON.parse(cleanStr.replace(/&quot;/g,'"'));const overwrites=(window._dupeActions||[]).map((a,i)=>a==='overwrite'?window._dupes[i].new:null).filter(Boolean);doImport(clean,overwrites,total);}
 
 function doImport(clean,overwrites,total){
   const cs=gc();let added=0,updated=0;const batchIds=[];
-  clean.forEach(p=>{
-    const id='c'+Date.now()+Math.random().toString(36).slice(2,6);
-    cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});
-    batchIds.push(id);added++;
-  });
-  overwrites.forEach(p=>{
-    const idx=cs.findIndex(e=>(p.email&&e.email&&e.email.toLowerCase()===p.email.toLowerCase())||(e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()));
-    if(idx>=0){Object.assign(cs[idx],{co:p.co||cs[idx].co,role:p.role||cs[idx].role,email:p.email||cs[idx].email,notes:p.notes||cs[idx].notes});updated++;}
-    else{const id='c'+Date.now()+Math.random().toString(36).slice(2,6);cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});batchIds.push(id);added++;}
-  });
+  clean.forEach(p=>{const id='c'+Date.now()+Math.random().toString(36).slice(2,6);cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});batchIds.push(id);added++;});
+  overwrites.forEach(p=>{const idx=cs.findIndex(e=>(p.email&&e.email&&e.email.toLowerCase()===p.email.toLowerCase())||(e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()));if(idx>=0){Object.assign(cs[idx],{co:p.co||cs[idx].co,role:p.role||cs[idx].role,email:p.email||cs[idx].email,notes:p.notes||cs[idx].notes});updated++;}else{const id='c'+Date.now()+Math.random().toString(36).slice(2,6);cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});batchIds.push(id);added++;}});
   sc(cs);setBatch({ids:batchIds,date:new Date().toISOString(),count:added});
-  document.getElementById('imp-preview').innerHTML=`<div class="panel" style="text-align:center;padding:24px"><div style="font-size:20px;font-weight:600;color:var(--ac);margin-bottom:6px">${added} contacts imported${updated?', '+updated+' updated':''}!</div><div style="font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.6">${added} new contacts added.${updated?' '+updated+' existing contacts updated.':''} If anything looks wrong, use "Undo last import" below.</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-p" onclick="go('contacts')">View contacts \u2192</button><button class="btn" onclick="go('queue')">See today's queue \u2192</button></div></div>`;
+  document.getElementById('imp-preview').innerHTML=`<div class="panel" style="text-align:center;padding:24px"><div style="font-size:20px;font-weight:600;color:var(--ac);margin-bottom:6px">${added} contacts imported${updated?', '+updated+' updated':''}!</div><div style="font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.6">${added} new contacts added.${updated?' '+updated+' updated.':''} If anything looks wrong, use "Undo last import" below.</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-p" onclick="go('contacts')">View contacts \u2192</button><button class="btn" onclick="go('queue')">See today's queue \u2192</button></div></div>`;
   document.getElementById('fi2').value='';
   document.getElementById('qbadge').textContent=gc().filter(due).length;
   window._dupes=null;window._dupeActions=null;
-  updateLastImportInfo();
-  toast(added+' imported'+(updated?', '+updated+' updated':'')+'!');
+  updateLastImportInfo();toast(added+' imported'+(updated?', '+updated+' updated':'')+'!');
 }
 
 function exportCSV(){
@@ -854,21 +978,12 @@ function exportCSV(){
   const hd=['First Name','Last Name','Company','Role','Email','LinkedIn','Tier','Source','Touches Sent','Last Touch Date','Responded','Do Not Contact','Notes'];
   const rows=cs.map(c=>[c.fn,c.ln||'',c.co||'',c.role||'',c.email||'',c.li||'',c.tier,c.src||'',(c.ts||[]).join(';'),c.ltd?fd(c.ltd):'',c.responded?'Yes':'',c.dnc?'Yes':'',c.notes||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
   const csv=[hd.join(','),...rows].join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='eridion_contacts_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
-  toast('CSV exported!');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='eridion_contacts_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('CSV exported!');
 }
 
-function clip(txt){
-  navigator.clipboard.writeText(txt).then(()=>toast('Copied!')).catch(()=>{
-    const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!');
-  });
-}
+function clip(txt){navigator.clipboard.writeText(txt).then(()=>toast('Copied!')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!');});}
 
-function toast(msg){
-  document.querySelectorAll('.toast').forEach(t=>t.remove());
-  const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2400);
-}
+function toast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2400);}
 
 rdash();
 </script>
