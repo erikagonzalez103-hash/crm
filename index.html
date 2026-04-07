@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--nav:#1a2332;--nt:#8a9bb0;--ac:#1D9E75;--al:#E1F5EE;--ad:#0F6E56;--sf:#fff;--bg:#f4f5f7;--bd:rgba(0,0,0,0.08);--tx:#1a1a1a;--mu:#666;--ht:#999;--dn:#E24B4A;--in:#185FA5;--amber:#BA7517;--amber-bg:#FAEEDA;--pink:#D4537E;--pink-bg:#FBEAF0}
+:root{--nav:#1a2332;--nt:#8a9bb0;--ac:#1D9E75;--al:#E1F5EE;--ad:#0F6E56;--sf:#fff;--bg:#f4f5f7;--bd:rgba(0,0,0,0.08);--tx:#1a1a1a;--mu:#666;--ht:#999;--dn:#E24B4A;--in:#185FA5;--amber:#BA7517;--amber-bg:#FAEEDA;--pink:#D4537E;--pink-bg:#FBEAF0;--lb:#2D6A4F;--lb-bg:#D8F3DC;--lb-border:#52B788}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
 .app{display:grid;grid-template-columns:215px 1fr;height:100vh;overflow:hidden}
 .nav{background:var(--nav);display:flex;flex-direction:column;overflow-y:auto}
@@ -39,6 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-li{background:#E6F1FB;color:#0C447C;border-color:#185FA5}
 .btn-ph{background:#FAEEDA;color:#633806;border-color:#BA7517}
 .btn-seq{background:#EEEDFE;color:#3C3489;border-color:#534AB7}
+.btn-lb{background:var(--lb-bg);color:var(--lb);border-color:var(--lb-border)}
 .content{flex:1;overflow-y:auto;padding:20px}
 .screen{display:none}
 .screen.active{display:block}
@@ -49,9 +50,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .msub{font-size:10px;color:var(--mu);margin-top:2px}
 .qcard{background:var(--sf);border:.5px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden}
 .qcard.seq-card{border-left:3px solid #534AB7}
+.qcard.lb-card{border-left:3px solid var(--lb-border)}
 .qcard-hd{padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:.5px solid var(--bd)}
 .av{width:36px;height:36px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--ad);flex-shrink:0}
 .av.seq{background:#EEEDFE;color:#3C3489}
+.av.lb{background:var(--lb-bg);color:var(--lb)}
 .cn{font-size:13px;font-weight:600}
 .cm{font-size:11px;color:var(--mu);margin-top:1px}
 .qcard-bd{padding:12px 16px}
@@ -70,6 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bt3t{background:#F1EFE8;color:#5F5E5A}
 .bcustom{background:#EEEDFE;color:#534AB7}
 .bseq{background:#EEEDFE;color:#3C3489}
+.blb{background:var(--lb-bg);color:var(--lb)}
 .bch-li{background:#E6F1FB;color:#0C447C}
 .bch-em{background:#E1F5EE;color:#0F6E56}
 .bch-ph{background:#FAEEDA;color:#633806}
@@ -125,24 +129,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .lib-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .lib-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--bd);background:var(--sf);color:var(--mu);transition:all .12s}
 .lib-tab.active{background:var(--nav);color:#fff;border-color:var(--nav)}
-.seq-bar{background:linear-gradient(135deg,#1a2332,#2d3f5c);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.seq-bar{background:linear-gradient(135deg,#1a2332,#2d3f5c);border-radius:10px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.seq-bar.lb-bar{background:linear-gradient(135deg,#1b4332,#2d6a4f)}
 .seq-bar-info{color:#fff}
 .seq-bar-title{font-size:13px;font-weight:600;margin-bottom:3px}
-.seq-bar-sub{font-size:11px;color:var(--nt)}
+.seq-bar-sub{font-size:11px;color:rgba(255,255,255,0.6)}
 .seq-steps{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
 .seq-step{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:1.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.4)}
 .seq-step.done{background:var(--ac);border-color:var(--ac);color:#fff}
 .seq-step.current{background:#534AB7;border-color:#7F77DD;color:#fff;box-shadow:0 0 0 2px rgba(127,119,221,0.4)}
+.seq-step.current.lb{background:var(--lb);border-color:var(--lb-border);box-shadow:0 0 0 2px rgba(82,183,136,0.4)}
 .seq-step.future{background:transparent}
 .ch-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}
 .seq-panel{background:var(--sf);border:.5px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden}
 .seq-panel-hd{padding:12px 16px;background:linear-gradient(to right,#f8f7ff,var(--sf));border-bottom:.5px solid var(--bd);display:flex;align-items:center;gap:10px}
+.seq-panel-hd.lb{background:linear-gradient(to right,#f0faf4,var(--sf))}
 .seq-touch-num{width:26px;height:26px;border-radius:50%;background:#EEEDFE;color:#3C3489;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .seq-touch-num.done{background:var(--ac);color:#fff}
+.seq-touch-num.lb{background:var(--lb-bg);color:var(--lb)}
 .seq-panel-bd{padding:12px 16px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2332;color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;z-index:999;white-space:nowrap;pointer-events:none;animation:fadeup .2s ease}
 @keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-.log-modal{background:var(--sf);border-radius:12px;padding:20px;width:520px;max-height:600px;overflow-y:auto;border:.5px solid var(--bd)}
+.log-modal{background:var(--sf);border-radius:12px;padding:20px;width:560px;max-height:640px;overflow-y:auto;border:.5px solid var(--bd)}
+.copy-variant-tabs{display:flex;gap:6px;margin-bottom:10px}
+.copy-variant-tab{padding:4px 12px;border-radius:16px;font-size:11px;font-weight:500;cursor:pointer;border:.5px solid var(--bd);background:var(--bg);color:var(--mu);transition:all .1s}
+.copy-variant-tab.active{background:var(--nav);color:#fff;border-color:var(--nav)}
+.li-account-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:600;background:#E6F1FB;color:#0C447C;border:.5px solid #185FA5}
 @media(max-width:768px){.app{grid-template-columns:1fr}.nav{display:none}.metrics{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -206,9 +218,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <input class="fi" style="width:170px" placeholder="Search contacts..." oninput="rcontacts()" id="csrch">
-          <select class="fsel" style="width:160px" onchange="rcontacts()" id="cfilt">
+          <select class="fsel" style="width:180px" onchange="rcontacts()" id="cfilt">
             <option value="all">All contacts</option>
             <option value="seq">On sequence</option>
+            <option value="fifa">FIFA sequence</option>
+            <option value="lb">Builder Warm sequence</option>
             <option value="tier1">Tier 1 — warm</option>
             <option value="tier2">Tier 2 — touched</option>
             <option value="tier3">Tier 3 — cold</option>
@@ -218,8 +232,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div id="bulk-bar" style="display:none" class="bulk-bar">
         <span id="bulk-count">0 contacts selected</span>
-        <div style="margin-left:auto;display:flex;gap:8px">
-          <button class="btn btn-sm btn-seq" onclick="bulkAssignSeq()">Assign sequence</button>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-seq" onclick="bulkAssignSeq('fifa_14day')">+ FIFA sequence</button>
+          <button class="btn btn-sm btn-lb" onclick="bulkAssignSeq('luxury_builder_warm')">+ Builder Warm</button>
           <button class="btn btn-sm btn-warn" onclick="bulkDNC()">Mark DNC</button>
           <button class="btn btn-sm btn-danger" onclick="bulkDelete()">Delete selected</button>
           <button class="btn btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3)" onclick="clearSel()">Cancel</button>
@@ -237,10 +252,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="screen" id="s-sequences">
       <div class="seq-bar">
         <div class="seq-bar-info">
-          <div class="seq-bar-title">FIFA 14-day sprint sequence</div>
+          <div class="seq-bar-title">FIFA 14-day sprint</div>
           <div class="seq-bar-sub">7 touches · 30 days · LinkedIn → Email → Email → Phone → LinkedIn DM → Email → Email</div>
         </div>
-        <button class="btn btn-sm" style="background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.2)" onclick="go('contacts');document.getElementById('cfilt').value='seq';rcontacts()">View active contacts →</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.2)" onclick="go('contacts');document.getElementById('cfilt').value='fifa';rcontacts()">View contacts →</button>
+      </div>
+      <div class="seq-bar lb-bar">
+        <div class="seq-bar-info">
+          <div class="seq-bar-title">Luxury Builder Warm</div>
+          <div class="seq-bar-sub">6 touches · 45 days · LinkedIn connect → LinkedIn DM → Email → Email → LinkedIn DM → Email</div>
+        </div>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.2)" onclick="go('contacts');document.getElementById('cfilt').value='lb';rcontacts()">View contacts →</button>
       </div>
       <div id="seq-contact-list"></div>
     </div>
@@ -263,7 +285,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="screen" id="s-library">
       <div class="lib-tabs">
         <div class="lib-tab active" id="tab-standard" onclick="switchLibTab('standard')">Standard library</div>
-        <div class="lib-tab" id="tab-fifa" onclick="switchLibTab('fifa')">FIFA World Cup copy <span style="background:#534AB7;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">7 blocks</span></div>
+        <div class="lib-tab" id="tab-fifa" onclick="switchLibTab('fifa')">FIFA sprint <span style="background:#534AB7;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">7</span></div>
+        <div class="lib-tab" id="tab-lb" onclick="switchLibTab('lb')">Builder Warm <span style="background:var(--lb);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">6</span></div>
         <div class="lib-tab" id="tab-custom" onclick="switchLibTab('custom')">Custom copy <span id="custom-count-badge" style="background:var(--ac);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px;display:none">0</span></div>
         <div class="lib-tab" id="tab-add" onclick="switchLibTab('add')">+ Add new copy</div>
       </div>
@@ -272,12 +295,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="lib-content"></div>
       </div>
       <div id="lib-fifa" style="display:none"><div id="lib-fifa-content"></div></div>
+      <div id="lib-lb" style="display:none"><div id="lib-lb-content"></div></div>
       <div id="lib-custom" style="display:none"><div id="custom-blocks-list"></div></div>
       <div id="lib-add" style="display:none">
         <div class="panel" style="max-width:600px">
           <div class="ptitle">Add new copy block</div>
           <div class="frow">
-            <div class="ff"><label class="flbl">Name / label *</label><input class="fi" id="cb-name" placeholder="e.g. FIFA World Cup — GC intro"></div>
+            <div class="ff"><label class="flbl">Name / label *</label><input class="fi" id="cb-name" placeholder="e.g. Builder Warm — CEO intro cold"></div>
             <div class="ff"><label class="flbl">Role track</label>
               <select class="fsel" id="cb-role">
                 <option value="CEO/Owner">CEO / Owner</option>
@@ -316,9 +340,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
               </select>
             </div>
           </div>
-          <div class="ff" style="margin-bottom:12px"><label class="flbl">Subject line <span style="font-weight:400;text-transform:none">(email only)</span></label><input class="fi" id="cb-subj" placeholder="e.g. Glass & mirror partner for your World Cup venue build"></div>
+          <div class="ff" style="margin-bottom:12px"><label class="flbl">Subject line <span style="font-weight:400;text-transform:none">(email only)</span></label><input class="fi" id="cb-subj" placeholder="e.g. Glass & mirror partner for your luxury builds"></div>
           <div class="ff" style="margin-bottom:14px"><label class="flbl">Copy body *</label><textarea class="rbox" id="cb-body" rows="12" placeholder="Paste or write your copy here..."></textarea></div>
-          <div class="ff" style="margin-bottom:14px"><label class="flbl">Notes <span style="font-weight:400;text-transform:none">(internal)</span></label><input class="fi" id="cb-notes" placeholder="e.g. Use for FIFA hospitality GCs"></div>
+          <div class="ff" style="margin-bottom:14px"><label class="flbl">Notes <span style="font-weight:400;text-transform:none">(internal)</span></label><input class="fi" id="cb-notes" placeholder="e.g. Use for boutique luxury builders, CEO track"></div>
           <div style="display:flex;gap:8px">
             <button class="btn btn-p" onclick="saveCustomBlock()">Save to library</button>
             <button class="btn" onclick="switchLibTab('custom')">Cancel</button>
@@ -361,7 +385,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <!-- ADD CONTACT -->
     <div class="screen" id="s-add">
-      <div class="panel" style="max-width:540px">
+      <div class="panel" style="max-width:560px">
         <div class="ptitle">Add new contact</div>
         <div class="frow">
           <div class="ff"><label class="flbl">First name *</label><input class="fi" id="a1" placeholder="First"></div>
@@ -384,6 +408,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="frow">
           <div class="ff"><label class="flbl">Email</label><input class="fi" id="a5" placeholder="name@company.com" type="email"></div>
           <div class="ff"><label class="flbl">LinkedIn URL</label><input class="fi" id="a6" placeholder="linkedin.com/in/..."></div>
+        </div>
+        <div class="frow">
+          <div class="ff"><label class="flbl">LinkedIn account to use</label>
+            <select class="fsel" id="a-liact">
+              <option value="personal">Erika Harrison (personal)</option>
+              <option value="company">Eridion Glass LLC (company page)</option>
+            </select>
+          </div>
+          <div class="ff"><label class="flbl">LinkedIn connection status</label>
+            <select class="fsel" id="a-listat">
+              <option value="cold">Not yet connected — use cold copy</option>
+              <option value="warm">Already connected — use warm copy</option>
+            </select>
+          </div>
         </div>
         <div class="frow">
           <div class="ff"><label class="flbl">Tier</label>
@@ -410,13 +448,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <select class="fsel" id="a10">
               <option value="">None</option>
               <option value="fifa_14day">FIFA 14-day sprint</option>
+              <option value="luxury_builder_warm">Luxury Builder Warm</option>
             </select>
           </div>
           <div class="ff"><label class="flbl">Sequence start date</label>
             <input class="fi" id="a11" type="date" value="">
           </div>
         </div>
-        <div class="ff" style="margin-bottom:14px"><label class="flbl">Notes</label><textarea class="rbox" id="a9" placeholder="Met at DBA event, has a project starting Q3..." rows="3"></textarea></div>
+        <div class="ff" style="margin-bottom:14px"><label class="flbl">Notes</label><textarea class="rbox" id="a9" placeholder="Met at DBA event, has a project starting Q3, connected on LinkedIn..." rows="3"></textarea></div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-p" onclick="saveContact()">Save contact</button>
           <button class="btn" onclick="go('contacts')">Cancel</button>
@@ -451,56 +490,82 @@ const SEQUENCES={
   fifa_14day:{
     id:'fifa_14day',
     name:'FIFA 14-day sprint',
+    color:'#534AB7',
     description:'Compressed 7-touch sequence for time-sensitive World Cup construction outreach',
     touches:[
-      {num:1,day_offset:0, channel:'linkedin', label:'LinkedIn connection request',
-       subject:'',
+      {num:1,day_offset:0,channel:'linkedin',label:'LinkedIn connection request',subject:'',
        body:'Hi [Name] — Eridion Glass is a Dallas-based, self-performing glass and mirror subcontractor registered with the North Texas Business Connect Program. Wanted to connect ahead of the Fan Festival buildout at Fair Park. Happy to send our capability statement if helpful.'},
-      {num:2,day_offset:3, channel:'email', label:'Intro email + capability statement',
+      {num:2,day_offset:3,channel:'email',label:'Intro email + capability statement',
        subject:'Glass & Mirror Sub — FIFA Fan Festival Buildout, Fair Park',
        body:'Hi [Name],\n\nI know you\'re deep into the Fan Festival buildout at Fair Park — reaching out because Eridion Glass is a self-performing glass and mirror subcontractor based in Dallas, and we\'re registered with the North Texas Business Connect Program.\n\nFor a project like the Fan Festival, we\'re the right fit for:\n— Glass railings and balustrade systems for VIP and premium areas\n— Colorback back-painted glass for feature walls and bar fronts\n— Full-wall mirror packages for hospitality and activation spaces\n— Custom frameless enclosures for any spa or premium suite buildout\n\nWe\'re owner-operated, carry GL/Auto/Workers Comp/Umbrella, and we self-perform — no labor brokering, no subbing out our scope. WBE certified, UEI: W5S8MAEZTUQ6.\n\nI\'ve attached our capability statement. Happy to jump on a quick call this week or send a quote on any specific scope you\'re pricing.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'},
-      {num:3,day_offset:6, channel:'email', label:'Follow-up — still open?',
+      {num:3,day_offset:6,channel:'email',label:'Follow-up — still open?',
        subject:'Re: Glass & Mirror Sub — FIFA Fan Festival Buildout',
        body:'Hi [Name],\n\nWanted to make sure my note from earlier this week didn\'t get buried — happy to jump on a quick call or send a quote on a specific scope you\'re pricing.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com'},
-      {num:4,day_offset:9, channel:'phone', label:'Phone call attempt',
-       subject:'',
+      {num:4,day_offset:9,channel:'phone',label:'Phone call attempt',subject:'',
        body:'Voicemail script:\n\n"Hi [Name], this is Erika Harrison from Eridion Glass — I\'ve sent over our capability statement for the Fan Festival buildout at Fair Park and wanted a quick two minutes to introduce ourselves. We\'re a Dallas-based, self-performing glass and mirror sub, WBE certified, registered with the North Texas Business Connect Program. My cell is 318-458-1786. I\'ll follow up by email. Thank you."'},
-      {num:5,day_offset:13,channel:'linkedin_dm', label:'LinkedIn DM — final touch',
-       subject:'',
+      {num:5,day_offset:13,channel:'linkedin_dm',label:'LinkedIn DM — final touch',subject:'',
        body:'Hi [Name] — sent over our capability statement last week for the Fan Festival build at Fair Park. If timing has passed on this one I completely understand, but wanted to make sure it reached you. Either way, happy to be a resource.\n\n— Erika Harrison, Eridion Glass'},
-      {num:6,day_offset:21,channel:'email', label:'Re-angle — hotel/renovation wave',
+      {num:6,day_offset:21,channel:'email',label:'Re-angle — hotel/renovation wave',
        subject:'Still open — DFW hospitality glass & mirror work',
        body:'Hi [Name],\n\nEven if the Fan Festival buildout scope is locked, I wanted to stay on your radar for the broader DFW hospitality and hotel renovation wave tied to the World Cup.\n\nWith 54% of international visitors staying in hotels and spending nearly 10 days in the region, the hotel refresh and upgrade cycle across DFW is very real. We\'re well positioned for VIP suite interiors, lobby glass, mirror packages, and spa enclosures.\n\nHappy to be a resource if any of that scope crosses your desk.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'},
-      {num:7,day_offset:28,channel:'email', label:'Final check-in + future ask',
+      {num:7,day_offset:28,channel:'email',label:'Final check-in + future ask',
        subject:'Last note from Eridion Glass',
        body:'Hi [Name],\n\nCircling back one last time — we\'d love to be on your sub list for future commercial and hospitality work in DFW even if the timing didn\'t work out on this one.\n\nI\'ll stop filling your inbox after this one. If you ever need a self-performing glass and mirror sub who shows up and executes cleanly — we\'re here.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'}
+    ]
+  },
+
+  luxury_builder_warm:{
+    id:'luxury_builder_warm',
+    name:'Luxury Builder Warm',
+    color:'#2D6A4F',
+    description:'6-touch LinkedIn-first sequence for boutique luxury DFW home builders. Warm up with likes before each touch.',
+    touches:[
+      {num:1,day_offset:0,channel:'linkedin',label:'LinkedIn connection request',subject:'',
+       body_cold:'Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. We specialize in precision glass & mirror work for custom and luxury builders in DFW — frameless showers, staircase glass, wine rooms, pool fencing and more. I\'d love to connect.',
+       body_warm:'Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. Love what you\'re building. We do precision glass & mirror work for luxury builders across DFW and I\'d love to be a resource when glass comes up on a project.',
+       body:'Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. We specialize in precision glass & mirror work for custom and luxury builders in DFW — frameless showers, staircase glass, wine rooms, pool fencing and more. I\'d love to connect.'},
+      {num:2,day_offset:7,channel:'linkedin_dm',label:'LinkedIn DM — first message',subject:'',
+       body_cold:'Hi [First Name] — thanks for connecting. Eridion Glass specializes in custom and luxury residential glass in DFW — frameless enclosures, staircase glass, wine rooms, Colorback mirrors, pool fencing. Would love to be on your radar when glass comes up on a project.',
+       body_warm:'Hi [First Name] — appreciate the connection. Wanted to properly introduce Eridion Glass. We do precision glass and mirror work for custom and luxury builders across DFW — frameless showers, staircase glass, wine rooms, Colorback, pool fencing. Happy to be a resource.',
+       body:'Hi [First Name] — thanks for connecting. Eridion Glass specializes in custom and luxury residential glass in DFW — frameless enclosures, staircase glass, wine rooms, Colorback mirrors, pool fencing. Would love to be on your radar when glass comes up on a project.'},
+      {num:3,day_offset:14,channel:'email',label:'Intro email — role-matched',subject:'Glass & mirror partner for your [Year] projects',
+       body:'Hi [First Name],\n\nI\'m Erika Harrison, co-founder of Eridion Glass. My husband Dion and I build our reputation on one thing: making our builder partners look good on every glass scope.\n\nFor luxury custom homes, we specialize in:\n— Frameless shower and bath enclosures\n— Staircase glass railings and panels\n— Custom mirrors and mirror walls\n— Wine room glass and doors\n— Colorback back-painted glass for kitchens and baths\n— Pool fencing and windscreens\n\nDion has 25+ years as a master glazier and leads every install personally. We show up, execute cleanly, and never end up on the punch list.\n\nIf you have a project with a glass scope coming up, I\'d love to offer a complimentary spec review — no strings attached.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com'},
+      {num:4,day_offset:28,channel:'email',label:'Value add — Colorback project story',
+       subject:'A project worth sharing — thought of you',
+       body:'Hi [First Name],\n\nFollowing up on my introduction from a couple weeks ago — wanted to share something more tangible.\n\nThis master bathroom project tells the story better than I can. A builder brought us in early, the homeowner had a design conflict between their tile choice and the rest of the space, and Colorback glass in crisp white became the canvas that let the tile be the star. The result ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat\'s the kind of outcome we aim for on every project. If you have something coming up where glass is part of the story — a staircase, a wine room, a statement bath — I\'d love to be in that early conversation.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com'},
+      {num:5,day_offset:38,channel:'linkedin_dm',label:'LinkedIn DM — check-in',subject:'',
+       body_cold:'Hi [First Name] — Erika from Eridion Glass. I\'ve sent over a couple of emails about our glass and mirror work for luxury builders. Wanted to check in here too — if you ever have a project with a glass scope and want a second opinion or a competitive bid, we\'re always happy to help.',
+       body_warm:'Hi [First Name] — Erika from Eridion Glass. Just checking in. If any projects are coming up where glass is part of the scope — staircase, wine room, custom bath — I\'d love to be in that early conversation. Happy to do a complimentary spec review.',
+       body:'Hi [First Name] — Erika from Eridion Glass. Just checking in. If any projects are coming up where glass is part of the scope — staircase, wine room, custom bath — I\'d love to be in that early conversation. Happy to do a complimentary spec review.'},
+      {num:6,day_offset:45,channel:'email',label:'Last email — leave door open',
+       subject:'Last note from Eridion Glass',
+       body:'Hi [First Name],\n\nThis is my last outreach — I don\'t want to be one of those vendors who never takes the hint.\n\nIf you ever need a precision glass and mirror sub in DFW who shows up, executes cleanly, and makes your project look good — we\'d genuinely love to earn your business.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com'}
     ]
   }
 };
 
-// Contact-specific FIFA copy overrides (keyed by contact company name fragment)
+// ── ROLE-MATCHED SUBJECT LINES FOR BUILDER WARM TOUCH 3 ──────────────────────
+const LB_ROLE_SUBJECTS={
+  'CEO/Owner':'Glass & mirror partner for your 2026 builds',
+  'Purchasing':'Competitive glass & mirror pricing for your luxury builds',
+  'Operations':'A glass sub that makes your job easier',
+  'Supervisor':'Glass sub who respects your schedule and your site',
+  'Designer':'A glass partner who can actually execute your vision',
+  'Woman-Owned':'One woman-owned business to another',
+  'DBA':'Fellow DBA member — glass & mirror sub introduction'
+};
+
+// ── FIFA COMPANY-SPECIFIC COPY OVERRIDES ──────────────────────────────────────
 const FIFA_COPY_OVERRIDES={
   'C3 Presents':{
     2:{subject:'Glass & Mirror Sub — FIFA Fan Festival Buildout, Fair Park',
        body:'Hi [Name],\n\nI know you\'re deep into the Fan Festival buildout at Fair Park — reaching out because Eridion Glass is a self-performing glass and mirror subcontractor based in Dallas, and we\'re registered with the North Texas Business Connect Program.\n\nFor a project like the Fan Festival, we\'re the right fit for:\n— Glass railings and balustrade systems for VIP and premium areas\n— Colorback back-painted glass for feature walls and bar fronts\n— Full-wall mirror packages for hospitality and activation spaces\n— Custom frameless enclosures for any spa or premium suite buildout\n\nWe\'re owner-operated, carry GL/Auto/Workers Comp/Umbrella, and we self-perform — no labor brokering, no subbing out our scope. WBE certified, UEI: W5S8MAEZTUQ6.\n\nI\'ve attached our capability statement. Happy to jump on a quick call this week or send a quote on any specific scope you\'re pricing.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'},
     1:{body:'Hi [Name] — Eridion Glass is a Dallas-based, self-performing glass and mirror subcontractor registered with the North Texas Business Connect Program. Wanted to connect ahead of the Fan Festival buildout at Fair Park. Happy to send our capability statement if helpful.'}
   },
-  'Turner Construction':{
-    2:{subject:'Glass & Mirror Sub — Kay Bailey IBC Fitout, FIFA World Cup 2026',
-       body:'Hi [Name],\n\nReaching out regarding the $15M IBC fitout at Kay Bailey Hutchison — we understand Turner is leading the Trinity Alliance JV on that scope and wanted to get Eridion Glass in front of your preconstruction team.\n\nWe\'re a Dallas-based, self-performing glass and mirror subcontractor. For the IBC fitout specifically, we can cover:\n— Interior mirror packages for media suites, greenrooms, and hospitality areas\n— Glass partitions and interior glazing systems\n— Glass railings for any mezzanine or multi-level broadcast areas\n— Colorback decorative glass for feature walls and branded spaces\n\nWe carry full insurance (GL/Auto/Workers Comp/Umbrella), are WBE certified, UEI: W5S8MAEZTUQ6, and registered with the North Texas Business Connect Program. Self-performing — no labor brokering.\n\nI\'ve attached our capability statement. If you\'re still building your sub list for any glass scope, I\'d welcome a five-minute call.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'}
-  },
-  'AECOM Hunt':{
-    2:{subject:'Glass & Mirror Sub — Trinity Alliance JV, Kay Bailey IBC',
-       body:'Hi [Name],\n\nI\'m reaching out about the Kay Bailey Hutchison IBC fitout — we know AECOM Hunt is co-leading the Trinity Alliance JV on that scope and wanted to introduce Eridion Glass before your sub list closes.\n\nWe\'re a Dallas-based glass and mirror subcontractor — self-performing, fully insured, WBE certified (UEI: W5S8MAEZTUQ6), and registered with the North Texas Business Connect Program. We work directly with GC preconstruction teams on commercial and hospitality scopes including:\n— Interior mirror packages\n— Glass partitions and glazing systems\n— Glass railings and balustrades\n— Colorback decorative glass and feature walls\n\nNo labor brokering — our own crew on every job, accountable to your schedule.\n\nCapability statement attached. Are you still pricing glass scope on this project? Happy to turn around a number quickly.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'}
-  },
-  'Matthews Southwest':{
-    2:{subject:'WBE Glass & Mirror Sub — Inspire Dallas / KBHCC Project',
-       body:'Hi [Name],\n\nI\'m reaching out because Matthews Southwest is leading the Inspire Dallas team on the Kay Bailey Hutchison project — and as a WBE-certified, Dallas-based glass and mirror subcontractor, we\'d like to be considered for any glass scope you\'re still pricing.\n\nEridion Glass is self-performing — our own crew, no brokering — and we specialize in commercial and hospitality interior glass:\n— Mirror packages for hospitality, fitness, and suite interiors\n— Frameless glass railings and balustrade systems\n— Glass partitions and interior glazing\n— Colorback painted glass for feature walls and accent panels\n— Bath and spa enclosures for hotel and VIP areas\n\nWe\'re fully insured (GL/Auto/Workers Comp/Umbrella), WBE certified, UEI: W5S8MAEZTUQ6, and registered with the North Texas Business Connect Program. As a local, woman-owned business we align directly with your M/WBE spend commitments on this project.\n\nCapability statement attached. Would love five minutes to introduce ourselves properly — even if the timing is tight on the World Cup scope, we\'d want to be on your list for future work.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'}
-  },
-  'OVG360':{
-    2:{subject:'Glass & Mirror Sub — Kay Bailey Hutchison, IBC Buildout',
-       body:'Hi [Name],\n\nI\'m reaching out to OVG360 in your role operating the Kay Bailey Hutchison Convention Center. With the World Cup International Broadcast Center coming online there this summer, I wanted to introduce Eridion Glass in case any interior glass or mirror scope is being handled through your facilities team rather than the construction JV.\n\nWe\'re a Dallas-based, self-performing glass and mirror subcontractor specializing in:\n— Commercial mirror packages for hospitality and media spaces\n— Glass partitions and interior glazing\n— Glass railings and balustrade systems\n— Feature walls and Colorback decorative glass\n\nFully insured, WBE certified, UEI: W5S8MAEZTUQ6, registered with the North Texas Business Connect Program.\n\nIf your team is managing any glass or mirror work for the IBC buildout or for ongoing facility improvements, I\'d welcome a quick conversation. Capability statement attached.\n\nDion Harrison\nEridion Glass, LLC\n214.862.8566\ndion@eridionglass.com\nwww.eridionglass.com'}
-  }
+  'Turner Construction':{2:{subject:'Glass & Mirror Sub — Kay Bailey IBC Fitout, FIFA World Cup 2026',body:'Hi [Name],\n\nReaching out regarding the $15M IBC fitout at Kay Bailey Hutchison — we understand Turner is leading the Trinity Alliance JV on that scope and wanted to get Eridion Glass in front of your preconstruction team.\n\nWe\'re a Dallas-based, self-performing glass and mirror subcontractor. For the IBC fitout specifically, we can cover:\n— Interior mirror packages for media suites, greenrooms, and hospitality areas\n— Glass partitions and interior glazing systems\n— Glass railings for any mezzanine or multi-level broadcast areas\n— Colorback decorative glass for feature walls and branded spaces\n\nWe carry full insurance (GL/Auto/Workers Comp/Umbrella), are WBE certified, UEI: W5S8MAEZTUQ6, and registered with the North Texas Business Connect Program. Self-performing — no labor brokering.\n\nI\'ve attached our capability statement. If you\'re still building your sub list for any glass scope, I\'d welcome a five-minute call.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'}},
+  'AECOM Hunt':{2:{subject:'Glass & Mirror Sub — Trinity Alliance JV, Kay Bailey IBC',body:'Hi [Name],\n\nI\'m reaching out about the Kay Bailey Hutchison IBC fitout — we know AECOM Hunt is co-leading the Trinity Alliance JV on that scope and wanted to introduce Eridion Glass before your sub list closes.\n\nWe\'re a Dallas-based glass and mirror subcontractor — self-performing, fully insured, WBE certified (UEI: W5S8MAEZTUQ6), and registered with the North Texas Business Connect Program. We work directly with GC preconstruction teams on commercial and hospitality scopes including:\n— Interior mirror packages\n— Glass partitions and glazing systems\n— Glass railings and balustrades\n— Colorback decorative glass and feature walls\n\nNo labor brokering — our own crew on every job, accountable to your schedule.\n\nCapability statement attached. Are you still pricing glass scope on this project? Happy to turn around a number quickly.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'}},
+  'Matthews Southwest':{2:{subject:'WBE Glass & Mirror Sub — Inspire Dallas / KBHCC Project',body:'Hi [Name],\n\nI\'m reaching out because Matthews Southwest is leading the Inspire Dallas team on the Kay Bailey Hutchison project — and as a WBE-certified, Dallas-based glass and mirror subcontractor, we\'d like to be considered for any glass scope you\'re still pricing.\n\nEridion Glass is self-performing — our own crew, no brokering — and we specialize in commercial and hospitality interior glass:\n— Mirror packages for hospitality, fitness, and suite interiors\n— Frameless glass railings and balustrade systems\n— Glass partitions and interior glazing\n— Colorback painted glass for feature walls and accent panels\n— Bath and spa enclosures for hotel and VIP areas\n\nWe\'re fully insured (GL/Auto/Workers Comp/Umbrella), WBE certified, UEI: W5S8MAEZTUQ6, and registered with the North Texas Business Connect Program. As a local, woman-owned business we align directly with your M/WBE spend commitments on this project.\n\nCapability statement attached. Would love five minutes to introduce ourselves properly — even if the timing is tight on the World Cup scope, we\'d want to be on your list for future work.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com\nwww.eridionglass.com'}},
+  'OVG360':{2:{subject:'Glass & Mirror Sub — Kay Bailey Hutchison, IBC Buildout',body:'Hi [Name],\n\nI\'m reaching out to OVG360 in your role operating the Kay Bailey Hutchison Convention Center. With the World Cup International Broadcast Center coming online there this summer, I wanted to introduce Eridion Glass in case any interior glass or mirror scope is being handled through your facilities team rather than the construction JV.\n\nWe\'re a Dallas-based, self-performing glass and mirror subcontractor specializing in:\n— Commercial mirror packages for hospitality and media spaces\n— Glass partitions and interior glazing\n— Glass railings and balustrade systems\n— Feature walls and Colorback decorative glass\n\nFully insured, WBE certified, UEI: W5S8MAEZTUQ6, registered with the North Texas Business Connect Program.\n\nIf your team is managing any glass or mirror work for the IBC buildout or for ongoing facility improvements, I\'d welcome a quick conversation. Capability statement attached.\n\nDion Harrison\nEridion Glass, LLC\n214.862.8566\ndion@eridionglass.com\nwww.eridionglass.com'}}
 };
 
 // ── STANDARD COPY LIBRARY ──────────────────────────────────────────────────────
@@ -548,7 +613,7 @@ t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. Hoping our
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:'Touch 1 — intro',t2:'Touch 2 — value add',t3:'Touch 3 — check in',t4:'Touch 4 — last one'};
 const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact'};
-const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + custom copy blocks',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually'};
+const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually'};
 const CH_LABELS={linkedin:'LinkedIn connect',email:'Email',phone:'Phone call',linkedin_dm:'LinkedIn DM'};
 const CH_CLASSES={linkedin:'bch-li',email:'bch-em',phone:'bch-ph',linkedin_dm:'bch-ld'};
 
@@ -565,10 +630,10 @@ const ini=n=>n.split(' ').map(x=>x[0]||'').join('').toUpperCase().slice(0,2);
 const fd=iso=>iso?new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'Never';
 const ds=iso=>iso?Math.floor((Date.now()-new Date(iso).getTime())/86400000):999;
 const nxt=c=>{const done=c.ts||[];for(const t of['t1','t2','t3','t4'])if(!done.includes(t))return t;return null};
+const isLB=c=>c.seq_id==='luxury_builder_warm';
+const isFIFA=c=>c.seq_id==='fifa_14day';
 const due=c=>{if(c.dnc)return false;
-  // Check sequence due
   if(c.seq_id&&c.seq_active){const nxts=seqNextTouch(c);if(nxts){const sd=seqTouchDueDate(c,nxts);if(sd&&new Date(sd)<=new Date())return true;}}
-  // Check standard due
   const n=nxt(c);if(!n)return false;
   if(n==='t1')return!c.seq_id;
   return ds(c.ltd)>=TD[n];
@@ -576,6 +641,7 @@ const due=c=>{if(c.dnc)return false;
 const bt=t=>{const m={tier1:'bwarm Tier 1 — warm',tier2:'bt2t Tier 2 — touched',tier3:'bt3t Tier 3 — cold'};const[cls,...lbl]=(m[t]||'bt3t Tier 3 — cold').split(' ');return`<span class="badge ${cls}">${lbl.join(' ')}</span>`};
 const btouch=t=>{const m={t1:'bt1 Touch 1',t2:'bt2 Touch 2',t3:'bt3 Touch 3',t4:'bt4 Touch 4'};const[cls,...lbl]=(m[t]||'bcold —').split(' ');return`<span class="badge ${cls}">${lbl.join(' ')}</span>`};
 const bch=ch=>`<span class="badge ${CH_CLASSES[ch]||'bcold'}">${CH_LABELS[ch]||ch}</span>`;
+const bliact=act=>`<span class="li-account-pill">👤 ${act==='company'?'Eridion Glass LLC':'Erika Harrison'}</span>`;
 
 // ── SEQUENCE ENGINE ───────────────────────────────────────────────────────────
 
@@ -618,15 +684,36 @@ function seqDaysUntil(c){
   return Math.ceil((new Date(dd)-new Date())/(1000*60*60*24));
 }
 
-function getSeqCopyForContact(c,touchNum){
-  // Check for contact-specific override
-  const co=(c.co||'').trim();
-  for(const[key,overrides] of Object.entries(FIFA_COPY_OVERRIDES)){
-    if(co.toLowerCase().includes(key.toLowerCase())){
-      if(overrides[touchNum])return overrides[touchNum];
+// Get copy for a contact's next touch, respecting cold/warm variants and role matching
+function getSeqCopyForContact(c,touchNum,variantOverride){
+  // FIFA: check company-specific overrides first
+  if(isFIFA(c)){
+    const co=(c.co||'').trim();
+    for(const[key,overrides] of Object.entries(FIFA_COPY_OVERRIDES)){
+      if(co.toLowerCase().includes(key.toLowerCase())){
+        if(overrides[touchNum])return overrides[touchNum];
+      }
     }
   }
-  // Fall back to generic sequence copy
+  // Luxury Builder Warm: handle cold/warm variants and role-matched subject
+  if(isLB(c)){
+    const seq=SEQUENCES.luxury_builder_warm;
+    const touch=seq.touches.find(t=>t.num===touchNum);if(!touch)return null;
+    const variant=variantOverride||(c.li_status==='warm'?'warm':'cold');
+    const body=touch['body_'+variant]||touch.body;
+    // Role-match subject for touch 3
+    let subject=touch.subject||'';
+    if(touchNum===3){
+      subject=(LB_ROLE_SUBJECTS[c.role||'CEO/Owner']||LB_ROLE_SUBJECTS['CEO/Owner']).replace('[Year]',new Date().getFullYear());
+      // Use role-specific copy from standard library for touch 3 body if available
+      const roleBlock=(COPY[c.role||'CEO/Owner']||COPY['CEO/Owner']);
+      if(roleBlock&&roleBlock.t1){
+        return{subject,body:(roleBlock.t1.b||roleBlock.t1).replace(/\[First Name\]/g,c.fn)};
+      }
+    }
+    return{subject,body:body.replace(/\[First Name\]/g,c.fn)};
+  }
+  // Generic fallback
   const seq=SEQUENCES[c.seq_id];if(!seq)return null;
   const touch=seq.touches.find(t=>t.num===touchNum);if(!touch)return null;
   return{subject:touch.subject,body:touch.body};
@@ -638,7 +725,6 @@ function logTouch(cid,touchNum,note){
   c.seq_log.push({touch_num:touchNum,date:new Date().toISOString(),note:note||''});
   c.ltd=new Date().toISOString();
   if(c.tier==='tier3')c.tier='tier2';
-  // Check if sequence complete
   const seq=SEQUENCES[c.seq_id];
   if(seq&&c.seq_log.length>=seq.touches.length)c.seq_active=false;
   sc(cs);
@@ -648,29 +734,49 @@ function logTouch(cid,touchNum,note){
   updateSeqBadge();
 }
 
+// Log modal — shows cold/warm variant toggle for LinkedIn touches on LB sequence
 function openLogModal(cid){
   const c=gc().find(x=>x.id===cid);if(!c||!c.seq_id)return;
   const nt=seqNextTouch(c);if(!nt){toast('Sequence complete!');return;}
-  const copy=getSeqCopyForContact(c,nt.num);
-  const body=copy?(copy.body||'').replace(/\[Name\]/g,c.fn) :'';
-  const subj=copy?copy.subject:'';
-  document.getElementById('log-body').innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <div class="seq-touch-num">${nt.num}</div>
-      <div>
-        <div style="font-size:13px;font-weight:600">${nt.label}</div>
-        <div style="font-size:11px;color:var(--mu);margin-top:2px">${bch(nt.channel)} · Due ${fd(seqTouchDueDate(c,nt))}</div>
+  const lb=isLB(c);
+  const hasVariants=lb&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')&&SEQUENCES.luxury_builder_warm.touches.find(t=>t.num===nt.num&&t.body_cold);
+  let currentVariant=c.li_status==='warm'?'warm':'cold';
+
+  function renderLogBody(variant){
+    const copy=getSeqCopyForContact(c,nt.num,variant);
+    const body=copy?(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn):'';
+    const subj=copy?copy.subject:'';
+    const liAccountInfo=lb&&c.li_account?`<div style="margin-bottom:10px">${bliact(c.li_account)} <span style="font-size:10px;color:var(--mu);margin-left:6px">Post 2-3 likes/comments before sending this touch</span></div>`:'';
+    return`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div class="seq-touch-num ${lb?'lb':''}">${nt.num}</div>
+        <div>
+          <div style="font-size:13px;font-weight:600">${nt.label}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:2px">${bch(nt.channel)} · Due ${fd(seqTouchDueDate(c,nt))}</div>
+        </div>
+        ${lb?`<span class="badge blb" style="margin-left:auto">Builder Warm</span>`:''}
       </div>
-    </div>
-    ${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Subject</div><div style="font-size:12px;font-weight:500;margin-bottom:12px;padding:8px 10px;background:var(--bg);border-radius:6px">${subj}</div>`:''}
-    <div style="font-size:10px;color:var(--mu);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Copy</div>
-    <div class="cprev" style="max-height:180px">${body.replace(/</g,'&lt;')}</div>
-    <div style="margin-top:12px;display:flex;gap:8px">
-      <button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>
-      ${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${cid}',${nt.num})">Open in email ↗</button>`:''}
-      ${c.li&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')?`<button class="btn btn-sm btn-li" onclick="window.open('https://'+c.li.replace(/^https?:\\/\\//,''),'_blank')">Open LinkedIn ↗</button>`:''}
-    </div>
-    <div style="margin-top:14px"><label class="flbl">Note (optional)</label><input class="fi" id="log-note" placeholder="e.g. Left voicemail, sent via LinkedIn DM..." style="margin-top:4px"></div>`;
+      ${liAccountInfo}
+      ${hasVariants?`<div class="copy-variant-tabs" id="variant-tabs">
+        <div class="copy-variant-tab ${variant==='cold'?'active':''}" onclick="switchVariant('cold','${cid}',${nt.num})">Cold copy <span style="font-size:9px;opacity:.7">(not yet connected)</span></div>
+        <div class="copy-variant-tab ${variant==='warm'?'active':''}" onclick="switchVariant('warm','${cid}',${nt.num})">Warm copy <span style="font-size:9px;opacity:.7">(already connected)</span></div>
+      </div>`:''}
+      ${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Subject</div><div style="font-size:12px;font-weight:500;margin-bottom:12px;padding:8px 10px;background:var(--bg);border-radius:6px">${subj}</div>`:''}
+      <div style="font-size:10px;color:var(--mu);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Copy</div>
+      <div class="cprev" style="max-height:180px" id="log-copy-prev">${body.replace(/</g,'&lt;')}</div>
+      <div style="margin-top:12px;display:flex;gap:8px" id="log-copy-acts">
+        <button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>
+        ${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${cid}',${nt.num})">Open in email ↗</button>`:''}
+        ${c.li&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')?`<a href="https://${(c.li||'').replace(/^https?:\/\//,'')}" target="_blank" class="btn btn-sm btn-li">Open LinkedIn ↗</a>`:''}
+      </div>
+      <div style="margin-top:14px"><label class="flbl">Note (optional)</label><input class="fi" id="log-note" placeholder="e.g. Left voicemail, sent cold variant via LinkedIn..." style="margin-top:4px"></div>`;
+  }
+
+  window._logVariant=currentVariant;
+  window._logCid=cid;
+  window._logTouchNum=nt.num;
+
+  document.getElementById('log-body').innerHTML=renderLogBody(currentVariant);
   document.getElementById('log-acts').innerHTML=`
     <button class="btn btn-sm btn-danger" onclick="closeLogModal()">Cancel</button>
     <button class="btn btn-sm btn-warn" onclick="skipTouch('${cid}',${nt.num})">Skip this touch</button>
@@ -678,9 +784,33 @@ function openLogModal(cid){
   document.getElementById('logmodal').classList.add('open');
 }
 
+function switchVariant(variant,cid,touchNum){
+  window._logVariant=variant;
+  const c=gc().find(x=>x.id===cid);if(!c)return;
+  const copy=getSeqCopyForContact(c,touchNum,variant);
+  const body=copy?(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn):'';
+  // Update preview and copy button
+  const prev=document.getElementById('log-copy-prev');
+  if(prev)prev.textContent=body;
+  const tabs=document.querySelectorAll('.copy-variant-tab');
+  tabs.forEach(t=>t.classList.toggle('active',t.textContent.trim().toLowerCase().startsWith(variant)));
+  const acts=document.getElementById('log-copy-acts');
+  if(acts){
+    const nt=seqNextTouch(c);
+    acts.innerHTML=`<button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>
+      ${c.email&&nt&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${cid}',${touchNum})">Open in email ↗</button>`:''}
+      ${c.li&&nt&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')?`<a href="https://${(c.li||'').replace(/^https?:\/\//,'')}" target="_blank" class="btn btn-sm btn-li">Open LinkedIn ↗</a>`:''}`;
+  }
+}
+
 function doLogTouch(cid,touchNum){
   const note=document.getElementById('log-note').value.trim();
-  logTouch(cid,touchNum,note);
+  // If contact used warm variant, update their li_status
+  if(window._logVariant==='warm'){
+    const cs=gc(),c=cs.find(x=>x.id===cid);
+    if(c){c.li_status='warm';sc(cs);}
+  }
+  logTouch(cid,touchNum,note+(window._logVariant?` [${window._logVariant} copy]`:''));
   closeLogModal();
   rdash();
   const act=document.querySelector('.screen.active');
@@ -689,18 +819,14 @@ function doLogTouch(cid,touchNum){
   if(act&&act.id==='s-sequences')rsequences();
 }
 
-function skipTouch(cid,touchNum){
-  addA(cid,'Touch '+touchNum+' skipped','');
-  closeLogModal();toast('Touch skipped');
-}
-
+function skipTouch(cid,touchNum){addA(cid,'Touch '+touchNum+' skipped','');closeLogModal();toast('Touch skipped');}
 function closeLogModal(){document.getElementById('logmodal').classList.remove('open');}
 document.getElementById('logmodal').addEventListener('click',e=>{if(e.target.id==='logmodal')closeLogModal()});
 
 function mailtoSeq(cid,touchNum){
   const c=gc().find(x=>x.id===cid);if(!c)return;
-  const copy=getSeqCopyForContact(c,touchNum);if(!copy)return;
-  const body=(copy.body||'').replace(/\[Name\]/g,c.fn);
+  const copy=getSeqCopyForContact(c,touchNum,window._logVariant);if(!copy)return;
+  const body=(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn);
   window.open(`mailto:${c.email||''}?subject=${encodeURIComponent(copy.subject||'')}&body=${encodeURIComponent(body)}`);
 }
 
@@ -709,13 +835,14 @@ function updateSeqBadge(){
   document.getElementById('seqbadge').textContent=active;
 }
 
-function bulkAssignSeq(){
+function bulkAssignSeq(seqId){
   if(!selectedIds.size)return;
   const count=selectedIds.size;
   const today=new Date().toISOString().slice(0,10);
-  if(!confirm(`Assign the FIFA 14-day sprint sequence to ${count} selected contact(s), starting today?`))return;
-  selectedIds.forEach(id=>assignSeq(id,'fifa_14day',today));
-  selectedIds.clear();rcontacts();rdash();toast(count+' contacts added to sequence');
+  const seqName=SEQUENCES[seqId]?SEQUENCES[seqId].name:seqId;
+  if(!confirm(`Assign "${seqName}" to ${count} selected contact(s), starting today?`))return;
+  selectedIds.forEach(id=>assignSeq(id,seqId,today));
+  selectedIds.clear();rcontacts();rdash();toast(count+' contacts added to '+seqName);
 }
 
 // ── SEQUENCES SCREEN ──────────────────────────────────────────────────────────
@@ -724,37 +851,43 @@ function rsequences(){
   const cs=gc().filter(c=>c.seq_id&&c.seq_active);
   const el=document.getElementById('seq-contact-list');
   if(!cs.length){
-    el.innerHTML=`<div class="empty"><div class="empty-icon">◎</div><div style="font-weight:600;margin-bottom:6px">No contacts on sequence yet</div><div>Go to Contacts, select your FIFA targets, and click "Assign sequence".</div><div style="margin-top:14px"><button class="btn btn-p btn-sm" onclick="go('contacts')">Go to contacts →</button></div></div>`;
+    el.innerHTML=`<div class="empty"><div class="empty-icon">◎</div><div style="font-weight:600;margin-bottom:6px">No contacts on sequence yet</div><div>Go to Contacts, select your targets, and assign a sequence.</div><div style="margin-top:14px"><button class="btn btn-p btn-sm" onclick="go('contacts')">Go to contacts →</button></div></div>`;
     return;
   }
   el.innerHTML=cs.map(c=>{
-    const seq=SEQUENCES[c.seq_id];
+    const seq=SEQUENCES[c.seq_id];if(!seq)return'';
     const nt=seqNextTouch(c);
     const done=(c.seq_log||[]).map(l=>l.touch_num);
     const du=seqIsDue(c);
     const daysUntil=seqDaysUntil(c);
-    const touchSteps=seq.touches.map(t=>`<div class="seq-step ${done.includes(t.num)?'done':nt&&t.num===nt.num?'current':'future'}" title="Touch ${t.num}: ${t.label}">${t.num}</div>`).join('');
+    const lb=isLB(c);
+    const touchSteps=seq.touches.map(t=>`<div class="seq-step ${done.includes(t.num)?'done':nt&&t.num===nt.num?('current'+(lb?' lb':'')):'future'}" title="Touch ${t.num}: ${t.label}">${t.num}</div>`).join('');
+    const hdClass=lb?'seq-panel-hd lb':'seq-panel-hd';
+    const tnClass=lb?'seq-touch-num lb':'seq-touch-num';
+    const seqBadge=lb?'<span class="badge blb" style="font-size:9px">Builder Warm</span>':'<span class="badge bseq" style="font-size:9px">FIFA sprint</span>';
     return`<div class="seq-panel">
-      <div class="seq-panel-hd">
-        <div class="av seq">${ini(c.fn+' '+(c.ln||''))}</div>
+      <div class="${hdClass}">
+        <div class="av ${lb?'lb':'seq'}">${ini(c.fn+' '+(c.ln||''))}</div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:600">${c.fn} ${c.ln||''}</div>
-          <div style="font-size:11px;color:var(--mu);margin-top:1px">${c.co||'—'} · Started ${fd(c.seq_start)}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:1px">${c.co||'—'} · Started ${fd(c.seq_start)} ${seqBadge}</div>
         </div>
+        ${lb&&c.li_account?bliact(c.li_account):''}
         <div class="seq-steps">${touchSteps}</div>
         ${du?'<span class="badge bt1" style="margin-left:8px">DUE NOW</span>':''}
         ${!du&&daysUntil!==null&&daysUntil>0?`<span class="badge bt3t" style="margin-left:8px">in ${daysUntil}d</span>`:''}
       </div>
       <div class="seq-panel-bd">
+        ${lb&&nt&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')?`<div style="font-size:10px;color:var(--lb);background:var(--lb-bg);border-radius:6px;padding:6px 10px;margin-bottom:10px;font-weight:500">💡 Warm up before this touch — like or comment on 2–3 of their recent posts first</div>`:''}
         ${nt?`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div class="seq-touch-num ${du?'done':''}">${nt.num}</div>
+          <div class="${tnClass} ${du?'done':''}">${nt.num}</div>
           <div style="flex:1">
             <div style="font-size:12px;font-weight:500">${nt.label}</div>
             <div style="font-size:11px;color:var(--mu);margin-top:2px">${bch(nt.channel)} · Due ${fd(seqTouchDueDate(c,nt))}</div>
           </div>
           <div style="display:flex;gap:7px">
             <button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button>
-            <button class="btn btn-sm btn-p" onclick="openLogModal('${c.id}')">Log touch ✓</button>
+            <button class="btn btn-sm ${lb?'btn-lb':'btn-p'}" onclick="openLogModal('${c.id}')">Log touch ✓</button>
           </div>
         </div>`:`<div style="font-size:12px;color:var(--ac);font-weight:500">✓ Sequence complete — ${done.length} touches sent</div>`}
         ${(c.seq_log||[]).length?`<div style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--bd)">
@@ -789,10 +922,16 @@ function rdash(){
 
 function rseqCard(c){
   const nt=seqNextTouch(c);if(!nt)return'';
+  const lb=isLB(c);
   const copy=getSeqCopyForContact(c,nt.num);
-  const body=copy?(copy.body||'').replace(/\[Name\]/g,c.fn):'No copy available.';
+  const body=copy?(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn):'No copy available.';
   const subj=copy?copy.subject:'';
-  return`<div class="qcard seq-card"><div class="qcard-hd"><div class="av seq">${ini(c.fn+' '+(c.ln||''))}</div><div style="flex:1"><div class="cn">${c.fn} ${c.ln||''}</div><div class="cm">${c.co||'—'} · FIFA sequence</div></div><span class="badge bseq">Touch ${nt.num}</span> ${bch(nt.channel)} ${bt(c.tier||'tier3')}</div><div class="qcard-bd">${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:5px">Subject: <strong style="color:var(--tx)">${subj}</strong></div>`:''}<div class="cprev">${body.replace(/</g,'&lt;')}</div><div class="qacts"><button class="btn btn-p btn-sm" onclick="openLogModal('${c.id}')">Log touch ✓</button><button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${c.id}',${nt.num})">Open in email ↗</button>`:''}<button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button></div></div></div>`;
+  const cardCls=lb?'qcard lb-card':'qcard seq-card';
+  const avCls=lb?'av lb':'av seq';
+  const seqLabel=lb?'<span class="badge blb">Builder Warm</span>':'<span class="badge bseq">FIFA sprint</span>';
+  const logBtn=`<button class="btn ${lb?'btn-lb':'btn-p'} btn-sm" onclick="openLogModal('${c.id}')">Log touch ✓</button>`;
+  const warmingTip=lb&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')?`<div style="font-size:10px;color:var(--lb);margin-bottom:8px;font-weight:500">💡 Like 2–3 of their posts before sending</div>`:'';
+  return`<div class="${cardCls}"><div class="qcard-hd"><div class="${avCls}">${ini(c.fn+' '+(c.ln||''))}</div><div style="flex:1"><div class="cn">${c.fn} ${c.ln||''}</div><div class="cm">${c.co||'—'} · ${lb?c.role||'—':'FIFA sequence'}</div></div>${seqLabel} <span class="badge bseq" style="background:transparent;border:.5px solid var(--bd);color:var(--mu)">Touch ${nt.num}</span> ${bch(nt.channel)} ${bt(c.tier||'tier3')}</div><div class="qcard-bd">${warmingTip}${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:5px">Subject: <strong style="color:var(--tx)">${subj}</strong></div>`:''}<div class="cprev">${body.replace(/</g,'&lt;')}</div><div class="qacts">${logBtn}<button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${c.id}',${nt.num})">Open in email ↗</button>`:''}<button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button></div></div></div>`;
 }
 
 function rcard(c){
@@ -841,6 +980,8 @@ function rcontacts(){
   const srch=(document.getElementById('csrch').value||'').toLowerCase();
   let cs=gc();
   if(filt==='seq')cs=cs.filter(c=>c.seq_id&&c.seq_active);
+  else if(filt==='fifa')cs=cs.filter(c=>c.seq_id==='fifa_14day'&&c.seq_active);
+  else if(filt==='lb')cs=cs.filter(c=>c.seq_id==='luxury_builder_warm'&&c.seq_active);
   else if(filt==='tier1')cs=cs.filter(c=>c.tier==='tier1');
   else if(filt==='tier2')cs=cs.filter(c=>c.tier==='tier2');
   else if(filt==='tier3')cs=cs.filter(c=>c.tier==='tier3');
@@ -852,13 +993,14 @@ function rcontacts(){
   tb.innerHTML=cs.map(c=>{
     const n=nxt(c);const sel=selectedIds.has(c.id);
     const isSeq=c.seq_id&&c.seq_active;
+    const lb=isLB(c);
     const nt=isSeq?seqNextTouch(c):null;
     const du=isSeq?seqIsDue(c):due(c);
-    const seqLabel=isSeq?(SEQUENCES[c.seq_id]?`<span class="badge bseq">${SEQUENCES[c.seq_id].name}</span>`:''):'—';
+    const seqLabel=isSeq?(SEQUENCES[c.seq_id]?`<span class="badge ${lb?'blb':'bseq'}">${SEQUENCES[c.seq_id].name}</span>`:''):'—';
     const nextLabel=isSeq&&nt?`Touch ${nt.num} · ${bch(nt.channel)}`:n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Complete</span>';
     const dueLabel=du?'<span class="badge bt1">Due now</span>':isSeq&&nt?`<span class="badge bt3t">in ${seqDaysUntil(c)||0}d</span>`:'—';
-    const actionBtn=isSeq?`<button class="btn btn-sm btn-p" onclick="openLogModal('${c.id}')">Log touch</button>`:`<button class="btn btn-sm" onclick="sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button>`;
-    return`<tr class="${sel?'selected':''}" id="row-${c.id}"><td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel('${c.id}',this.checked)" onclick="event.stopPropagation()"></td><td onclick="openC('${c.id}')" style="cursor:pointer"><div style="display:flex;align-items:center;gap:8px"><div class="av ${isSeq?'seq':''}" style="width:28px;height:28px;font-size:10px">${ini(c.fn+' '+(c.ln||''))}</div><span style="font-weight:500">${c.fn} ${c.ln||''}</span></div></td><td onclick="openC('${c.id}')" style="cursor:pointer">${c.co||'—'}</td><td style="color:var(--mu)">${c.role||'—'}</td><td>${bt(c.tier||'tier3')}</td><td>${seqLabel}</td><td>${nextLabel}</td><td>${dueLabel}</td><td>${actionBtn}</td></tr>`;
+    const actionBtn=isSeq?`<button class="btn btn-sm ${lb?'btn-lb':'btn-p'}" onclick="openLogModal('${c.id}')">Log touch</button>`:`<button class="btn btn-sm" onclick="sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button>`;
+    return`<tr class="${sel?'selected':''}" id="row-${c.id}"><td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel('${c.id}',this.checked)" onclick="event.stopPropagation()"></td><td onclick="openC('${c.id}')" style="cursor:pointer"><div style="display:flex;align-items:center;gap:8px"><div class="av ${lb?'lb':isSeq?'seq':''}" style="width:28px;height:28px;font-size:10px">${ini(c.fn+' '+(c.ln||''))}</div><span style="font-weight:500">${c.fn} ${c.ln||''}</span></div></td><td onclick="openC('${c.id}')" style="cursor:pointer">${c.co||'—'}</td><td style="color:var(--mu)">${c.role||'—'}</td><td>${bt(c.tier||'tier3')}</td><td>${seqLabel}</td><td>${nextLabel}</td><td>${dueLabel}</td><td>${actionBtn}</td></tr>`;
   }).join('');
   updateBulkBar();updateSelAll(cs);
 }
@@ -874,6 +1016,8 @@ function toggleSelAll(checked){
   const srch=(document.getElementById('csrch').value||'').toLowerCase();
   let cs=gc();
   if(filt==='seq')cs=cs.filter(c=>c.seq_id&&c.seq_active);
+  else if(filt==='fifa')cs=cs.filter(c=>c.seq_id==='fifa_14day'&&c.seq_active);
+  else if(filt==='lb')cs=cs.filter(c=>c.seq_id==='luxury_builder_warm'&&c.seq_active);
   else if(filt==='tier1')cs=cs.filter(c=>c.tier==='tier1');
   else if(filt==='tier2')cs=cs.filter(c=>c.tier==='tier2');
   else if(filt==='tier3')cs=cs.filter(c=>c.tier==='tier3');
@@ -908,6 +1052,7 @@ function renderModal(id){
   const c=gc().find(x=>x.id===id);if(!c)return;
   const n=nxt(c),acts=ga().filter(a=>a.cid===id);
   const isSeq=c.seq_id&&c.seq_active;
+  const lb=isLB(c);
   const nt=isSeq?seqNextTouch(c):null;
   document.getElementById('mod-name').textContent=editMode?'Edit contact':c.fn+' '+(c.ln||'');
   if(editMode){
@@ -927,6 +1072,20 @@ function renderModal(id){
         <div class="ff"><label class="flbl">LinkedIn URL</label><input class="fi" id="e-li" value="${(c.li||'').replace(/"/g,'&quot;')}"></div>
       </div>
       <div class="frow">
+        <div class="ff"><label class="flbl">LinkedIn account</label>
+          <select class="fsel" id="e-liact">
+            <option value="personal"${(c.li_account||'personal')==='personal'?' selected':''}>Erika Harrison (personal)</option>
+            <option value="company"${c.li_account==='company'?' selected':''}>Eridion Glass LLC (company)</option>
+          </select>
+        </div>
+        <div class="ff"><label class="flbl">LinkedIn status</label>
+          <select class="fsel" id="e-listat">
+            <option value="cold"${(c.li_status||'cold')==='cold'?' selected':''}>Not connected — cold copy</option>
+            <option value="warm"${c.li_status==='warm'?' selected':''}>Connected — warm copy</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
         <div class="ff"><label class="flbl">Tier</label>
           <select class="fsel" id="e-tier">
             <option value="tier3"${c.tier==='tier3'?' selected':''}>Tier 3 — cold</option>
@@ -941,6 +1100,7 @@ function renderModal(id){
           <select class="fsel" id="e-seq">
             <option value="">None</option>
             <option value="fifa_14day"${c.seq_id==='fifa_14day'?' selected':''}>FIFA 14-day sprint</option>
+            <option value="luxury_builder_warm"${c.seq_id==='luxury_builder_warm'?' selected':''}>Luxury Builder Warm</option>
           </select>
         </div>
         <div class="ff"><label class="flbl">Seq start date</label><input class="fi" id="e-seqstart" type="date" value="${c.seq_start||''}"></div>
@@ -948,6 +1108,7 @@ function renderModal(id){
       <div class="ff" style="margin-bottom:4px"><label class="flbl">Notes</label><textarea class="rbox" id="e-notes" rows="4">${c.notes||''}</textarea></div>`;
     document.getElementById('mod-acts').innerHTML=`<button class="btn btn-p btn-sm" onclick="saveEdit()">Save changes</button><button class="btn btn-sm" onclick="editMode=false;renderModal('${id}')">Cancel</button>`;
   }else{
+    const seqBadge=isSeq?`<span class="badge ${lb?'blb':'bseq'}">${SEQUENCES[c.seq_id].name} — Touch ${nt?nt.num:(c.seq_log||[]).length} of ${SEQUENCES[c.seq_id].touches.length}</span>`:n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Sequence complete</span>';
     document.getElementById('mod-body').innerHTML=`
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div class="metric"><div class="mlbl">Company</div><div style="font-size:13px;font-weight:600;margin-top:2px">${c.co||'—'}</div></div>
@@ -955,18 +1116,18 @@ function renderModal(id){
         <div class="metric"><div class="mlbl">Email</div><div style="font-size:11px;margin-top:2px;color:var(--in);word-break:break-all">${c.email||'—'}</div></div>
         <div class="metric"><div class="mlbl">LinkedIn</div><div style="font-size:11px;margin-top:2px;word-break:break-all">${c.li?`<a href="https://${c.li.replace(/^https?:\/\//,'')}" style="color:var(--in)" target="_blank">${c.li}</a>`:'—'}</div></div>
         <div class="metric"><div class="mlbl">Last touch</div><div style="font-size:11px;margin-top:2px">${fd(c.ltd)}</div></div>
-        <div class="metric"><div class="mlbl">Source</div><div style="font-size:11px;margin-top:2px">${c.src||'—'}</div></div>
+        <div class="metric"><div class="mlbl">LinkedIn</div><div style="font-size:11px;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${c.li_account?bliact(c.li_account):''} <span class="badge ${c.li_status==='warm'?'bwarm':'bcold'}">${c.li_status==='warm'?'Connected':'Not connected'}</span></div></div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
-        ${bt(c.tier||'tier3')}
-        ${isSeq?`<span class="badge bseq">FIFA sequence — Touch ${nt?nt.num:(c.seq_log||[]).length} of ${SEQUENCES[c.seq_id].touches.length}</span>`:n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Sequence complete</span>'}
+        ${bt(c.tier||'tier3')} ${seqBadge}
         ${c.dnc?' <span class="badge bdnc">DNC</span>':''}
         ${c.responded?' <span class="badge bresp">Responded</span>':''}
       </div>
-      ${isSeq&&nt?`<div style="background:#F8F7FF;border:.5px solid #AFA9EC;border-radius:8px;padding:12px;margin-bottom:14px">
-        <div style="font-size:10px;color:#534AB7;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Next touch — FIFA sequence</div>
+      ${isSeq&&nt?`<div style="background:${lb?'#f0faf4':'#F8F7FF'};border:.5px solid ${lb?'var(--lb-border)':'#AFA9EC'};border-radius:8px;padding:12px;margin-bottom:14px">
+        <div style="font-size:10px;color:${lb?'var(--lb)':'#534AB7'};font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Next touch — ${SEQUENCES[c.seq_id].name}</div>
         <div style="font-size:12px;font-weight:600;margin-bottom:4px">Touch ${nt.num}: ${nt.label}</div>
         <div style="font-size:11px;color:var(--mu)">${bch(nt.channel)} · Due ${fd(seqTouchDueDate(c,nt))}</div>
+        ${lb&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')?`<div style="font-size:10px;color:var(--lb);margin-top:6px;font-weight:500">💡 Warm up: like or comment on 2–3 recent posts before sending</div>`:''}
       </div>`:''}
       ${c.notes?`<div style="margin-bottom:14px"><div class="mlbl" style="margin-bottom:4px">Notes</div><div style="font-size:12px;line-height:1.6;background:var(--bg);padding:10px;border-radius:7px;white-space:pre-wrap">${c.notes}</div></div>`:''}
       <div class="mlbl" style="margin-bottom:8px">Activity timeline</div>
@@ -974,7 +1135,7 @@ function renderModal(id){
     document.getElementById('mod-acts').innerHTML=`
       <button class="btn btn-sm btn-danger" onclick="doDNC()">Do not contact</button>
       <button class="btn btn-sm btn-warn" onclick="doResp()">Mark responded</button>
-      ${isSeq&&nt?`<button class="btn btn-sm btn-seq" onclick="closeModal();openLogModal('${id}')">Log touch ✓</button>`:''}
+      ${isSeq&&nt?`<button class="btn btn-sm ${lb?'btn-lb':'btn-seq'}" onclick="closeModal();openLogModal('${id}')">Log touch ✓</button>`:''}
       <button class="btn btn-sm btn-p" onclick="editMode=true;renderModal('${id}')">Edit contact</button>
       <button class="btn btn-sm" onclick="closeModal()">Close</button>`;
   }
@@ -987,10 +1148,11 @@ function saveEdit(){
   if(!fn){alert('First name is required.');return;}
   const newSeq=document.getElementById('e-seq').value;
   const newSeqStart=document.getElementById('e-seqstart').value;
-  if(newSeq&&newSeq!==c.seq_id){
-    c.seq_id=newSeq;c.seq_start=newSeqStart||new Date().toISOString().slice(0,10);c.seq_active=true;c.seq_current_touch=1;c.seq_log=[];
-  }else if(!newSeq&&c.seq_id){c.seq_id=null;c.seq_active=false;}
-  c.fn=fn;c.ln=document.getElementById('e-ln').value.trim();c.co=document.getElementById('e-co').value.trim();c.role=document.getElementById('e-role').value;c.email=document.getElementById('e-email').value.trim();c.li=document.getElementById('e-li').value.trim();c.tier=document.getElementById('e-tier').value;c.src=document.getElementById('e-src').value.trim();c.notes=document.getElementById('e-notes').value.trim();
+  if(newSeq&&newSeq!==c.seq_id){c.seq_id=newSeq;c.seq_start=newSeqStart||new Date().toISOString().slice(0,10);c.seq_active=true;c.seq_current_touch=1;c.seq_log=[];}
+  else if(!newSeq&&c.seq_id){c.seq_id=null;c.seq_active=false;}
+  c.fn=fn;c.ln=document.getElementById('e-ln').value.trim();c.co=document.getElementById('e-co').value.trim();c.role=document.getElementById('e-role').value;c.email=document.getElementById('e-email').value.trim();c.li=document.getElementById('e-li').value.trim();
+  c.li_account=document.getElementById('e-liact').value;c.li_status=document.getElementById('e-listat').value;
+  c.tier=document.getElementById('e-tier').value;c.src=document.getElementById('e-src').value.trim();c.notes=document.getElementById('e-notes').value.trim();
   sc(cs);addA(curC,'Contact updated','');editMode=false;renderModal(curC);rcontacts();updateSeqBadge();toast('Contact saved!');
 }
 
@@ -1026,7 +1188,7 @@ function saveContact(){
   const cs=gc();
   const seqId=document.getElementById('a10').value;
   const seqStart=document.getElementById('a11').value||new Date().toISOString().slice(0,10);
-  const c={id:'c'+Date.now()+Math.random().toString(36).slice(2,6),fn,ln:document.getElementById('a2').value.trim(),co:document.getElementById('a3').value.trim(),role:document.getElementById('a4').value,email:document.getElementById('a5').value.trim(),li:document.getElementById('a6').value.trim(),tier:document.getElementById('a7').value,src:document.getElementById('a8').value,notes:document.getElementById('a9').value.trim(),ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString()};
+  const c={id:'c'+Date.now()+Math.random().toString(36).slice(2,6),fn,ln:document.getElementById('a2').value.trim(),co:document.getElementById('a3').value.trim(),role:document.getElementById('a4').value,email:document.getElementById('a5').value.trim(),li:document.getElementById('a6').value.trim(),li_account:document.getElementById('a-liact').value,li_status:document.getElementById('a-listat').value,tier:document.getElementById('a7').value,src:document.getElementById('a8').value,notes:document.getElementById('a9').value.trim(),ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString()};
   if(seqId){c.seq_id=seqId;c.seq_start=seqStart;c.seq_active=true;c.seq_current_touch=1;c.seq_log=[];}
   cs.push(c);sc(cs);addA(c.id,'Contact added',c.co);
   ['a1','a2','a3','a5','a6','a9'].forEach(id=>document.getElementById(id).value='');
@@ -1037,12 +1199,15 @@ function saveContact(){
 
 function switchLibTab(tab){
   currentLibTab=tab;
-  ['standard','fifa','custom','add'].forEach(t=>{
-    document.getElementById('lib-'+t).style.display=t===tab?(t==='standard'?'grid':'block'):'none';
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  ['standard','fifa','lb','custom','add'].forEach(t=>{
+    const el=document.getElementById('lib-'+t);
+    if(el)el.style.display=t===tab?(t==='standard'?'grid':'block'):'none';
+    const tab2=document.getElementById('tab-'+t);
+    if(tab2)tab2.classList.toggle('active',t===tab);
   });
   if(tab==='standard')rlib();
   if(tab==='fifa')rFifaLib();
+  if(tab==='lb')rLBLib();
   if(tab==='custom')rCustomBlocks();
   if(tab==='add')clearAddForm();
 }
@@ -1052,26 +1217,45 @@ function rFifaLib(){
   document.getElementById('lib-fifa-content').innerHTML=`
     <div style="background:#F8F7FF;border:.5px solid #AFA9EC;border-radius:10px;padding:14px;margin-bottom:16px">
       <div style="font-size:12px;font-weight:600;color:#3C3489;margin-bottom:4px">FIFA 14-day sprint — 7 touch sequence</div>
-      <div style="font-size:11px;color:#534AB7;line-height:1.5">Company-specific copy is pre-assigned to C3 Presents, Turner Construction, AECOM Hunt, Matthews Southwest, and OVG360. Generic copy shown below applies to all other contacts on this sequence.</div>
+      <div style="font-size:11px;color:#534AB7;line-height:1.5">Company-specific copy pre-assigned to C3 Presents, Turner Construction, AECOM Hunt, Matthews Southwest, OVG360. Generic copy below applies to all other contacts on this sequence.</div>
+    </div>
+    ${seq.touches.map(t=>{const body=t.body.replace(/</g,'&lt;');return`<div class="cblock" style="border-left:3px solid #534AB7"><div class="cblock-hd"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div class="seq-touch-num">${t.num}</div><span style="font-size:12px;font-weight:600">${t.label}</span>${bch(t.channel)}<span style="font-size:10px;color:var(--mu)">Day ${t.day_offset}</span></div></div><div class="cblock-actions"><button class="btn btn-sm" onclick="clip(\`${t.body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button></div></div>${t.subject?`<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Subject: <strong style="color:var(--tx)">${t.subject}</strong></div>`:''}<div class="ctext">${body}</div></div>`;}).join('')}`;
+}
+
+function rLBLib(){
+  const seq=SEQUENCES.luxury_builder_warm;
+  document.getElementById('lib-lb-content').innerHTML=`
+    <div style="background:#f0faf4;border:.5px solid var(--lb-border);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--lb);margin-bottom:4px">Luxury Builder Warm — 6 touch sequence</div>
+      <div style="font-size:11px;color:var(--lb);line-height:1.6">LinkedIn-first strategy. Touches 1, 2, 5 have cold/warm variants shown below. Touch 3 email pulls from the Standard copy library matched to the contact's role. Warm up each contact with likes/comments before LinkedIn touches.</div>
     </div>
     ${seq.touches.map(t=>{
-      const body=t.body.replace(/</g,'&lt;');
-      return`<div class="cblock" style="border-left:3px solid #534AB7">
+      const hasColdWarm=t.body_cold&&t.body_warm;
+      const body=(t.body||'').replace(/</g,'&lt;');
+      return`<div class="cblock" style="border-left:3px solid var(--lb-border)">
         <div class="cblock-hd">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-              <div class="seq-touch-num">${t.num}</div>
-              <span style="font-size:12px;font-weight:600">${t.label}</span>
-              ${bch(t.channel)}
-              <span style="font-size:10px;color:var(--mu)">Day ${t.day_offset}</span>
-            </div>
-          </div>
-          <div class="cblock-actions">
-            <button class="btn btn-sm" onclick="clip(\`${t.body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button>
-          </div>
+          <div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div class="seq-touch-num lb">${t.num}</div>
+            <span style="font-size:12px;font-weight:600">${t.label}</span>
+            ${bch(t.channel)}
+            <span style="font-size:10px;color:var(--mu)">Day ${t.day_offset}</span>
+          </div></div>
         </div>
-        ${t.subject?`<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Subject: <strong style="color:var(--tx)">${t.subject}</strong></div>`:''}
-        <div class="ctext">${body}</div>
+        ${t.num===3?`<div style="font-size:10px;color:var(--lb);font-weight:500;margin-bottom:8px;padding:6px 10px;background:var(--lb-bg);border-radius:6px">Role-matched — pulls from Standard library using contact's role track (CEO/Owner, Purchasing, Designer, etc.)</div>`:''}
+        ${hasColdWarm?`
+          <div style="margin-bottom:8px">
+            <div style="font-size:10px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Cold copy <span style="font-weight:400;color:var(--ht)">(not yet connected)</span></div>
+            <div class="ctext" style="margin-bottom:10px;padding:8px;background:var(--bg);border-radius:6px">${(t.body_cold||'').replace(/</g,'&lt;')}</div>
+            <button class="btn btn-sm" onclick="clip(\`${(t.body_cold||'').replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy cold</button>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Warm copy <span style="font-weight:400;color:var(--ht)">(already connected)</span></div>
+            <div class="ctext" style="margin-bottom:10px;padding:8px;background:var(--bg);border-radius:6px">${(t.body_warm||'').replace(/</g,'&lt;')}</div>
+            <button class="btn btn-sm" onclick="clip(\`${(t.body_warm||'').replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy warm</button>
+          </div>
+        `:`${t.subject?`<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Subject: <strong style="color:var(--tx)">${t.subject}</strong></div>`:''}
+          <div class="ctext">${body}</div>
+          <button class="btn btn-sm" style="margin-top:8px" onclick="clip(\`${(t.body||'').replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button>`}
       </div>`;
     }).join('')}`;
 }
@@ -1222,7 +1406,7 @@ function showMap(rows,fname){
   const crmFields=['Contact Name','First Name','Last Name','Company','Role','Email','LinkedIn','Phone','Address','Notes','Last Outreach Date'];
   const autoMap={};headers.forEach((h,i)=>{const m=bestMatch(h);if(m&&autoMap[m]===undefined)autoMap[m]=i;});
   const preview=rows.slice(1,4).filter(r=>r.some(c=>String(c).trim()));
-  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns pre-selected. Set any field to "— skip —" to ignore.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}<div style="margin-bottom:8px;margin-top:14px"><label class="flbl">Assign sequence to imported contacts</label><select class="fsel" id="imp-seq" style="margin-top:4px"><option value="">None</option><option value="fifa_14day">FIFA 14-day sprint</option></select></div>${preview.length?`<div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import →</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns pre-selected. Set any field to "— skip —" to ignore.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}<div style="margin-bottom:8px;margin-top:14px"><label class="flbl">Assign sequence to imported contacts</label><select class="fsel" id="imp-seq" style="margin-top:4px"><option value="">None</option><option value="fifa_14day">FIFA 14-day sprint</option><option value="luxury_builder_warm">Luxury Builder Warm</option></select></div>${preview.length?`<div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import →</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
 }
 
 function getFieldIndex(field){const el=document.getElementById('mp-'+field.replace(/ /g,'_').replace(/[()\/]/g,''));return el&&el.value!==''?parseInt(el.value):undefined;}
@@ -1238,7 +1422,7 @@ function parseRows(){
     const roleRaw=get(ri).toLowerCase();let role='CEO/Owner';for(const[k,v]of Object.entries(roleMap)){if(roleRaw.includes(k)){role=v;break;}}
     const noteParts=[];if(get(pi))noteParts.push('Phone: '+get(pi));if(get(ai))noteParts.push('Address: '+get(ai));if(get(ni))noteParts.push(get(ni));
     let ltd=null;const dr=get(di);if(dr){try{const d=new Date(dr);if(!isNaN(d.getTime()))ltd=d.toISOString();}catch(e){}}
-    return{fn,ln,co:get(coi),role,email:get(ei),li:get(lii),notes:noteParts.join('\n'),ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[]};
+    return{fn,ln,co:get(coi),role,email:get(ei),li:get(lii),notes:noteParts.join('\n'),ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[],li_account:'personal',li_status:'cold'};
   }).filter(r=>r.fn||r.ln||r.co);
 }
 
@@ -1261,21 +1445,22 @@ function doImport(clean,overwrites,total){
   const seqStart=new Date().toISOString().slice(0,10);
   clean.forEach(p=>{
     const id='c'+Date.now()+Math.random().toString(36).slice(2,6);
-    const contact={id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()};
+    const contact={id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString(),li_account:p.li_account||'personal',li_status:p.li_status||'cold'};
     if(seqId){contact.seq_id=seqId;contact.seq_start=seqStart;contact.seq_active=true;contact.seq_current_touch=1;contact.seq_log=[];}
     cs.push(contact);batchIds.push(id);added++;
   });
-  overwrites.forEach(p=>{const idx=cs.findIndex(e=>(p.email&&e.email&&e.email.toLowerCase()===p.email.toLowerCase())||(e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()));if(idx>=0){Object.assign(cs[idx],{co:p.co||cs[idx].co,role:p.role||cs[idx].role,email:p.email||cs[idx].email,notes:p.notes||cs[idx].notes});updated++;}else{const id='c'+Date.now()+Math.random().toString(36).slice(2,6);cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString()});batchIds.push(id);added++;}});
+  overwrites.forEach(p=>{const idx=cs.findIndex(e=>(p.email&&e.email&&e.email.toLowerCase()===p.email.toLowerCase())||(e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()));if(idx>=0){Object.assign(cs[idx],{co:p.co||cs[idx].co,role:p.role||cs[idx].role,email:p.email||cs[idx].email,notes:p.notes||cs[idx].notes});updated++;}else{const id='c'+Date.now()+Math.random().toString(36).slice(2,6);cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString(),li_account:'personal',li_status:'cold'});batchIds.push(id);added++;}});
   sc(cs);setBatch({ids:batchIds,date:new Date().toISOString(),count:added});
-  document.getElementById('imp-preview').innerHTML=`<div class="panel" style="text-align:center;padding:24px"><div style="font-size:20px;font-weight:600;color:var(--ac);margin-bottom:6px">${added} contacts imported${updated?', '+updated+' updated':''}!</div><div style="font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.6">${seqId?'Assigned to '+SEQUENCES[seqId].name+' sequence.':''} If anything looks wrong, use "Undo last import" below.</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-p" onclick="go('contacts')">View contacts →</button><button class="btn" onclick="go('sequences')">View sequences →</button></div></div>`;
+  const seqName=seqId&&SEQUENCES[seqId]?SEQUENCES[seqId].name:'';
+  document.getElementById('imp-preview').innerHTML=`<div class="panel" style="text-align:center;padding:24px"><div style="font-size:20px;font-weight:600;color:var(--ac);margin-bottom:6px">${added} contacts imported${updated?', '+updated+' updated':''}!</div><div style="font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.6">${seqName?'Assigned to '+seqName+' sequence.':''} If anything looks wrong, use "Undo last import" below.</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-p" onclick="go('contacts')">View contacts →</button><button class="btn" onclick="go('sequences')">View sequences →</button></div></div>`;
   document.getElementById('fi2').value='';document.getElementById('qbadge').textContent=gc().filter(c=>c.seq_id&&c.seq_active&&seqIsDue(c)||(!c.seq_id&&due(c))).length;
   window._dupes=null;window._dupeActions=null;updateLastImportInfo();updateSeqBadge();toast(added+' imported'+(updated?', '+updated+' updated':'')+'!');
 }
 
 function exportCSV(){
   const cs=gc();if(!cs.length){alert('No contacts to export yet.');return;}
-  const hd=['First Name','Last Name','Company','Role','Email','LinkedIn','Tier','Source','Touches Sent','Last Touch Date','Sequence','Seq Touch','Responded','Do Not Contact','Notes'];
-  const rows=cs.map(c=>{const seqDone=(c.seq_log||[]).length;return[c.fn,c.ln||'',c.co||'',c.role||'',c.email||'',c.li||'',c.tier,c.src||'',(c.ts||[]).join(';'),c.ltd?fd(c.ltd):'',c.seq_id||'',seqDone,c.responded?'Yes':'',c.dnc?'Yes':'',c.notes||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')});
+  const hd=['First Name','Last Name','Company','Role','Email','LinkedIn','LinkedIn Account','LinkedIn Status','Tier','Source','Touches Sent','Last Touch Date','Sequence','Seq Touch','Responded','Do Not Contact','Notes'];
+  const rows=cs.map(c=>{const seqDone=(c.seq_log||[]).length;return[c.fn,c.ln||'',c.co||'',c.role||'',c.email||'',c.li||'',c.li_account||'personal',c.li_status||'cold',c.tier,c.src||'',(c.ts||[]).join(';'),c.ltd?fd(c.ltd):'',c.seq_id||'',seqDone,c.responded?'Yes':'',c.dnc?'Yes':'',c.notes||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')});
   const csv=[hd.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='eridion_contacts_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('CSV exported!');
 }
