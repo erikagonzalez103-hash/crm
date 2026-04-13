@@ -187,6 +187,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bfu{background:#FDF3E7;color:#7A3E00;border:.5px solid #EF9F27}
 .qcard.fu-card{border-left:3px solid #EF9F27}
 .qcard.li-gated-card{border-left:3px solid #185FA5}
+.btn-personalize{background:linear-gradient(135deg,#f0f4ff,#e8effe);color:#3451b2;border-color:#7c93e8;font-size:10px}
+.btn-personalize:hover{background:linear-gradient(135deg,#e0e8ff,#d4e0fd)}
+.pmod-dropzone{border:1.5px dashed #7c93e8;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative;background:#f8f9ff}
+.pmod-dropzone:hover{border-color:#3451b2}
+.pmod-dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pmod-preview{width:100%;max-height:200px;object-fit:cover;border-radius:8px;display:block;margin-top:10px;border:.5px solid var(--bd)}
 @media(max-width:768px){.app{grid-template-columns:1fr}.nav{display:none}.metrics{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -633,6 +639,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- PERSONALIZE MODAL -->
+<div class="modal-ov" id="pmodal">
+  <div class="modal" style="width:640px;max-height:720px">
+    <div class="modal-title" id="pmod-title">Personalize outreach</div>
+    <div id="pmod-body"></div>
+    <div class="modal-acts" id="pmod-acts"></div>
+  </div>
+</div>
+
 <script>
 // ── SEQUENCE DEFINITIONS ──────────────────────────────────────────────────────
 const SEQUENCES={
@@ -830,6 +845,7 @@ function doLogTouch(cid,touchNum){const note=document.getElementById('log-note')
 function skipTouch(cid,touchNum){const cs=gc(),c=cs.find(x=>x.id===cid);if(c){c.snooze_until=tomorrow();sc(cs);}addA(cid,'Touch '+touchNum+' skipped','');closeLogModal();toast('Touch skipped — back tomorrow');rdash();const act=document.querySelector('.screen.active');if(act&&act.id==='s-queue')rqueue();}
 function closeLogModal(){document.getElementById('logmodal').classList.remove('open');}
 document.getElementById('logmodal').addEventListener('click',e=>{if(e.target.id==='logmodal')closeLogModal()});
+document.getElementById('pmodal').addEventListener('click',e=>{if(e.target.id==='pmodal')closePModal()});
 function mailtoSeq(cid,touchNum){const c=gc().find(x=>x.id===cid);if(!c)return;const copy=getSeqCopyForContact(c,touchNum,window._logVariant);if(!copy)return;const body=(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn);window.open(`mailto:${c.email||''}?subject=${encodeURIComponent(copy.subject||'')}&body=${encodeURIComponent(body)}`);}
 function updateSeqBadge(){const active=gc().filter(c=>c.seq_id&&c.seq_active).length;document.getElementById('seqbadge').textContent=active;}
 function bulkAssignSeq(seqId){if(!selectedIds.size)return;const count=selectedIds.size;const today=new Date().toISOString().slice(0,10);const seqName=SEQUENCES[seqId]?SEQUENCES[seqId].name:seqId;if(!confirm(`Assign "${seqName}" to ${count} selected contact(s), starting today?`))return;selectedIds.forEach(id=>assignSeq(id,seqId,today));selectedIds.clear();rcontacts();rdash();toast(count+' contacts added to '+seqName);}
@@ -892,6 +908,90 @@ function clearFollowUp(cid){
   if(act&&act.id==='s-contacts')rcontacts();
 }
 
+// ── PERSONALIZE ENGINE ───────────────────────────────────────────────────────
+let _pCid=null,_pImg64=null,_pImgType='image/jpeg';
+
+function openPersonalizeModal(cid){
+  const c=gc().find(x=>x.id===cid);if(!c)return;
+  _pCid=cid;_pImg64=null;
+  const nt=c.seq_id?seqNextTouch(c):null;
+  const touchLabel=nt?nt.label:'Touch 1 — intro';
+  const channel=nt?nt.channel:'linkedin';
+  const chanLabel=CH_LABELS[channel]||channel;
+  const copy=nt?getSeqCopyForContact(c,nt.num):null;
+  const n=nxt(c);
+  const origBody=copy?(copy.body_cold||copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn):(()=>{const b=n?(COPY[c.role||'CEO/Owner']||COPY['CEO/Owner'])[n]:null;return b?(b.b||b).replace(/\[First Name\]/g,c.fn):'';})();
+  const origSubj=copy?copy.subject||'':'';
+  document.getElementById('pmod-title').textContent='Personalize for '+c.fn+' '+(c.ln||'');
+  document.getElementById('pmod-body').innerHTML='<div style="background:#f8f9ff;border:.5px solid #7c93e8;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#3451b2;line-height:1.6">Drop a screenshot of their <strong>LinkedIn profile</strong>, website bio, or any page with info about them. The AI will read it and rewrite the copy to feel like you did your homework.</div><div style="font-size:10px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Next touch: '+touchLabel+' &middot; '+chanLabel+'</div><div class="cprev" style="max-height:80px;margin-bottom:14px">'+origBody.replace(/</g,'&lt;').slice(0,300)+(origBody.length>300?'&hellip;':'')+'</div><div class="pmod-dropzone" id="pmod-dz"><input type="file" id="pmod-file" accept="image/*" onchange="pHandleFile(this.files[0])"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c93e8" stroke-width="1.5" style="margin:0 auto"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/></svg><div style="font-size:12px;color:var(--mu);margin-top:6px;font-weight:500">Drop a LinkedIn screenshot or click to browse</div><div style="font-size:10px;color:var(--ht);margin-top:3px">Profile page &middot; About section &middot; Any screenshot with their info</div></div><div id="pmod-preview-wrap" style="display:none;margin-top:10px;position:relative"><img id="pmod-preview" class="pmod-preview" src="" alt=""><button onclick="pClearImage()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer">X Clear</button></div><div id="pmod-status" style="display:none;align-items:center;gap:10px;padding:12px;font-size:12px;color:var(--mu)"><div class="scan-spinner"></div><span>Reading profile and personalizing copy...</span></div><div id="pmod-out" style="margin-top:14px"></div>';
+  document.getElementById('pmod-acts').innerHTML='<button class="btn btn-sm" onclick="closePModal()">Cancel</button><button class="btn btn-p btn-sm" id="pmod-run-btn" onclick="runPersonalize()" disabled>Personalize copy</button>';
+  document.getElementById('pmodal').classList.add('open');
+}
+
+function pHandleFile(file){
+  if(!file||!file.type.startsWith('image/'))return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const dataUrl=e.target.result;
+    _pImg64=dataUrl.split(',')[1];_pImgType=file.type;
+    document.getElementById('pmod-preview').src=dataUrl;
+    document.getElementById('pmod-preview-wrap').style.display='block';
+    document.getElementById('pmod-dz').style.display='none';
+    const btn=document.getElementById('pmod-run-btn');if(btn)btn.disabled=false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function pClearImage(){
+  _pImg64=null;
+  document.getElementById('pmod-preview-wrap').style.display='none';
+  document.getElementById('pmod-dz').style.display='block';
+  document.getElementById('pmod-file').value='';
+  const btn=document.getElementById('pmod-run-btn');if(btn)btn.disabled=true;
+  document.getElementById('pmod-out').innerHTML='';
+}
+
+function closePModal(){document.getElementById('pmodal').classList.remove('open');_pCid=null;_pImg64=null;}
+
+async function runPersonalize(){
+  if(!_pImg64||!_pCid)return;
+  const c=gc().find(x=>x.id===_pCid);if(!c)return;
+  const apiKey=getScanKey();
+  if(!apiKey){toast('API key required — set it in Scan & import first');return;}
+  const nt=c.seq_id?seqNextTouch(c):null;
+  const touchLabel=nt?nt.label:'Touch 1 — intro';
+  const channel=nt?nt.channel:'linkedin';
+  const copy=nt?getSeqCopyForContact(c,nt.num):null;
+  const n=nxt(c);
+  const origBody=copy?(copy.body_cold||copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn):(()=>{const b=n?(COPY[c.role||'CEO/Owner']||COPY['CEO/Owner'])[n]:null;return b?(b.b||b).replace(/\[First Name\]/g,c.fn):'';})();
+  const origSubj=copy?copy.subject||'':'';
+  const statusEl=document.getElementById('pmod-status');
+  statusEl.style.display='flex';
+  document.getElementById('pmod-out').innerHTML='';
+  const btn=document.getElementById('pmod-run-btn');if(btn)btn.disabled=true;
+  const sysPrompt='You are personalizing outreach copy for Erika Harrison, co-founder of Eridion Glass, LLC.\n\nEridion Glass is an independent glass and mirror subcontractor based in Dallas. Dion Harrison (25+ yr master glazier) leads every install. Clients span all tiers: DR Horton, Grand Homes, Hines Homes, Lingenfelter Luxury Homes, Gutman Homes, Martyn Hammer. WBE certified, self-performing.\nContact: 318.458.1786 | erika@eridionglass.com | www.eridionglass.com\n\nWHAT TO LOOK FOR IN THE PROFILE:\n- Current company — if it is already one of our clients, mention it warmly\n- Mutual connections — name-drop them naturally if visible\n- Bio/about language — mirror their values and priorities (efficiency, quality, speed, etc.)\n- Job title nuance — what do they actually care about day-to-day\n- Education, tenure, or any humanizing detail that creates common ground\n- Any signals about project types or company culture\n\nRULES:\n- Lead with something specific from their profile — do not bury the personal detail\n- Keep same general length and format as the original copy\n- LinkedIn or DM: max 3-4 sentences, conversational, no subject line needed\n- Email: slightly longer, professional, include personalized subject line if original had one\n- Never fabricate details not visible in the profile\n- Return ONLY the personalized copy ready to send. No preamble, no explanation, no labels.';
+  const userMsg='Contact: '+c.fn+' '+(c.ln||'')+', '+(c.role||'unknown role')+' at '+(c.co||'unknown company')+'\nTouch: '+touchLabel+' ('+channel+')\n'+(origSubj?'Original subject: '+origSubj+'\n':'')+'Original copy:\n---\n'+origBody+'\n---\n\nHere is their profile screenshot. Read everything visible — name, title, company, about section, mutual connections, education — and rewrite the copy to feel genuinely personalized to this specific person.';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-opus-4-5',max_tokens:800,system:sysPrompt,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:_pImgType,data:_pImg64}},{type:'text',text:userMsg}]}]})
+    });
+    const data=await res.json();
+    if(!res.ok){if(data.error?.type==='authentication_error'){localStorage.removeItem('eg_scan_key');updateScanKeyUI();}throw new Error(data.error?.message||'API error');}
+    const personalized=data.content.map(b=>b.text||'').join('').trim();
+    statusEl.style.display='none';
+    const safe=personalized.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+    document.getElementById('pmod-out').innerHTML='<div style="font-size:10px;color:#3451b2;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Personalized copy</div><div class="cprev" style="max-height:220px;border-color:#7c93e8;background:#f8f9ff">'+personalized.replace(/</g,'&lt;')+'</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p btn-sm" onclick="clip(`'+safe+'`);toast(\'Personalized copy copied!\')">Copy</button><button class="btn btn-sm" onclick="pClearImage()">Try another screenshot</button></div>';
+    addA(_pCid,'Copy personalized from LinkedIn screenshot','','linkedin');
+  }catch(err){
+    statusEl.style.display='none';
+    document.getElementById('pmod-out').innerHTML='<div style="background:#FCEBEB;border:.5px solid var(--dn);border-radius:8px;padding:10px;font-size:12px;color:var(--dn)">Failed: '+err.message+'</div>';
+    if(btn)btn.disabled=false;
+  }
+}
+
+
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function rdash(){
   const cs=gc();const seqDue=cs.filter(c=>c.seq_id&&c.seq_active&&seqIsDue(c));const stdDue=cs.filter(c=>!c.seq_id&&due(c));const fuDue=cs.filter(c=>isFollowUpDue(c));const allDue=[...seqDue,...stdDue,...fuDue];const resp=cs.filter(c=>c.tier==='tier1'||c.responded),touched=cs.filter(c=>c.ts&&c.ts.length||c.seq_log&&c.seq_log.length);
@@ -900,8 +1000,8 @@ function rdash(){
   dq.innerHTML=preview.length?preview.map(c=>isFollowUpDue(c)?rFollowUpCard(c):c.seq_id?rseqCard(c):rcard(c)).join(''):'<div class="empty"><div class="empty-icon">✓</div>All caught up! No outreach due today.</div>';
   const acts=ga().slice(0,6);document.getElementById('d-activity').innerHTML=acts.length?acts.map(a=>{const c=gc().find(x=>x.id===a.cid);const dotCls=a.channel==='linkedin'||a.channel==='linkedin_dm'?'li':a.channel==='phone'?'ph':a.channel==='linkedin_dm'?'ld':'';return`<div class="tl-item"><div class="tl-dot ${dotCls}"></div><div><div class="tl-a">${a.action}${c?' — '+c.fn+' '+c.ln:''}</div><div class="tl-d">${fd(a.date)}${a.note?' · '+a.note:''}</div></div></div>`;}).join(''):'<div class="empty" style="padding:16px"><div class="empty-icon">○</div>No activity yet</div>';
 }
-function rseqCard(c){const nt=seqNextTouch(c);if(!nt)return'';if(isLiGated(c,nt))return rLiGatedCard(c,nt);const lb=isLB(c);const copy=getSeqCopyForContact(c,nt.num);const body=copy?(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn):'No copy available.';const subj=copy?copy.subject:'';const cardCls=lb?'qcard lb-card':'qcard seq-card';const avCls=lb?'av lb':'av seq';const seqLabel=lb?'<span class="badge blb">Builder Warm</span>':'<span class="badge bseq">FIFA sprint</span>';const logBtn=`<button class="btn ${lb?'btn-lb':'btn-p'} btn-sm" onclick="openLogModal('${c.id}')">Log touch ✓</button>`;const warmingTip=lb&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')?`<div style="font-size:10px;color:var(--lb);margin-bottom:8px;font-weight:500">💡 Like 2–3 of their posts before sending</div>`:'';return`<div class="${cardCls}"><div class="qcard-hd"><div class="${avCls}">${ini(c.fn+' '+(c.ln||''))}</div><div style="flex:1"><div class="cn">${c.fn} ${c.ln||''}</div><div class="cm">${c.co||'—'} · ${lb?c.role||'—':'FIFA sequence'}</div></div>${seqLabel} <span class="badge bseq" style="background:transparent;border:.5px solid var(--bd);color:var(--mu)">Touch ${nt.num}</span> ${bch(nt.channel)} <span style="font-size:10px;color:var(--mu);margin-left:2px">due ${fd(seqTouchDueDate(c,nt))}</span> ${bt(c.tier||'tier3')}</div><div class="qcard-bd">${warmingTip}${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:5px">Subject: <strong style="color:var(--tx)">${subj}</strong></div>`:''}<div class="cprev">${body.replace(/</g,'&lt;')}</div><div class="qacts">${logBtn}<button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${c.id}',${nt.num})">Open in email ↗</button>`:''}<button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button></div></div></div>`;}
-function rcard(c){const n=nxt(c);if(!n)return'';const block=(COPY[c.role||'CEO/Owner']||COPY['CEO/Owner'])[n];const body=block?(block.b||block).replace(/\[First Name\]/g,c.fn):'No copy available for this role.';return`<div class="qcard"><div class="qcard-hd"><div class="av">${ini(c.fn+' '+(c.ln||''))}</div><div style="flex:1"><div class="cn">${c.fn} ${c.ln||''}</div><div class="cm">${c.co||'—'} · ${c.role||'—'}</div></div>${btouch(n)} <span style="font-size:10px;color:var(--mu)">${n==='t1'?'due now':'due '+new Date((c.ltd?new Date(c.ltd).getTime():Date.now())+TD[n]*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span> ${bt(c.tier||'tier3')}</div><div class="qcard-bd">${block&&block.s?`<div style="font-size:10px;color:var(--mu);margin-bottom:5px">Subject: <strong style="color:var(--tx)">${block.s}</strong></div>`:''}<div class="cprev">${body}</div><div class="qacts"><button class="btn btn-p btn-sm" onclick="sent('${c.id}','${n}')">Mark as sent ✓</button><button class="btn btn-sm" onclick="skip('${c.id}')">Skip today</button><button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button>${c.email?`<button class="btn btn-sm" onclick="mailto_('${c.id}','${n}')">Open in email ↗</button>`:''}</div></div></div>`;}
+function rseqCard(c){const nt=seqNextTouch(c);if(!nt)return'';if(isLiGated(c,nt))return rLiGatedCard(c,nt);const lb=isLB(c);const copy=getSeqCopyForContact(c,nt.num);const body=copy?(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn):'No copy available.';const subj=copy?copy.subject:'';const cardCls=lb?'qcard lb-card':'qcard seq-card';const avCls=lb?'av lb':'av seq';const seqLabel=lb?'<span class="badge blb">Builder Warm</span>':'<span class="badge bseq">FIFA sprint</span>';const logBtn=`<button class="btn ${lb?'btn-lb':'btn-p'} btn-sm" onclick="openLogModal('${c.id}')">Log touch ✓</button>`;const warmingTip=lb&&(nt.channel==='linkedin'||nt.channel==='linkedin_dm')?`<div style="font-size:10px;color:var(--lb);margin-bottom:8px;font-weight:500">💡 Like 2–3 of their posts before sending</div>`:'';return`<div class="${cardCls}"><div class="qcard-hd"><div class="${avCls}">${ini(c.fn+' '+(c.ln||''))}</div><div style="flex:1"><div class="cn">${c.fn} ${c.ln||''}</div><div class="cm">${c.co||'—'} · ${lb?c.role||'—':'FIFA sequence'}</div></div>${seqLabel} <span class="badge bseq" style="background:transparent;border:.5px solid var(--bd);color:var(--mu)">Touch ${nt.num}</span> ${bch(nt.channel)} <span style="font-size:10px;color:var(--mu);margin-left:2px">due ${fd(seqTouchDueDate(c,nt))}</span> ${bt(c.tier||'tier3')}</div><div class="qcard-bd">${warmingTip}${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:5px">Subject: <strong style="color:var(--tx)">${subj}</strong></div>`:''}<div class="cprev">${body.replace(/</g,'&lt;')}</div><div class="qacts">${logBtn}<button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${c.id}',${nt.num})">Open in email ↗</button>`:''}<button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button><button class="btn btn-sm btn-personalize" onclick="openPersonalizeModal('${c.id}')">Personalize</button></div></div></div>`;}
+function rcard(c){const n=nxt(c);if(!n)return'';const block=(COPY[c.role||'CEO/Owner']||COPY['CEO/Owner'])[n];const body=block?(block.b||block).replace(/\[First Name\]/g,c.fn):'No copy available for this role.';return`<div class="qcard"><div class="qcard-hd"><div class="av">${ini(c.fn+' '+(c.ln||''))}</div><div style="flex:1"><div class="cn">${c.fn} ${c.ln||''}</div><div class="cm">${c.co||'—'} · ${c.role||'—'}</div></div>${btouch(n)} <span style="font-size:10px;color:var(--mu)">${n==='t1'?'due now':'due '+new Date((c.ltd?new Date(c.ltd).getTime():Date.now())+TD[n]*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span> ${bt(c.tier||'tier3')}</div><div class="qcard-bd">${block&&block.s?`<div style="font-size:10px;color:var(--mu);margin-bottom:5px">Subject: <strong style="color:var(--tx)">${block.s}</strong></div>`:''}<div class="cprev">${body}</div><div class="qacts"><button class="btn btn-p btn-sm" onclick="sent('${c.id}','${n}')">Mark as sent ✓</button><button class="btn btn-sm" onclick="skip('${c.id}')">Skip today</button><button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button>${c.email?`<button class="btn btn-sm" onclick="mailto_('${c.id}','${n}')">Open in email ↗</button>`:''}<button class="btn btn-sm btn-personalize" onclick="openPersonalizeModal('${c.id}')">Personalize</button></div></div></div>`;}
 function rqueue(){const cs=gc();const seqDue=cs.filter(c=>c.seq_id&&c.seq_active&&seqIsDue(c));const stdDue=cs.filter(c=>!c.seq_id&&due(c));const fuDue=cs.filter(c=>isFollowUpDue(c));const el=document.getElementById('q-list');const all=[...fuDue,...seqDue,...stdDue];el.innerHTML=all.length?all.map(c=>isFollowUpDue(c)?rFollowUpCard(c):c.seq_id?rseqCard(c):rcard(c)).join(''):'<div class="empty"><div class="empty-icon">✓</div><div style="font-weight:600;margin-bottom:6px">All caught up!</div><div>No contacts due. <span style="color:var(--ac);cursor:pointer" onclick="go(\'add\')">Add new contacts →</span></div></div>';}
 
 // ── CONTACTS TABLE ────────────────────────────────────────────────────────────
