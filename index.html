@@ -493,6 +493,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <!-- ── SCAN & IMPORT ──────────────────────────────────────────────── -->
     <div class="screen" id="s-scan">
+
+      <!-- API KEY SETUP (shown when key not yet saved) -->
+      <div id="scan-api-setup" style="display:none;background:#FAEEDA;border:.5px solid #EF9F27;border-radius:10px;padding:16px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;color:#854F0B;margin-bottom:6px">⚙️ One-time setup — Anthropic API key required</div>
+        <div style="font-size:11px;color:#633806;margin-bottom:12px;line-height:1.6">The scan feature calls the Anthropic API directly from your browser. You need an API key — get one free at <a href="https://console.anthropic.com" target="_blank" style="color:#854F0B">console.anthropic.com</a>. It's saved locally in your browser only and never sent anywhere else.</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="fi" id="scan-api-key-input" type="password" placeholder="sk-ant-..." style="flex:1;background:#fff;border-color:#EF9F27">
+          <button class="btn btn-warn btn-sm" onclick="saveScanApiKey()" style="flex-shrink:0;white-space:nowrap">Save key</button>
+        </div>
+      </div>
+
+      <!-- API KEY SAVED INDICATOR -->
+      <div id="scan-api-saved" style="display:none;background:#E1F5EE;border:.5px solid var(--lb-border);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--ad);font-weight:500">✓ API key configured — scan is ready</div>
+        <button class="btn btn-sm" onclick="clearScanApiKey()" style="font-size:10px;color:var(--mu)">Change key</button>
+      </div>
+
       <div class="scan-hero">
         <div class="scan-hero-icon">📷</div>
         <div class="scan-hero-info">
@@ -939,9 +956,31 @@ function inferRole(title){
   return'CEO/Owner';
 }
 
+// ── API KEY MANAGEMENT ────────────────────────────────────────────────────────
+const getScanKey=()=>localStorage.getItem('eg_scan_key')||'';
+function saveScanApiKey(){
+  const val=(document.getElementById('scan-api-key-input').value||'').trim();
+  if(!val.startsWith('sk-ant-')&&!val.startsWith('sk-')){alert('That doesn\'t look like a valid Anthropic API key. It should start with sk-ant-');return;}
+  localStorage.setItem('eg_scan_key',val);
+  document.getElementById('scan-api-key-input').value='';
+  updateScanKeyUI();
+  toast('API key saved ✓');
+}
+function clearScanApiKey(){
+  if(!confirm('Remove saved API key?'))return;
+  localStorage.removeItem('eg_scan_key');
+  updateScanKeyUI();
+}
+function updateScanKeyUI(){
+  const hasKey=!!getScanKey();
+  const setup=document.getElementById('scan-api-setup');
+  const saved=document.getElementById('scan-api-saved');
+  if(setup)setup.style.display=hasKey?'none':'block';
+  if(saved)saved.style.display=hasKey?'flex':'none';
+}
+
 function initScanScreen(){
-  // reset state when entering scan screen
-  // don't clear if we have pending results
+  updateScanKeyUI();
 }
 
 function scanHandleFile(file){
@@ -994,6 +1033,12 @@ function scanClearResults(){
 
 async function runScan(){
   if(!scanImageBase64){toast('Please upload an image first.');return;}
+  const apiKey=getScanKey();
+  if(!apiKey){
+    updateScanKeyUI();
+    toast('Please enter your Anthropic API key first ↑');
+    return;
+  }
   document.getElementById('scan-run-btn').disabled=true;
   document.getElementById('scan-error').style.display='none';
   document.getElementById('scan-results').style.display='none';
@@ -1024,9 +1069,14 @@ Leave fields as empty string if not visible. Extract EVERY person. Return only t
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-opus-4-5',
         max_tokens:1000,
         system:systemPrompt,
         messages:[{
@@ -1039,7 +1089,11 @@ Leave fields as empty string if not visible. Extract EVERY person. Return only t
       })
     });
     const data=await res.json();
-    if(!res.ok)throw new Error(data.error?.message||'API error');
+    if(!res.ok){
+      // Invalid key — clear it so user can re-enter
+      if(data.error?.type==='authentication_error'){localStorage.removeItem('eg_scan_key');updateScanKeyUI();}
+      throw new Error(data.error?.message||'API error');
+    }
     const rawText=data.content.map(b=>b.text||'').join('');
     const jsonMatch=rawText.match(/\[[\s\S]*\]/);
     if(!jsonMatch)throw new Error('No contact data found in image');
@@ -1052,7 +1106,7 @@ Leave fields as empty string if not visible. Extract EVERY person. Return only t
     setScanStatus(false);
     const errEl=document.getElementById('scan-error');
     errEl.style.display='block';
-    errEl.textContent='Scan failed: '+err.message+'. Try a clearer image or check your connection.';
+    errEl.textContent='Scan failed: '+err.message+(err.message.includes('fetch')?'. Make sure you\'re using a modern browser with internet access.':'');
     document.getElementById('scan-run-btn').disabled=false;
   }
 }
