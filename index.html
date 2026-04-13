@@ -181,6 +181,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .scan-add-all-bar{background:var(--sf);border:.5px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-left:3px solid var(--ac)}
 .scan-source-badge{display:inline-block;font-size:9px;background:#E6F1FB;color:#0C447C;border-radius:4px;padding:2px 6px;margin-left:6px;font-weight:600;vertical-align:middle}
 .scan-added-check{position:absolute;top:12px;right:12px;background:var(--ac);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px}
+/* ── RESPONSE INTAKE EXTRAS ──────────────────────────────────────────── */
+.direction-box{background:#F8F7FF;border:.5px solid #AFA9EC;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#3C3489}
+.analyze-loading{display:flex;align-items:center;gap:10px;padding:20px;justify-content:center;color:var(--mu);font-size:12px}
 @media(max-width:768px){.app{grid-template-columns:1fr}.nav{display:none}.metrics{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -304,6 +307,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="ff"><label class="flbl">Channel</label><select class="fsel" id="rchan"><option value="email">Email</option><option value="linkedin">LinkedIn DM</option></select></div>
         </div>
         <div class="ff" style="margin-bottom:12px"><label class="flbl">Their message</label><textarea class="rbox" id="rinput" placeholder="Paste their email or LinkedIn message here..." rows="5"></textarea></div>
+        <div class="ff" style="margin-bottom:14px">
+          <label class="flbl">Direction / context <span style="font-weight:400;text-transform:none;color:var(--ht)">(optional — guide the reply before it's generated)</span></label>
+          <textarea class="rbox" id="rdirection" placeholder='e.g. "Clarify we are an independent subcontractor, not an in-house team." · "Emphasize we work across all builder tiers — DR Horton to Lingenfelter." · "Keep it short — just confirm and ask for a call." · "They seem to think we work for a builder; correct that."' rows="3" style="min-height:70px"></textarea>
+        </div>
         <button class="btn btn-p" onclick="analyze()">Analyze + suggest reply ↗</button>
       </div>
       <div id="rout"></div>
@@ -794,7 +801,7 @@ function getSeqCopyForContact(c,touchNum,variantOverride){
   const seq=SEQUENCES[c.seq_id];if(!seq)return null;const touch=seq.touches.find(t=>t.num===touchNum);if(!touch)return null;return{subject:touch.subject,body:touch.body};
 }
 function logTouch(cid,touchNum,note){
-  const cs=gc(),c=cs.find(x=>x.id===cid);if(!c)return;if(!c.seq_log)c.seq_log=[];c.seq_log.push({touch_num:touchNum,date:new Date().toISOString(),note:note||''});c.ltd=new Date().toISOString();if(c.tier==='tier3')c.tier='tier2';const seq=SEQUENCES[c.seq_id];if(seq&&c.seq_log.length>=seq.touches.length)c.seq_active=false;sc(cs);const touch=seq?seq.touches.find(t=>t.num===touchNum):null;addA(cid,'Touch '+(touchNum)+' sent'+(touch?' — '+touch.label:''),c.co||'',touch?touch.channel:'email');toast('Touch '+touchNum+' logged ✓');updateSeqBadge();
+  const cs=gc(),c=cs.find(x=>x.id===cid);if(!c)return;if(!c.seq_log)c.seq_log=[];c.seq_log.push({touch_num:touchNum,date:new Date().toISOString(),note:note||''});c.ltd=new Date().toISOString();if(c.tier==='tier3')c.tier='tier2';sc(cs);const seq=SEQUENCES[c.seq_id];if(seq&&c.seq_log.length>=seq.touches.length)c.seq_active=false;const touch=seq?seq.touches.find(t=>t.num===touchNum):null;addA(cid,'Touch '+(touchNum)+' sent'+(touch?' — '+touch.label:''),c.co||'',touch?touch.channel:'email');toast('Touch '+touchNum+' logged ✓');updateSeqBadge();
 }
 function openLogModal(cid){
   const c=gc().find(x=>x.id===cid);if(!c||!c.seq_id)return;const nt=seqNextTouch(c);if(!nt){toast('Sequence complete!');return;}
@@ -901,15 +908,139 @@ function deleteCustomBlock(id){if(!confirm('Delete this copy block?'))return;set
 
 // ── RESPONSES ─────────────────────────────────────────────────────────────────
 function rpopsel(){document.getElementById('rcont').innerHTML='<option value="">Select contact...</option>'+gc().map(c=>`<option value="${c.id}">${c.fn} ${c.ln||''}${c.co?' — '+c.co:''}</option>`).join('');}
-function analyze(){
-  const msg=document.getElementById('rinput').value.trim();if(!msg){alert('Please paste their message first.');return;}const cid=document.getElementById('rcont').value,chan=document.getElementById('rchan').value;const cs=gc(),c=cs.find(x=>x.id===cid),name=c?c.fn:'[First Name]',low=msg.toLowerCase();let tone,intent,reply;
-  if(low.match(/not interested|no thank|remove me|unsubscribe|stop contact/)){tone='Declining';intent='They want to be removed from outreach.';reply=`Hi ${name},\n\nAbsolutely understood — I appreciate you taking the time to reply. I've noted your preference and won't reach out again.\n\nBest,\nErika Harrison\nEridion Glass`;if(c){c.dnc=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Marked DNC — replied to opt out','');}}
-  else if(low.match(/interested|would love|tell me more|send me|let.s connect|schedule|call|meeting|bid|yes|sounds good/)){tone='Interested';intent='They want to connect or learn more.';reply=`Hi ${name},\n\nReally glad to hear from you — thank you for taking the time to reply.\n\nI'd love to set up a quick call or send over our capability statement and some recent project photos. What works best for you?\n\nLooking forward to connecting.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;if(c){c.tier='tier1';c.responded=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Responded — interested, upgraded to Tier 1, sequence paused','');}}
-  else if(low.match(/already have|current vendor|covered|locked in|happy with/)){tone='Has existing vendor';intent='Covered but hasn\'t closed the door.';reply=`Hi ${name},\n\nTotally understood — glad you're covered.\n\nIf your current sub ever has a capacity issue or you want a second bid — we'd love to be your first call.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;}
-  else if(low.match(/budget|expensive|price|cost|quote/)){tone='Price sensitive';intent='Cost is a concern or they want pricing.';reply=`Hi ${name},\n\nFair point — because we work with both custom luxury and select production builders, we're able to offer competitive pricing. I'd love to put a bid together on a specific scope.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;}
-  else{tone='Neutral — needs context';intent='Conversational or needs more information.';reply=`Hi ${name},\n\nThank you for getting back to me.\n\nI'd love to learn more about your current projects and see if there's a natural fit. Would a quick call be a useful next step?\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;}
+
+// ── ANALYZE: AI-POWERED WITH DIRECTION/CONTEXT FIELD ─────────────────────────
+async function analyze(){
+  const msg=document.getElementById('rinput').value.trim();
+  if(!msg){alert('Please paste their message first.');return;}
+  const cid=document.getElementById('rcont').value;
+  const chan=document.getElementById('rchan').value;
+  const direction=(document.getElementById('rdirection').value||'').trim();
+  const cs=gc();
+  const c=cs.find(x=>x.id===cid);
+  const name=c?c.fn:'[First Name]';
+
+  // Show loading state
+  document.getElementById('rout').innerHTML=`<div class="panel"><div class="analyze-loading"><div class="scan-spinner"></div><span>Analyzing message and drafting reply${direction?' with your direction':' with Eridion context'}...</span></div></div>`;
+
+  const apiKey=getScanKey();
+  if(!apiKey){
+    // No API key — fall back to rule-based
+    analyzeRuleBased(msg,cid,chan,name,cs,c,direction);
+    return;
+  }
+
+  const contactContext=c
+    ?`Contact on file: ${c.fn} ${c.ln||''}, ${c.role||'unknown role'} at ${c.co||'unknown company'}. CRM tier: ${c.tier}. Active sequence: ${c.seq_id||'none'}.`
+    :'No specific contact selected.';
+
+  const systemPrompt=`You are a reply-drafting assistant for Erika Harrison, co-founder of Eridion Glass, LLC — a Dallas-based glass and mirror subcontractor serving builders across DFW.
+
+CRITICAL CONTEXT — POSITIONING:
+Eridion Glass is an INDEPENDENT SUBCONTRACTOR. It is NOT an in-house team, NOT an employee, and NOT a division of any builder. Erika and Dion run their own company and take on work from multiple builders simultaneously. If a prospect seems confused about this, the reply must clarify it clearly and naturally.
+
+KEY FACTS:
+- Owner/installer: Dion Harrison (25+ years as master glazier, personally leads every install)
+- Erika Harrison: co-founder, business development
+- Builder client roster spans ALL tiers: DR Horton (production volume), Grand Homes & Hines Homes (semi-custom), Lingenfelter Luxury Homes / Gutman Homes / Martyn Hammer (luxury/custom) — use this range as social proof when it helps
+- WBE certified, UEI: W5S8MAEZTUQ6, North Texas Business Connect Program
+- Services: frameless showers, staircase glass, wine rooms, Colorback back-painted glass, custom mirrors, pool fencing, architectural railings, commercial glazing
+- Contacts: 318.458.1786 | erika@eridionglass.com | www.eridionglass.com
+
+REPLY STYLE RULES:
+- Sign as: Erika Harrison, Co-Founder, Eridion Glass (include phone/email for email replies)
+- Email replies: professional and warm, can be a few sentences to a short paragraph
+- LinkedIn DM replies: keep brief — 2–4 sentences max
+- Never be sycophantic or over-the-top
+- Channel for this reply: ${chan}
+
+${contactContext}`;
+
+  const userPrompt=`Inbound ${chan} message from ${name}:
+---
+${msg}
+---
+${direction?`\nDIRECTION FROM ERIKA (apply these instructions when writing the reply — follow them closely):\n${direction}\n---\n`:''}
+Respond in EXACTLY this format with no extra text before or after:
+TONE: [detected tone, e.g. Interested, Confused about positioning, Declining, Has existing vendor, Price sensitive, Neutral]
+INTENT: [one sentence — what they are communicating]
+REPLY:
+[full ready-to-send reply]`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-opus-4-5',max_tokens:900,system:systemPrompt,messages:[{role:'user',content:userPrompt}]})
+    });
+    const data=await res.json();
+    if(!res.ok){
+      if(data.error?.type==='authentication_error'){localStorage.removeItem('eg_scan_key');updateScanKeyUI();}
+      throw new Error(data.error?.message||'API error');
+    }
+    const raw=data.content.map(b=>b.text||'').join('');
+    const toneM=raw.match(/TONE:\s*(.+)/);
+    const intentM=raw.match(/INTENT:\s*(.+)/);
+    const replyM=raw.match(/REPLY:\s*([\s\S]+)/);
+    const tone=toneM?toneM[1].trim():'Analyzed';
+    const intent=intentM?intentM[1].trim():'See suggested reply below.';
+    const reply=replyM?replyM[1].trim():'Could not generate reply — please try again.';
+
+    // Auto-update contact status
+    if(c){
+      const tl=tone.toLowerCase();
+      if(tl.match(/declin|not interested|remove|opt.?out/)){c.dnc=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Marked DNC — replied to opt out','');}
+      else if(tl.match(/interest|positive|wants to|yes/)){c.tier='tier1';c.responded=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Responded — interested, upgraded to Tier 1, sequence paused','');}
+      addA(cid,'Inbound '+chan+' analyzed — '+tone,'');
+    }
+    renderReplyOutput(tone,intent,reply,direction);
+
+  }catch(err){
+    // Fallback to rule-based on error
+    analyzeRuleBased(msg,cid,chan,name,cs,c,direction);
+  }
+}
+
+function analyzeRuleBased(msg,cid,chan,name,cs,c,direction){
+  const low=msg.toLowerCase();let tone,intent,reply;
+  if(low.match(/not interested|no thank|remove me|unsubscribe|stop contact/)){
+    tone='Declining';intent='They want to be removed from outreach.';
+    reply=`Hi ${name},\n\nAbsolutely understood — I appreciate you taking the time to reply. I've noted your preference and won't reach out again.\n\nBest,\nErika Harrison\nEridion Glass`;
+    if(c){c.dnc=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Marked DNC — replied to opt out','');}
+  }else if(low.match(/interested|would love|tell me more|send me|let.s connect|schedule|call|meeting|bid|yes|sounds good/)){
+    tone='Interested';intent='They want to connect or learn more.';
+    reply=`Hi ${name},\n\nReally glad to hear from you — thank you for taking the time to reply.\n\nI'd love to set up a quick call or send over our capability statement and some recent project photos. What works best for you?\n\nLooking forward to connecting.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com`;
+    if(c){c.tier='tier1';c.responded=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Responded — interested, upgraded to Tier 1, sequence paused','');}
+  }else if(low.match(/already have|current vendor|covered|locked in|happy with/)){
+    tone='Has existing vendor';intent='Covered but hasn\'t closed the door.';
+    reply=`Hi ${name},\n\nTotally understood — glad you're covered.\n\nIf your current sub ever has a capacity issue or you want a second bid — we'd love to be your first call.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;
+  }else if(low.match(/budget|expensive|price|cost|quote/)){
+    tone='Price sensitive';intent='Cost is a concern or they want pricing.';
+    reply=`Hi ${name},\n\nFair point — because we work with both custom luxury and select production builders, we're able to offer competitive pricing. I'd love to put a bid together on a specific scope.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;
+  }else{
+    tone='Neutral — needs context';intent='Conversational or needs more information.';
+    reply=`Hi ${name},\n\nThank you for getting back to me.\n\nI'd love to learn more about your current projects and see if there's a natural fit. Would a quick call be a useful next step?\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;
+  }
   if(c)addA(cid,'Inbound '+chan+' analyzed — '+tone,'');
-  document.getElementById('rout').innerHTML=`<div class="panel"><div class="ptitle">Message analysis</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="metric"><div class="mlbl">Tone detected</div><div style="font-size:14px;font-weight:600;margin-top:3px">${tone}</div></div><div class="metric"><div class="mlbl">Intent</div><div style="font-size:12px;margin-top:3px;line-height:1.5">${intent}</div></div></div><div class="ptitle" style="margin-bottom:8px">Suggested reply</div><div class="cprev" style="max-height:200px">${reply.replace(/</g,'&lt;')}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p btn-sm" onclick="clip(\`${reply.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy reply</button><button class="btn btn-sm" onclick="document.getElementById('rout').innerHTML=''">Clear</button></div></div>`;
+  renderReplyOutput(tone,intent,reply,direction);
+}
+
+function renderReplyOutput(tone,intent,reply,direction){
+  const safeReply=reply.replace(/`/g,'\\`').replace(/\\/g,'\\\\');
+  document.getElementById('rout').innerHTML=`<div class="panel">
+    <div class="ptitle">Message analysis</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="metric"><div class="mlbl">Tone detected</div><div style="font-size:14px;font-weight:600;margin-top:3px">${tone}</div></div>
+      <div class="metric"><div class="mlbl">Intent</div><div style="font-size:12px;margin-top:3px;line-height:1.5">${intent}</div></div>
+    </div>
+    ${direction?`<div class="direction-box"><strong>Direction applied:</strong> ${direction.replace(/</g,'&lt;')}</div>`:''}
+    <div class="ptitle" style="margin-bottom:8px">Suggested reply</div>
+    <div class="cprev" style="max-height:220px">${reply.replace(/</g,'&lt;')}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-p btn-sm" onclick="clip(\`${safeReply}\`)">Copy reply</button>
+      <button class="btn btn-sm" onclick="document.getElementById('rdirection').value='';document.getElementById('rout').innerHTML=''">Clear</button>
+    </div>
+  </div>`;
 }
 
 // ── DANGER ZONE ───────────────────────────────────────────────────────────────
@@ -944,7 +1075,6 @@ let scanImageType='image/jpeg';
 let scanContacts=[];
 let scanAddedIds=new Set();
 
-// Role inference from title strings
 function inferRole(title){
   if(!title)return'CEO/Owner';
   const t=title.toLowerCase();
@@ -956,7 +1086,6 @@ function inferRole(title){
   return'CEO/Owner';
 }
 
-// ── API KEY MANAGEMENT ────────────────────────────────────────────────────────
 const getScanKey=()=>localStorage.getItem('eg_scan_key')||'';
 function saveScanApiKey(){
   const val=(document.getElementById('scan-api-key-input').value||'').trim();
@@ -998,7 +1127,6 @@ function scanHandleFile(file){
   reader.readAsDataURL(file);
 }
 
-// Drag & drop for scan zone
 (function(){
   const dz=document.getElementById('scan-dropzone');
   if(!dz)return;
@@ -1090,7 +1218,6 @@ Leave fields as empty string if not visible. Extract EVERY person. Return only t
     });
     const data=await res.json();
     if(!res.ok){
-      // Invalid key — clear it so user can re-enter
       if(data.error?.type==='authentication_error'){localStorage.removeItem('eg_scan_key');updateScanKeyUI();}
       throw new Error(data.error?.message||'API error');
     }
@@ -1113,10 +1240,6 @@ Leave fields as empty string if not visible. Extract EVERY person. Return only t
 
 function renderScanCards(){
   const cards=document.getElementById('scan-cards');
-  const src=document.getElementById('scan-source').value;
-  const tier=document.getElementById('scan-tier').value;
-  const liact=document.getElementById('scan-liact').value;
-
   document.getElementById('scan-results').style.display='block';
   document.getElementById('scan-result-count').textContent=scanContacts.length+' contact'+(scanContacts.length!==1?'s':'')+' found';
 
@@ -1125,7 +1248,6 @@ function renderScanCards(){
     const initials=((c.firstName||'?')[0]+(c.lastName||'?')[0]).toUpperCase();
     const added=scanAddedIds.has(i);
     const srcBadge=c.source==='linkedin_screenshot'?'<span class="scan-source-badge">LI</span>':c.source==='business_card'?'<span class="scan-source-badge">CARD</span>':'';
-    const liStatus=c.connectionStatus==='1st'?'warm':'cold';
     const liStatLabel=c.connectionStatus==='1st'?'Connected (1st)':c.connectionStatus==='pending'?'Pending':c.connectionStatus&&c.connectionStatus!=='unknown'?c.connectionStatus+' degree':'Not connected';
 
     return`<div class="scan-contact-card${added?' added':''}" id="scan-card-${i}">
@@ -1200,7 +1322,6 @@ function addSingleScanned(i){
   updateSeqBadge();
   rdash();
 
-  // Update the card to show "Added" state
   const card=document.getElementById(`scan-card-${i}`);
   if(card){
     card.classList.add('added');
@@ -1208,7 +1329,6 @@ function addSingleScanned(i){
     if(btns){btns.disabled=true;btns.textContent='✓ Added to CRM';}
     const removeBtn=card.querySelector('[onclick^="removeScanCard"]');
     if(removeBtn)removeBtn.remove();
-    // Add checkmark
     if(!card.querySelector('.scan-added-check')){
       const chk=document.createElement('div');chk.className='scan-added-check';chk.textContent='✓';card.insertBefore(chk,card.firstChild);
     }
@@ -1222,7 +1342,6 @@ function addAllScanned(){
     if(!scanAddedIds.has(i)){addSingleScanned(i);added++;}
   }
   if(added===0){toast('All contacts already added!');return;}
-  // Show success bar
   document.getElementById('scan-add-all-bar').innerHTML=`
     <div>
       <div style="font-size:13px;font-weight:600;color:var(--ac)">✓ ${added} contact${added!==1?'s':''} added to CRM</div>
@@ -1232,7 +1351,6 @@ function addAllScanned(){
       <button class="btn btn-sm" onclick="scanClearResults()">Scan another image</button>
       <button class="btn btn-p btn-sm" onclick="go('contacts')">View contacts →</button>
     </div>`;
-  // Save batch for undo
   const batchIds=[];
   const cs=gc().slice(-added);
   cs.forEach(c=>batchIds.push(c.id));
