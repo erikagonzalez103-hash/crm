@@ -276,13 +276,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <!-- RESPONSES -->
     <div class="screen" id="s-responses">
       <div class="panel">
-        <div class="ptitle">Paste an inbound message — get a suggested reply</div>
+        <div class="ptitle">Response intake — analyze + draft a personalized reply</div>
         <div class="frow">
-          <div class="ff"><label class="flbl">Contact</label><select class="fsel" id="rcont"><option value="">Select contact...</option></select></div>
+          <div class="ff"><label class="flbl">Contact</label><select class="fsel" id="rcont" onchange="rpopcontact()"><option value="">Select contact...</option></select></div>
           <div class="ff"><label class="flbl">Channel</label><select class="fsel" id="rchan"><option value="email">Email</option><option value="linkedin">LinkedIn DM</option></select></div>
         </div>
-        <div class="ff" style="margin-bottom:12px"><label class="flbl">Their message</label><textarea class="rbox" id="rinput" placeholder="Paste their email or LinkedIn message here..." rows="5"></textarea></div>
-        <button class="btn btn-p" onclick="analyze()">Analyze + suggest reply ↗</button>
+        <div class="ff" style="margin-bottom:12px"><label class="flbl">Their message</label><textarea class="rbox" id="rinput" placeholder="Paste their email or LinkedIn message here..." rows="4"></textarea></div>
+        <div class="ff" style="margin-bottom:10px">
+          <label class="flbl">Context & new intel <span style="font-weight:400;text-transform:none;color:var(--ht)">— the more you add, the better the reply</span></label>
+          <textarea class="rbox" id="rcontext" rows="3" placeholder="e.g. Just accepted my LinkedIn request · UT grad · DBA member · Her actual name is Sarah · sarah@builderco.com · Has a luxury project starting Q3 in Plano · Met at HBA event last spring"></textarea>
+        </div>
+        <div id="rcontact-chip" style="display:none;margin-bottom:10px"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <input type="checkbox" id="rsave" style="width:auto;cursor:pointer">
+          <label for="rsave" style="font-size:11px;color:var(--mu);cursor:pointer">Save new context to contact notes</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-p" onclick="analyze()">Analyze + draft reply</button>
+          <button class="btn btn-li" onclick="aiDraft()" id="ai-draft-btn">✦ AI draft</button>
+        </div>
       </div>
       <div id="rout"></div>
     </div>
@@ -1042,7 +1054,7 @@ function go(id){
   if(id==='contacts'){rcontacts();updateLastImportInfo();}
   if(id==='sequences')rsequences();
   if(id==='library'){rlib();updateCustomBadge();}
-  if(id==='responses')rpopsel();
+  if(id==='responses')rpopcontact();
   if(id==='import')updateLastImportInfo();
   if(id==='add'){const d=document.getElementById('a11');if(d)d.value=new Date().toISOString().slice(0,10);}
 }
@@ -1423,20 +1435,316 @@ function deleteCustomBlock(id){
 
 // ── RESPONSES ─────────────────────────────────────────────────────────────────
 
-function rpopsel(){document.getElementById('rcont').innerHTML='<option value="">Select contact...</option>'+gc().map(c=>`<option value="${c.id}">${c.fn} ${c.ln||''}${c.co?' — '+c.co:''}</option>`).join('');}
+function rpopsel(){
+  document.getElementById('rcont').innerHTML='<option value="">Select contact...</option>'+gc().map(c=>`<option value="${c.id}">${c.fn} ${c.ln||''}${c.co?' — '+c.co:''}</option>`).join('');
+}
+
+function rpopcontact(){
+  rpopsel();
+  const cid=document.getElementById('rcont').value;
+  const chip=document.getElementById('rcontact-chip');
+  if(!cid){chip.style.display='none';return;}
+  const c=gc().find(x=>x.id===cid);if(!c){chip.style.display='none';return;}
+  const eo=isEmailOnly(c);
+  chip.style.display='block';
+  chip.innerHTML=`<div style="background:var(--bg);border:.5px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:11px;display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+    <div><span style="color:var(--mu)">Company:</span> <strong>${c.co||'—'}</strong></div>
+    <div><span style="color:var(--mu)">Role:</span> <strong>${c.role||'—'}</strong></div>
+    ${c.email?`<div><span style="color:var(--mu)">Email:</span> <strong>${c.email}</strong></div>`:''}
+    <div>${bt(c.tier||'tier3')}</div>
+    ${c.seq_id&&c.seq_active?`<div>${bch(isEmailOnly(c)?'email':seqNextTouch(c)?.channel||'email')}</div>`:''}
+    ${c.notes?`<div style="color:var(--mu);font-style:italic;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.notes.replace(/"/g,'&quot;')}">Notes: ${c.notes.slice(0,80)}${c.notes.length>80?'…':''}</div>`:''}
+  </div>`;
+}
+
+// ── CONTEXT PARSER ────────────────────────────────────────────────────────────
+
+function parseIntelContext(ctx){
+  const signals=[];
+  const low=(ctx||'').toLowerCase();
+
+  // LinkedIn connection/acceptance
+  if(low.match(/connect|accepted|linkedin/))
+    signals.push({type:'linkedin',text:'just connected on LinkedIn'});
+
+  // School / university — expanded list
+  const schoolMap={
+    'university of texas':'UT Austin','ut austin':'UT Austin','ut ':'UT Austin',
+    'texas a&m':'Texas A&M','aggie':'Texas A&M','a&m':'Texas A&M',
+    'smu':'SMU','southern methodist':'SMU',
+    'tcu':'TCU','horned frog':'TCU',
+    'baylor':'Baylor',
+    'rice':'Rice University',
+    'unt':'UNT','north texas':'UNT',
+    'uta':'UT Arlington','ut arlington':'UT Arlington',
+    'ou ':'OU','university of oklahoma':'OU',
+    'texas tech':'Texas Tech','red raider':'Texas Tech',
+    'lsu':'LSU','tulane':'Tulane','vanderbilt':'Vanderbilt','auburn':'Auburn'
+  };
+  for(const[key,name] of Object.entries(schoolMap)){
+    if(low.includes(key)){signals.push({type:'school',school:name});break;}
+  }
+
+  // Associations/memberships
+  const assocMap={
+    'dba':'the Dallas Builders Association','dallas builders association':'the Dallas Builders Association',
+    'hba':'the Home Builders Association','nahb':'NAHB','home builders association':'the Home Builders Association',
+    'nkba':'NKBA','asid':'ASID','aia ':'AIA','agc':'AGC',
+    'lgn':'Let\'s Grow Networks','her texas':'HER Texas','her dallas':'HER Dallas',
+    'ntba':'the North Texas Builders Association'
+  };
+  for(const[key,name] of Object.entries(assocMap)){
+    if(low.includes(key)){signals.push({type:'assoc',assoc:name});break;}
+  }
+
+  // Project timing
+  const projMatch=ctx.match(/project[^.]{0,60}?(start|Q[1-4]|spring|summer|fall|winter|202[4-9]|kicking off|coming up)/i);
+  if(projMatch)signals.push({type:'project',text:projMatch[0].trim()});
+
+  // Location/neighborhood
+  const locMatch=ctx.match(/\b(Plano|Frisco|Allen|McKinney|Prosper|Celina|Southlake|Westlake|Dallas|Uptown|Highland Park|University Park|Colleyville|Keller|Flower Mound|Lewisville|Coppell|Las Colinas)\b/i);
+  if(locMatch)signals.push({type:'location',location:locMatch[1]});
+
+  // Email extraction
+  const emailMatch=ctx.match(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
+  if(emailMatch)signals.push({type:'email',email:emailMatch[0]});
+
+  // Name extraction
+  const nameMatch=ctx.match(/(?:name is|named|^|\bher\b|\bhis\b|\btheir\b)\s+([A-Z][a-z]{1,14}(?:\s+[A-Z][a-z]{1,20})?)/);
+  if(nameMatch&&nameMatch[1]&&nameMatch[1].length>1)signals.push({type:'name',name:nameMatch[1]});
+
+  // Met in person
+  if(low.match(/met at|met in person|saw at|spoke at|event|conference|tradeshow|show/))
+    signals.push({type:'met',text:'met in person'});
+
+  // Referral
+  const refMatch=ctx.match(/referred by ([A-Z][a-zA-Z\s]{2,30})/i);
+  if(refMatch)signals.push({type:'referral',by:refMatch[1].trim()});
+
+  return signals;
+}
+
+function buildPersonalizedOpener(signals,firstName){
+  const parts=[];
+  const liSig=signals.find(s=>s.type==='linkedin');
+  const schoolSig=signals.find(s=>s.type==='school');
+  const assocSig=signals.find(s=>s.type==='assoc');
+  const metSig=signals.find(s=>s.type==='met');
+  const refSig=signals.find(s=>s.type==='referral');
+
+  if(liSig)parts.push('Glad we\'re connected on LinkedIn!');
+  if(refSig)parts.push(`${refSig.by} speaks very highly of you — great to make the connection.`);
+  if(metSig&&!liSig)parts.push('Great to connect after seeing your name in the industry.');
+  if(schoolSig&&assocSig)
+    parts.push(`Fellow ${assocSig.assoc} member and ${schoolSig.school} alum — small world, always great to connect.`);
+  else if(schoolSig)
+    parts.push(`Always good to connect with a fellow ${schoolSig.school} alum.`);
+  else if(assocSig)
+    parts.push(`Fellow member of ${assocSig.assoc} — always great to connect with familiar faces in the industry.`);
+
+  return parts.join(' ');
+}
+
+function buildContextualBody(signals,contactRole,contextRaw){
+  const parts=[];
+  const projSig=signals.find(s=>s.type==='project');
+  const locSig=signals.find(s=>s.type==='location');
+
+  if(projSig)
+    parts.push(`I'd love to learn more about the project you mentioned${locSig?' in '+locSig.location:''} — if glass is part of the scope, I'd be happy to offer a complimentary spec review.`);
+  else if(locSig)
+    parts.push(`If you have anything coming up in the ${locSig.location} area, we'd love to be a resource.`);
+
+  return parts.join(' ');
+}
+
+// ── ANALYZE FUNCTION (context-aware) ─────────────────────────────────────────
 
 function analyze(){
-  const msg=document.getElementById('rinput').value.trim();if(!msg){alert('Please paste their message first.');return;}
-  const cid=document.getElementById('rcont').value,chan=document.getElementById('rchan').value;
-  const cs=gc(),c=cs.find(x=>x.id===cid),name=c?c.fn:'[First Name]',low=msg.toLowerCase();
-  let tone,intent,reply;
-  if(low.match(/not interested|no thank|remove me|unsubscribe|stop contact/)){tone='Declining';intent='They want to be removed from outreach.';reply=`Hi ${name},\n\nAbsolutely understood — I appreciate you taking the time to reply. I've noted your preference and won't reach out again.\n\nBest,\nErika Harrison\nEridion Glass`;if(c){c.dnc=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Marked DNC — replied to opt out','');}}
-  else if(low.match(/interested|would love|tell me more|send me|let.s connect|schedule|call|meeting|bid|yes|sounds good/)){tone='Interested';intent='They want to connect or learn more.';reply=`Hi ${name},\n\nReally glad to hear from you — thank you for taking the time to reply.\n\nI'd love to set up a quick call or send over our capability statement and some recent project photos. What works best for you?\n\nLooking forward to connecting.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;if(c){c.tier='tier1';c.responded=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Responded — interested, upgraded to Tier 1, sequence paused','');}}
-  else if(low.match(/already have|current vendor|covered|locked in|happy with/)){tone='Has existing vendor';intent='Covered but hasn\'t closed the door.';reply=`Hi ${name},\n\nTotally understood — glad you're covered.\n\nIf your current sub ever has a capacity issue or you want a second bid — we'd love to be your first call.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;}
-  else if(low.match(/budget|expensive|price|cost|quote/)){tone='Price sensitive';intent='Cost is a concern or they want pricing.';reply=`Hi ${name},\n\nFair point — because we work with both custom luxury and select production builders, we're able to offer competitive pricing. I'd love to put a bid together on a specific scope.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;}
-  else{tone='Neutral — needs context';intent='Conversational or needs more information.';reply=`Hi ${name},\n\nThank you for getting back to me.\n\nI'd love to learn more about your current projects and see if there's a natural fit. Would a quick call be a useful next step?\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;}
+  const msg=document.getElementById('rinput').value.trim();
+  if(!msg){alert('Please paste their message first.');return;}
+  const cid=document.getElementById('rcont').value;
+  const chan=document.getElementById('rchan').value;
+  const contextRaw=(document.getElementById('rcontext').value||'').trim();
+  const saveCtx=document.getElementById('rsave').checked;
+
+  const cs=gc();
+  const c=cs.find(x=>x.id===cid);
+  const name=c?c.fn:'[First Name]';
+  const low=msg.toLowerCase();
+  const signals=parseIntelContext(contextRaw);
+
+  // If name was found in context and contact exists, offer to update
+  const nameSig=signals.find(s=>s.type==='name');
+  const emailSig=signals.find(s=>s.type==='email');
+
+  // Save context to contact notes if checked
+  if(saveCtx&&c&&contextRaw){
+    const existing=c.notes||'';
+    const stamp=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    c.notes=(existing?existing+'\n\n':'')+`[${stamp} intel] ${contextRaw}`;
+    if(nameSig&&(!c.ln||c.fn==='Contact'))c.fn=nameSig.name.split(' ')[0]||c.fn;
+    if(emailSig&&!c.email)c.email=emailSig.email;
+    sc(cs);
+    addA(cid,'Contact updated from response intake context','');
+  }
+
+  const opener=buildPersonalizedOpener(signals,name);
+  const ctxBody=buildContextualBody(signals,c?c.role:'',contextRaw);
+
+  let tone,intent,replyCore;
+
+  if(low.match(/not interested|no thank|remove me|unsubscribe|stop contact/)){
+    tone='Declining';intent='They want to be removed from outreach.';
+    replyCore=`Absolutely understood — I appreciate you taking the time to reply. I've noted your preference and won't reach out again.\n\nBest,\nErika Harrison\nEridion Glass`;
+    if(c){c.dnc=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Marked DNC — replied to opt out','');}
+  }
+  else if(low.match(/interested|would love|tell me more|send me|let.s connect|schedule|call|meeting|bid|yes|sounds good/)){
+    tone='Interested';intent='They want to connect or learn more.';
+    replyCore=`Really glad to hear from you — thank you for taking the time to reply.\n\nI'd love to set up a quick call or send over our capability statement and some recent project photos. What works best for you?\n\nLooking forward to connecting.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;
+    if(c){c.tier='tier1';c.responded=true;if(c.seq_id)c.seq_active=false;sc(cs);addA(cid,'Responded — interested, upgraded to Tier 1, sequence paused','');}
+  }
+  else if(low.match(/already have|current vendor|covered|locked in|happy with/)){
+    tone='Has existing vendor';intent='Covered but hasn\'t closed the door.';
+    replyCore=`Totally understood — glad you\'re covered.\n\nIf your current sub ever has a capacity issue or you want a second bid — we\'d love to be your first call.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;
+  }
+  else if(low.match(/what builders|who do you work for|your clients|your builders/)){
+    tone='Clarification needed — subcontractor role';intent='They may think you work for a builder rather than as an independent sub.';
+    replyCore=`Great question — happy to clarify! Eridion Glass is the subcontractor. We\'re the boots on the ground — we partner directly with builders as their glass and mirror trade.\n\nWe work across the full range:\n— Luxury custom: Lingenfelter Luxury Homes, Gutman Homes, Martyn Hammer\n— Semi-custom: Hines Homes, Grand Homes\n— Production volume: DR Horton\n\nSo whether it\'s a custom wine room or a 50-unit frameless shower package, we scale to the project.\n\nDion leads every install personally — 25+ years as a master glazier — so you get one point of accountability from measure to install.\n\nDo you have anything coming up with a glass scope? Happy to offer a complimentary spec review.\n\n— Erika Harrison | Eridion Glass\n318.458.1786 | erika@eridionglass.com`;
+  }
+  else if(low.match(/budget|expensive|price|cost|quote/)){
+    tone='Price sensitive';intent='Cost is a concern or they want pricing.';
+    replyCore=`Fair point — because we work with both custom luxury and select production builders, we\'re able to offer competitive pricing without cutting corners. I\'d love to put a bid together on a specific scope.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass`;
+  }
+  else{
+    tone='Neutral — conversational';intent='Opening the door, needs a natural next step.';
+    replyCore=`${ctxBody?ctxBody+'\n\n':''}I\'d love to learn more about your current projects and see if there\'s a natural fit. Would a quick call be a useful next step?\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;
+  }
+
+  // Build final reply — weave in opener before the core
+  const finalReply=`Hi ${name},\n\n${opener?opener+'\n\n':''}${replyCore}`;
+
   if(c)addA(cid,'Inbound '+chan+' analyzed — '+tone,'');
-  document.getElementById('rout').innerHTML=`<div class="panel"><div class="ptitle">Message analysis</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="metric"><div class="mlbl">Tone detected</div><div style="font-size:14px;font-weight:600;margin-top:3px">${tone}</div></div><div class="metric"><div class="mlbl">Intent</div><div style="font-size:12px;margin-top:3px;line-height:1.5">${intent}</div></div></div><div class="ptitle" style="margin-bottom:8px">Suggested reply</div><div class="cprev" style="max-height:200px">${reply.replace(/</g,'&lt;')}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p btn-sm" onclick="clip(\`${reply.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy reply</button><button class="btn btn-sm" onclick="document.getElementById('rout').innerHTML=''">Clear</button></div></div>`;
+
+  // Show signal chips
+  const chipHtml=signals.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${signals.filter(s=>!['email','name'].includes(s.type)).map(s=>{
+    const labels={linkedin:'🔗 LinkedIn connected',school:'🎓 '+s.school,assoc:'🤝 '+s.assoc,project:'🏗 Project mention',location:'📍 '+s.location,met:'👋 Met in person',referral:'💬 Referred by '+s.by};
+    return`<span class="badge" style="background:#EEF;color:#534AB7;border:.5px solid #AFA9EC;font-size:10px">${labels[s.type]||s.type}</span>`;
+  }).join('')}</div>`:'';
+
+  const updateNote=saveCtx&&c&&contextRaw?`<div style="font-size:10px;color:var(--ac);margin-bottom:10px;font-weight:500">✓ Context saved to ${c.fn}'s notes${emailSig&&!c.email?' · Email updated to '+emailSig.email:''}</div>`:'';
+
+  document.getElementById('rout').innerHTML=`<div class="panel">
+    <div class="ptitle">Message analysis</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="metric"><div class="mlbl">Tone detected</div><div style="font-size:14px;font-weight:600;margin-top:3px">${tone}</div></div>
+      <div class="metric"><div class="mlbl">Intent</div><div style="font-size:12px;margin-top:3px;line-height:1.5">${intent}</div></div>
+    </div>
+    ${chipHtml}
+    ${updateNote}
+    <div class="ptitle" style="margin-bottom:8px">Personalized reply draft</div>
+    <div class="cprev" style="max-height:240px" id="rdraft-prev">${finalReply.replace(/</g,'&lt;')}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-p btn-sm" onclick="clip(\`${finalReply.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy reply</button>
+      ${c&&c.email?`<button class="btn btn-sm btn-li" onclick="window.open('mailto:${c.email}?subject=${encodeURIComponent('Re: Eridion Glass')}&body='+encodeURIComponent(document.getElementById('rdraft-prev').innerText))">Open in email ↗</button>`:''}
+      <button class="btn btn-sm" onclick="document.getElementById('rout').innerHTML=''">Clear</button>
+    </div>
+  </div>`;
+}
+
+// ── AI DRAFT — calls Anthropic API with full contact context ─────────────────
+
+async function aiDraft(){
+  const msg=document.getElementById('rinput').value.trim();
+  if(!msg){alert('Please paste their message first.');return;}
+  const cid=document.getElementById('rcont').value;
+  const chan=document.getElementById('rchan').value;
+  const contextRaw=(document.getElementById('rcontext').value||'').trim();
+  const c=gc().find(x=>x.id===cid);
+  const saveCtx=document.getElementById('rsave').checked;
+
+  const btn=document.getElementById('ai-draft-btn');
+  btn.disabled=true;btn.textContent='✦ Drafting…';
+
+  const contactBlurb=c?`Contact: ${c.fn} ${c.ln||''} at ${c.co||'unknown company'}, role: ${c.role||'unknown'}, tier: ${c.tier||'tier3'}, ${c.li_status==='warm'?'already connected on LinkedIn':'not yet connected on LinkedIn'}.`:'No contact selected.';
+  const notesBlurb=c&&c.notes?`Existing notes on contact: ${c.notes}`:'';
+  const seqBlurb=c&&c.seq_id&&c.seq_active?`Currently on ${SEQUENCES[c.seq_id]?.name} sequence, touch ${seqNextTouch(c)?.num||'?'}.`:'';
+
+  const systemPrompt=`You are Erika Harrison, co-founder of Eridion Glass — a Dallas-based, self-performing glass and mirror subcontractor specializing in custom and luxury residential builders. Erika has a warm, confident, direct voice. She is NOT an employee of any builder; she is the subcontractor.
+
+Key facts about Eridion Glass:
+- Her husband Dion leads all installs personally with 25+ years as a master glazier
+- Builder roster spans production (DR Horton) to luxury custom (Lingenfelter, Gutman, Martyn Hammer) and semi-custom (Hines Homes, Grand Homes)
+- WBE certified, UEI: W5S8MAEZTUQ6
+- Specialty: frameless showers, staircase glass, wine rooms, Colorback glass, pool fencing, custom mirrors
+- Phone: 318.458.1786 | Email: erika@eridionglass.com | Web: www.eridionglass.com
+- Outreach channel for this message: ${chan}
+
+Write a personalized, concise reply to the inbound message. Weave in any personal connections or context naturally — don't force them. Sign off as Erika Harrison. For LinkedIn DMs, keep it under 4 sentences. For email, 3–5 short paragraphs max. Never use generic filler phrases. Sound like a real person.`;
+
+  const userPrompt=`${contactBlurb}
+${notesBlurb}
+${seqBlurb}
+
+Inbound message from ${c?c.fn:'them'}:
+"${msg}"
+
+${contextRaw?'Additional context / new intel: '+contextRaw:''}
+
+Draft a personalized reply for Erika to send via ${chan}.`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:600,
+        system:systemPrompt,
+        messages:[{role:'user',content:userPrompt}]
+      })
+    });
+    const data=await resp.json();
+    const draft=(data.content&&data.content[0]&&data.content[0].text)||'';
+    if(!draft){throw new Error('Empty response');}
+
+    // Save context to notes if checked
+    if(saveCtx&&c&&contextRaw){
+      const cs=gc(),cc=cs.find(x=>x.id===cid);
+      if(cc){
+        const stamp=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        cc.notes=(cc.notes?cc.notes+'\n\n':'')+`[${stamp} intel] ${contextRaw}`;
+        const signals=parseIntelContext(contextRaw);
+        const emailSig=signals.find(s=>s.type==='email');
+        if(emailSig&&!cc.email)cc.email=emailSig.email;
+        sc(cs);
+        addA(cid,'Contact updated from AI draft context','');
+      }
+    }
+    if(c)addA(cid,'AI reply drafted — inbound '+chan,'');
+
+    document.getElementById('rout').innerHTML=`<div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="ptitle" style="margin-bottom:0">✦ AI-drafted reply</div>
+        <span class="badge" style="background:#E6F1FB;color:#0C447C">claude-sonnet-4</span>
+      </div>
+      <div class="cprev" style="max-height:260px" id="rdraft-prev">${draft.replace(/</g,'&lt;')}</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-p btn-sm" onclick="clip(\`${draft.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy reply</button>
+        ${c&&c.email?`<button class="btn btn-sm btn-li" onclick="window.open('mailto:${c.email}?subject=${encodeURIComponent('Re: Eridion Glass')}&body='+encodeURIComponent(document.getElementById('rdraft-prev').innerText))">Open in email ↗</button>`:''}
+        <button class="btn btn-sm btn-warn" onclick="aiDraft()">Regenerate</button>
+        <button class="btn btn-sm" onclick="document.getElementById('rout').innerHTML=''">Clear</button>
+      </div>
+    </div>`;
+  }catch(err){
+    document.getElementById('rout').innerHTML=`<div class="panel" style="border-color:rgba(226,75,74,0.3)">
+      <div style="font-size:12px;color:var(--dn);margin-bottom:8px;font-weight:600">AI draft unavailable on GitHub Pages</div>
+      <div style="font-size:11px;color:var(--mu);line-height:1.6">The ✦ AI draft button works when running inside Claude.ai. For your live GitHub Pages deployment, a Cloudflare Worker proxy endpoint (<code>/api/reply</code>) needs to be added to your existing worker — we can set that up in a future session.<br><br>Use <strong>Analyze + draft reply</strong> for context-aware drafts in the meantime.</div>
+      <div style="margin-top:10px"><button class="btn btn-sm" onclick="analyze()">Run template draft instead →</button></div>
+    </div>`;
+  }finally{
+    btn.disabled=false;btn.textContent='✦ AI draft';
+  }
 }
 
 // ── DANGER ZONE ───────────────────────────────────────────────────────────────
