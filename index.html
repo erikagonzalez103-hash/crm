@@ -656,6 +656,137 @@ t1:{s:"Fellow DBA member — glass & mirror sub introduction",b:"Hi [First Name]
 t3:{s:"Still happy to connect — fellow DBA member",b:"Hi [First Name],\n\nJust closing the loop. If glass ever comes up and you want a reliable DBA partner — we'd love to be on your list.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. Hoping our paths cross at a DBA event.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"}}};
 
+// ═══════════════════════════════════════════════════════════════════════
+// CONTENT LIBRARY + PERSONALIZE FEATURE
+// Paste this block ABOVE the line: const TD={t1:0,t2:14,t3:28,t4:45};
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── CONTENT LIBRARY ───────────────────────────────────────────────────
+// Add published content here. The ✦ Personalize AI uses tags to find
+// the best proof point for each contact based on their notes + role.
+
+const CONTENT_LIBRARY = [
+  {
+    id: 'cl1',
+    title: 'Colorback Glass — Luxury Bath Project (Print Advertising)',
+    url: 'https://www.eridionglass.com/colorback',
+    description: 'A luxury bathroom where Colorback back-painted glass in crisp white became the canvas that let cobalt picket tile be the star. The result ended up in print advertising.',
+    tags: ['colorback','luxury bath','modern design','contemporary','tile','custom mirror','frameless','high-end','feature wall','spa','custom home','bathroom'],
+    type: 'case_study'
+  }
+  // Add more content pieces here as you publish them:
+  // { id: 'cl2', title: '...', url: '...', description: '...', tags: [...], type: 'blog_post' }
+];
+
+// Scores contact notes against content tags — returns best match or null
+function findRelevantContent(notes, role) {
+  if (!CONTENT_LIBRARY.length) return null;
+  const combined = ((notes || '') + ' ' + (role || '')).toLowerCase();
+  let best = null, bestScore = 0;
+  CONTENT_LIBRARY.forEach(item => {
+    const score = item.tags.filter(tag => combined.includes(tag.toLowerCase())).length;
+    if (score > bestScore) { bestScore = score; best = item; }
+  });
+  return bestScore >= 1 ? best : null;
+}
+
+// ── PERSONALIZE TOUCH ─────────────────────────────────────────────────
+// Called from the log modal. Rewrites the base copy using the contact's
+// notes + any relevant content piece, via the Worker /api/messages proxy.
+
+async function personalizeTouch(cid, touchNum) {
+  const c = gc().find(x => x.id === cid);
+  if (!c) return;
+  const copy = getSeqCopyForContact(c, touchNum, window._logVariant);
+  if (!copy) return;
+  const baseBody = (copy.body || '').replace(/\[First Name\]/g, c.fn).replace(/\[Name\]/g, c.fn);
+  const baseSubj = copy.subject || '';
+
+  const prev = document.getElementById('log-copy-prev');
+  const btn = document.getElementById('personalize-btn');
+  if (prev) prev.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--mu);font-size:11px"><div class="spinner" style="width:12px;height:12px;border-width:1.5px;border-color:var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div> Personalizing for ' + c.fn + '...</div>';
+  if (btn) { btn.disabled = true; btn.textContent = '✦ Working...'; }
+
+  const relevantContent = findRelevantContent(c.notes, c.role);
+  const contentNote = relevantContent
+    ? '\n\nRelevant published content — weave in naturally if it fits (title: "' + relevantContent.title + '", url: ' + relevantContent.url + ', description: ' + relevantContent.description + '). Reference it the way you\'d mention it in conversation, not as a formal link drop.'
+    : '';
+
+  const system = `You are Erika Harrison, co-founder of Eridion Glass — a Dallas-based glass and mirror subcontractor. Voice: warm, direct, confident. Real person, not a sales template.
+
+Given a base outreach email and contact notes, personalize it by weaving in 1-2 specific details naturally. Keep the same structure and length. Never invent details not supported by the notes. If a relevant content piece is provided, reference it conversationally. Return ONLY the email body — no subject line, no preamble, no explanation.`;
+
+  const user = 'Contact: ' + c.fn + ' ' + (c.ln || '') + ' at ' + (c.co || 'unknown') + ', role: ' + (c.role || 'CEO/Owner') + '\n\nContact notes:\n' + (c.notes || 'No notes on file.') + contentNote + '\n\nBase email' + (baseSubj ? ' (Subject: ' + baseSubj + ')' : '') + ':\n' + baseBody + '\n\nPersonalize this for ' + c.fn + ' now.';
+
+  try {
+    const resp = await fetch('https://frosty-base-f01e.erikagonzalez103.workers.dev/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 700,
+        system: system,
+        messages: [{ role: 'user', content: user }]
+      })
+    });
+    const data = await resp.json();
+    const personalized = (data.content && data.content[0] && data.content[0].text) || '';
+    if (!personalized) throw new Error('Empty response');
+
+    window['_pers_' + cid + '_' + touchNum] = personalized;
+    if (prev) prev.textContent = personalized;
+
+    const nt = seqNextTouch(c);
+    const acts = document.getElementById('log-copy-acts');
+    if (acts) {
+      const safeP = personalized.replace(/`/g, '\\`').replace(/\\/g, '\\\\');
+      acts.innerHTML =
+        '<button class="btn btn-sm btn-lb" onclick="clip(`' + safeP + '`)">Copy personalized ✓</button>' +
+        (c.email && nt && nt.channel === 'email' ? '<button class="btn btn-sm btn-li" onclick="mailtoPersonalized(\'' + cid + '\',' + touchNum + ')">Open in email ↗</button>' : '') +
+        (c.li && nt && isLiTouch(nt) && !isEmailOnly(c) ? '<a href="https://' + (c.li || '').replace(/^https?:\/\//, '') + '" target="_blank" class="btn btn-sm btn-li">Open LinkedIn ↗</a>' : '') +
+        '<button class="btn btn-sm" style="color:var(--mu)" onclick="resetPersonalize(\'' + cid + '\',' + touchNum + ')">Reset to template</button>' +
+        (relevantContent ? '<span style="font-size:10px;color:var(--ac);font-weight:500">✦ Personalized + content</span>' : '<span style="font-size:10px;color:var(--ac);font-weight:500">✦ Personalized</span>');
+    }
+    toast('✦ Personalized for ' + c.fn + (relevantContent ? ' · content matched' : '') + '!');
+
+  } catch(err) {
+    if (prev) prev.textContent = baseBody;
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Personalize'; }
+    toast('Personalize failed — check Worker /api/messages route');
+    console.error('Personalize error:', err);
+  }
+}
+
+function mailtoPersonalized(cid, touchNum) {
+  const c = gc().find(x => x.id === cid);
+  if (!c) return;
+  const copy = getSeqCopyForContact(c, touchNum, window._logVariant);
+  const personalized = window['_pers_' + cid + '_' + touchNum] || '';
+  const subj = copy ? copy.subject || '' : '';
+  window.open('mailto:' + (c.email || '') + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(personalized));
+}
+
+function resetPersonalize(cid, touchNum) {
+  const c = gc().find(x => x.id === cid);
+  if (!c) return;
+  const copy = getSeqCopyForContact(c, touchNum, window._logVariant);
+  if (!copy) return;
+  const body = (copy.body || '').replace(/\[First Name\]/g, c.fn).replace(/\[Name\]/g, c.fn);
+  const prev = document.getElementById('log-copy-prev');
+  if (prev) prev.textContent = body;
+  const acts = document.getElementById('log-copy-acts');
+  const nt = seqNextTouch(c);
+  if (acts) {
+    const safeB = body.replace(/`/g, '\\`').replace(/\\/g, '\\\\');
+    acts.innerHTML =
+      '<button class="btn btn-sm" onclick="clip(`' + safeB + '`)">Copy text</button>' +
+      (c.email && nt && nt.channel === 'email' ? '<button class="btn btn-sm btn-li" onclick="mailtoSeq(\'' + cid + '\',' + touchNum + ')">Open in email ↗</button>' : '') +
+      (c.li && nt && isLiTouch(nt) && !isEmailOnly(c) ? '<a href="https://' + (c.li || '').replace(/^https?:\/\//, '') + '" target="_blank" class="btn btn-sm btn-li">Open LinkedIn ↗</a>' : '') +
+      (c.notes ? '<button class="btn btn-sm btn-p" id="personalize-btn" onclick="personalizeTouch(\'' + cid + '\',' + touchNum + ')">✦ Personalize</button>' : '');
+  }
+}
+
+// ── END CONTENT LIBRARY + PERSONALIZE ────────────────────────────────  
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:'Touch 1 — intro',t2:'Touch 2 — value add',t3:'Touch 3 — check in',t4:'Touch 4 — last one'};
 const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact'};
@@ -866,6 +997,7 @@ function openLogModal(cid){
         <button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>
         ${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${cid}',${nt.num})">Open in email ↗</button>`:''}
         ${c.li&&isLiTouch(nt)&&!isEmailOnly(c)?`<a href="https://${(c.li||'').replace(/^https?:\/\//,'')}" target="_blank" class="btn btn-sm btn-li">Open LinkedIn ↗</a>`:''}
+    ${c.notes?`<button class="btn btn-sm btn-p" id="personalize-btn" onclick="personalizeTouch('${cid}',${nt.num})">✦ Personalize</button>`:''}
       </div>
       <div style="margin-top:14px"><label class="flbl">Note (optional)</label><input class="fi" id="log-note" placeholder="e.g. Left voicemail, sent cold variant via LinkedIn..." style="margin-top:4px"></div>`;
   }
@@ -896,9 +1028,8 @@ function switchVariant(variant,cid,touchNum){
     const nt=seqNextTouch(c);
     acts.innerHTML=`<button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>
       ${c.email&&nt&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${cid}',${touchNum})">Open in email ↗</button>`:''}
-      ${c.li&&nt&&isLiTouch(nt)&&!isEmailOnly(c)?`<a href="https://${(c.li||'').replace(/^https?:\/\//,'')}" target="_blank" class="btn btn-sm btn-li">Open LinkedIn ↗</a>`:''}`;
-  }
-}
+      ${c.li&&nt&&isLiTouch(nt)&&!isEmailOnly(c)?`<a href="https://${(c.li||'').replace(/^https?:\/\//,'')}" target="_blank" class="btn btn-sm btn-li">Open LinkedIn ↗</a>`:''}`; }
+${c.notes?`<button class="btn btn-sm btn-p" id="personalize-btn" onclick="personalizeTouch('${cid}',${touchNum})">✦ Personalize</button>`:''}`;  
 
 function doLogTouch(cid,touchNum){
   const note=document.getElementById('log-note').value.trim();
