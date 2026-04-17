@@ -162,6 +162,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* NEW: email-only skip banner */
 .li-skip-banner{background:#FFF3CD;border:.5px solid #F59E0B;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:#854F0B;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;line-height:1.5}
 @media(max-width:768px){.app{grid-template-columns:1fr}.nav{display:none}.metrics{grid-template-columns:1fr 1fr}}
+.qcard.cgc-card{border-left:3px solid #185FA5}
+.qcard.edc-card{border-left:3px solid #BA7517}
+.av.cgc{background:#E6F1FB;color:#0C447C}
+.av.edc{background:#FAEEDA;color:#633806}
+.seq-bar.cgc-bar{background:linear-gradient(135deg,#0c2a4a,#185FA5)}
+.seq-bar.edc-bar{background:linear-gradient(135deg,#3d2800,#BA7517)}
+.btn-cgc{background:#E6F1FB;color:#0C447C;border-color:#185FA5}
+.btn-cgc:hover{background:#cce3f5}
+.btn-edc{background:#FAEEDA;color:#633806;border-color:#BA7517}
+.btn-edc:hover{background:#f5e0c0}
+.seq-touch-num.cgc{background:#E6F1FB;color:#0C447C}
+.seq-touch-num.edc{background:#FAEEDA;color:#633806}
+.bcgc{background:#E6F1FB;color:#0C447C}
+.bedc{background:#FAEEDA;color:#633806}
+.seq-panel-hd.cgc{background:linear-gradient(to right,#eef4fb,var(--sf))}
+.seq-panel-hd.edc{background:linear-gradient(to right,#fdf5e6,var(--sf))}
 </style>
 </head>
 <body>
@@ -229,6 +245,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <option value="seq">On sequence</option>
             <option value="fifa">FIFA sequence</option>
             <option value="lb">Builder Warm sequence</option>
+            <option value="cgc">Commercial GC Warm</option>
+            <option value="edc">City EDC Warm</option>
             <option value="tier1">Tier 1 — warm</option>
             <option value="tier2">Tier 2 — touched</option>
             <option value="tier3">Tier 3 — cold</option>
@@ -241,6 +259,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-sm btn-seq" onclick="bulkAssignSeq('fifa_14day')">+ FIFA sequence</button>
           <button class="btn btn-sm btn-lb" onclick="bulkAssignSeq('luxury_builder_warm')">+ Builder Warm</button>
+          <button class="btn btn-sm btn-cgc" onclick="bulkAssignSeq('commercial_gc_warm')">+ Commercial GC</button>
+          <button class="btn btn-sm btn-edc" onclick="bulkAssignSeq('city_edc_warm')">+ City EDC</button>
           <button class="btn btn-sm btn-warn" onclick="bulkDNC()">Mark DNC</button>
           <button class="btn btn-sm btn-danger" onclick="bulkDelete()">Delete selected</button>
           <button class="btn btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3)" onclick="clearSel()">Cancel</button>
@@ -269,6 +289,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="seq-bar-sub">6 touches · 45 days · LinkedIn connect → LinkedIn DM → Email → Email → LinkedIn DM → Email</div>
         </div>
         <button class="btn btn-sm" style="background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.2)" onclick="go('contacts');document.getElementById('cfilt').value='lb';rcontacts()">View contacts →</button>
+      </div>
+      <div class="seq-bar cgc-bar">
+        <div class="seq-bar-info">
+          <div class="seq-bar-title">Commercial GC Warm</div>
+          <div class="seq-bar-sub">6 touches · 45 days · LinkedIn → LinkedIn DM → Email + Cap Statement → Email value add → Phone → Final email</div>
+        </div>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.2)" onclick="go('contacts');document.getElementById('cfilt').value='cgc';rcontacts()">View contacts →</button>
+      </div>
+      <div class="seq-bar edc-bar">
+        <div class="seq-bar-info">
+          <div class="seq-bar-title">City EDC Warm</div>
+          <div class="seq-bar-sub">4 touches · 28 days · Email intro → Phone → Email + Cap Statement → Final email · Gets Eridion on approved sub lists for facade grant programs</div>
+        </div>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.2)" onclick="go('contacts');document.getElementById('cfilt').value='edc';rcontacts()">View contacts →</button>
       </div>
       <div id="seq-contact-list"></div>
     </div>
@@ -332,6 +366,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="lib-tab active" id="tab-standard" onclick="switchLibTab('standard')">Standard library</div>
         <div class="lib-tab" id="tab-fifa" onclick="switchLibTab('fifa')">FIFA sprint <span style="background:#534AB7;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">7</span></div>
         <div class="lib-tab" id="tab-lb" onclick="switchLibTab('lb')">Builder Warm <span style="background:var(--lb);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">6</span></div>
+        <div class="lib-tab" id="tab-cgc" onclick="switchLibTab('cgc')">Commercial GC <span style="background:#185FA5;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">6</span></div>
+        <div class="lib-tab" id="tab-edc" onclick="switchLibTab('edc')">City EDC <span style="background:#BA7517;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">4</span></div>
         <div class="lib-tab" id="tab-custom" onclick="switchLibTab('custom')">Custom copy <span id="custom-count-badge" style="background:var(--ac);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px;display:none">0</span></div>
         <div class="lib-tab" id="tab-add" onclick="switchLibTab('add')">+ Add new copy</div>
       </div>
@@ -341,6 +377,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div id="lib-fifa" style="display:none"><div id="lib-fifa-content"></div></div>
       <div id="lib-lb" style="display:none"><div id="lib-lb-content"></div></div>
+      <div id="lib-cgc" style="display:none"><div id="lib-cgc-content"></div></div>
+      <div id="lib-edc" style="display:none"><div id="lib-edc-content"></div></div>
       <div id="lib-custom" style="display:none"><div id="custom-blocks-list"></div></div>
       <div id="lib-add" style="display:none">
         <div class="panel" style="max-width:600px">
@@ -447,6 +485,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
               <option value="Designer">Designer</option>
               <option value="Woman-Owned">Woman-owned (peer outreach)</option>
               <option value="DBA">DBA member</option>
+              <option value="VP Business Development">VP Business Development</option>
+              <option value="Preconstruction Manager">Preconstruction Manager</option>
+              <option value="Project Executive">Project Executive</option>
+              <option value="EDC Director">EDC Director / Program Manager</option>
             </select>
           </div>
         </div>
@@ -495,6 +537,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
               <option value="">None</option>
               <option value="fifa_14day">FIFA 14-day sprint</option>
               <option value="luxury_builder_warm">Luxury Builder Warm</option>
+              <option value="commercial_gc_warm">Commercial GC Warm</option>
+              <option value="city_edc_warm">City EDC Warm</option>
             </select>
           </div>
           <div class="ff"><label class="flbl">Sequence start date</label>
@@ -590,6 +634,55 @@ const SEQUENCES={
   }
 };
 
+// NEW: add sequences after closing brace of luxury_builder_warm
+Object.assign(SEQUENCES,{
+
+  commercial_gc_warm:{
+    id:'commercial_gc_warm',
+    name:'Commercial GC Warm',
+    color:'#185FA5',
+    description:'6-touch LinkedIn-first sequence for DFW commercial interior GCs. AI personalizes from contact card intel.',
+    touches:[
+      {num:1,day_offset:0,channel:'linkedin',label:'LinkedIn connection request',subject:'',
+       body:'Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. We\'re a Dallas-based, self-performing glass and mirror subcontractor — interior commercial scope including glass partitions, mirror packages, lobby glass, Colorback feature walls, and glass railings. WBE certified, self-performing. I\'d love to connect and be a resource when glass comes up on a project.'},
+      {num:2,day_offset:7,channel:'linkedin_dm',label:'LinkedIn DM — intro',subject:'',
+       body:'Hi [First Name] — thanks for connecting. Wanted to properly introduce Eridion Glass.\n\nWe specialize in interior commercial glass and mirror work — glass office partitions, restroom and fitness mirror packages, lobby and reception glass, Colorback back-painted glass for feature walls and bar fronts, frameless enclosures, and glass railings.\n\nDion leads every install personally with 25+ years as a master glazier. We self-perform — no brokering, no subbing out our scope. WBE certified, UEI: W5S8MAEZTUQ6.\n\nIf you have projects with glass scope coming up, I\'d love to be on your sub list. Happy to send our commercial capability statement.\n\n— Erika Harrison | Eridion Glass | 318.458.1786'},
+      {num:3,day_offset:14,channel:'email',label:'Email intro + capability statement',
+       subject:'Interior Glass & Mirror Sub — Eridion Glass | WBE Certified, Self-Performing',
+       body:'Hi [First Name],\n\nReaching out to introduce Eridion Glass as an interior glass and mirror subcontractor for your DFW commercial and tenant improvement projects.\n\nWe cover the full interior glass scope:\n— Glass office partitions and interior glazing systems\n— Restroom, fitness, and hospitality mirror packages\n— Lobby and reception glass\n— Colorback back-painted glass for feature walls, bar fronts, and accent panels\n— Frameless shower and spa enclosures\n— Glass railings and balustrade systems\n\nWe\'re owner-operated and self-performing — our own crew on every job, no labor brokering, no subbing out our scope. Dion Harrison leads every install personally with 25+ years as a master glazier. One point of accountability from measure to install.\n\nWe\'re WBE certified (UEI: W5S8MAEZTUQ6), carry GL/Auto/Workers Comp/Umbrella, and are registered with the North Texas Business Connect Program.\n\nI\'ve attached our commercial capability statement. If you\'re building your sub list for upcoming projects or would like to get us prequalified, I\'d welcome a quick call.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com'},
+      {num:4,day_offset:28,channel:'email',label:'Email value add — builder roster breadth',
+       subject:'Why our builder roster matters for your projects',
+       body:'Hi [First Name],\n\nFollowing up on my earlier introduction — wanted to share something that tells the Eridion story better than a capability statement can.\n\nWe work with builders across the full range — from DR Horton on the production side to Lingenfelter Luxury Homes, Gutman Homes, and Martyn Hammer on the custom luxury end. That range is intentional. Working at both ends of the market means we bring production-level logistics discipline to every job — and the craft that high-end projects demand.\n\nFor commercial and tenant improvement work, that translates to: we show up on time, we execute cleanly, we coordinate with your other trades, and we don\'t end up on the punch list.\n\nThis project is a good visual example of what we do with Colorback glass — a material we use extensively on commercial feature walls and bar fronts:\nwww.eridionglass.com/colorback\n\nWould a quick 15-minute call be worth it? I\'d love to learn what\'s in your pipeline and see if there\'s a fit.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com'},
+      {num:5,day_offset:38,channel:'phone',label:'Phone call / voicemail',subject:'',
+       body:'Voicemail script:\n\n"Hi [First Name], this is Erika Harrison from Eridion Glass — I\'ve sent over our commercial capability statement and wanted to follow up directly.\n\nWe\'re a Dallas-based, self-performing glass and mirror subcontractor — WBE certified, Dion leads every install personally with 25+ years as a master glazier. Interior commercial scope: glass partitions, mirror packages, lobby glass, Colorback feature walls, railings.\n\nIf you\'re ever building a sub list for a project with glass scope, I\'d love five minutes. My cell is 318-458-1786. I\'ll follow up by email. Thank you."'},
+      {num:6,day_offset:45,channel:'email',label:'Final email — leave door open',
+       subject:'Last note from Eridion Glass',
+       body:'Hi [First Name],\n\nLast one from me — I don\'t want to be the sub who never takes the hint.\n\nIf a project ever comes across your desk with an interior glass scope — partitions, mirrors, lobby glass, feature walls, railings — and you want a self-performing, WBE-certified sub who shows up and executes cleanly, we\'d genuinely love to earn a spot on your list.\n\nWe\'ll be here.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com'}
+    ]
+  },
+
+  city_edc_warm:{
+    id:'city_edc_warm',
+    name:'City EDC Warm',
+    color:'#BA7517',
+    description:'4-touch email-first sequence for city economic development contacts. Gets Eridion on approved sub lists for facade/storefront grant programs.',
+    touches:[
+      {num:1,day_offset:0,channel:'email',label:'Email intro — WBE + facade angle',
+       subject:'WBE Glass Sub — Eridion Glass | Facade & Storefront Improvement Projects',
+       body:'Hi [First Name],\n\nReaching out to introduce Eridion Glass as a resource for any facade, storefront, or commercial improvement projects your office is supporting.\n\nWe\'re a Dallas-based, WBE-certified, self-performing glass and mirror subcontractor. For facade and grant-funded work specifically, we handle:\n— Storefront glass and window systems\n— Glass doors, entryways, and vestibules\n— Interior mirror packages for commercial spaces\n— Colorback back-painted glass for feature walls and storefronts\n— Glass railings and architectural glass\n\nWe carry full insurance (GL/Auto/Workers Comp/Umbrella), are WBE certified (UEI: W5S8MAEZTUQ6), and are registered with the North Texas Business Connect Program.\n\nIf your office maintains a list of recommended subcontractors for grant-funded or incentivized improvement projects, we\'d love to be included. Happy to send our capability statement or meet briefly.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com'},
+      {num:2,day_offset:7,channel:'phone',label:'Phone call / voicemail',subject:'',
+       body:'Voicemail script:\n\n"Hi [First Name], this is Erika Harrison from Eridion Glass — I sent you a note last week about getting Eridion on your recommended subcontractor list for facade and storefront improvement projects.\n\nWe\'re a WBE-certified, Dallas-based glass sub — storefront glass, window systems, interior mirrors, feature walls. My cell is 318-458-1786. Happy to chat for five minutes whenever you have time."'},
+      {num:3,day_offset:14,channel:'email',label:'Email follow-up + capability statement',
+       subject:'Re: WBE Glass Sub — capability statement attached',
+       body:'Hi [First Name],\n\nFollowing up on my earlier note. I\'ve attached our commercial capability statement — it covers our full scope, credentials, insurance, and WBE certification details.\n\nWe\'re particularly well-positioned for the types of projects city programs support: storefront window replacement, glass door systems, feature wall glass, and commercial interior mirror packages. We\'re local, self-performing, and built for exactly this kind of work.\n\nIs there a vendor registration process or sub list we should be on? Happy to complete any prequalification paperwork.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com'},
+      {num:4,day_offset:28,channel:'email',label:'Final email — leave door open',
+       subject:'Last note — Eridion Glass, WBE glass sub',
+       body:'Hi [First Name],\n\nLast follow-up. If a project ever comes up where glass or mirrors are part of the scope — and you need a WBE-certified, locally owned sub who can execute — please keep us in mind.\n\nWe\'re here.\n\nErika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com'}
+    ]
+  }
+
+});
+
 // ── ROLE-MATCHED SUBJECT LINES FOR BUILDER WARM TOUCH 3 ──────────────────────
 const LB_ROLE_SUBJECTS={
   'CEO/Owner':'Glass & mirror partner for your 2026 builds',
@@ -678,6 +771,8 @@ const ds=iso=>iso?Math.floor((Date.now()-new Date(iso).getTime())/86400000):999;
 const nxt=c=>{const done=c.ts||[];for(const t of['t1','t2','t3','t4'])if(!done.includes(t))return t;return null};
 const isLB=c=>c.seq_id==='luxury_builder_warm';
 const isFIFA=c=>c.seq_id==='fifa_14day';
+const isCommGC=c=>c.seq_id==='commercial_gc_warm';
+const isEDC=c=>c.seq_id==='city_edc_warm';
 
 // ── EMAIL-ONLY HELPER ─────────────────────────────────────────────────────────
 // Returns true if contact should skip LinkedIn touches
@@ -765,6 +860,12 @@ function getSeqCopyForContact(c,touchNum,variantOverride){
       }
     }
     return{subject,body:body.replace(/\[First Name\]/g,c.fn)};
+  }
+  // Commercial GC and EDC — use sequence copy directly, no role variants
+  if(isCommGC(c)||isEDC(c)){
+    const seq=SEQUENCES[c.seq_id];if(!seq)return null;
+    const touch=seq.touches.find(t=>t.num===touchNum);if(!touch)return null;
+    return{subject:touch.subject||'',body:(touch.body||'').replace(/\[First Name\]/g,c.fn)};
   }
   const seq=SEQUENCES[c.seq_id];if(!seq)return null;
   const touch=seq.touches.find(t=>t.num===touchNum);if(!touch)return null;
@@ -1032,17 +1133,20 @@ function rdash(){
 function rseqCard(c){
   const nt=seqNextTouch(c);if(!nt)return'';
   const lb=isLB(c);
+  const cgc=isCommGC(c);
+  const edc=isEDC(c);
   const eo=isEmailOnly(c);
   const copy=getSeqCopyForContact(c,nt.num);
   const body=copy?(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn):'No copy available.';
   const subj=copy?copy.subject:'';
-  const cardCls=lb?'qcard lb-card':'qcard seq-card';
-  const avCls=lb?'av lb':'av seq';
-  const seqLabel=lb?'<span class="badge blb">Builder Warm</span>':'<span class="badge bseq">FIFA sprint</span>';
+  const cardCls=lb?'qcard lb-card':cgc?'qcard cgc-card':edc?'qcard edc-card':'qcard seq-card';
+  const avCls=lb?'av lb':cgc?'av cgc':edc?'av edc':'av seq';
+  const seqLabel=lb?'<span class="badge blb">Builder Warm</span>':cgc?'<span class="badge bcgc">Commercial GC</span>':edc?'<span class="badge bedc">City EDC</span>':'<span class="badge bseq">FIFA sprint</span>';
   const eoBadge=eo?'<span class="badge beo">Email only</span>':'';
-  const logBtn=`<button class="btn ${lb?'btn-lb':'btn-p'} btn-sm" onclick="openLogModal('${c.id}')">Log touch ✓</button>`;
-  const warmingTip=lb&&isLiTouch(nt)&&!eo?`<div style="font-size:10px;color:var(--lb);margin-bottom:8px;font-weight:500">💡 Like 2–3 of their posts before sending</div>`:'';
-  return`<div class="${cardCls}"><div class="qcard-hd"><div class="${avCls}">${ini(c.fn+' '+(c.ln||''))}</div><div style="flex:1"><div class="cn">${c.fn} ${c.ln||''}</div><div class="cm">${c.co||'—'} · ${lb?c.role||'—':'FIFA sequence'}</div></div>${seqLabel} ${eoBadge} <span class="badge bseq" style="background:transparent;border:.5px solid var(--bd);color:var(--mu)">Touch ${nt.num}</span> ${bch(nt.channel)} ${bt(c.tier||'tier3')}</div><div class="qcard-bd">${warmingTip}${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:5px">Subject: <strong style="color:var(--tx)">${subj}</strong></div>`:''}<div class="cprev">${body.replace(/</g,'&lt;')}</div><div class="qacts">${logBtn}<button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${c.id}',${nt.num})">Open in email ↗</button>`:''}<button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button></div></div></div>`;
+  const logBtnCls=lb?'btn-lb':cgc?'btn-cgc':edc?'btn-edc':'btn-p';
+  const logBtn=`<button class="btn ${logBtnCls} btn-sm" onclick="openLogModal('${c.id}')">Log touch ✓</button>`;
+  const warmingTip=lb&&isLiTouch(nt)&&!eo?`<div style="font-size:10px;color:var(--lb);margin-bottom:8px;font-weight:500">💡 Like 2–3 of their posts before sending</div>`:cgc&&isLiTouch(nt)&&!eo?`<div style="font-size:10px;color:#185FA5;margin-bottom:8px;font-weight:500">💡 Warm up: engage with 2–3 of their recent posts first</div>`:'';
+  return`<div class="${cardCls}"><div class="qcard-hd"><div class="${avCls}">${ini(c.fn+' '+(c.ln||''))}</div><div style="flex:1"><div class="cn">${c.fn} ${c.ln||''}</div><div class="cm">${c.co||'—'} · ${c.role||'—'}</div></div>${seqLabel} ${eoBadge} <span class="badge bseq" style="background:transparent;border:.5px solid var(--bd);color:var(--mu)">Touch ${nt.num}</span> ${bch(nt.channel)} ${bt(c.tier||'tier3')}</div><div class="qcard-bd">${warmingTip}${subj?`<div style="font-size:10px;color:var(--mu);margin-bottom:5px">Subject: <strong style="color:var(--tx)">${subj}</strong></div>`:''}<div class="cprev">${body.replace(/</g,'&lt;')}</div><div class="qacts">${logBtn}<button class="btn btn-sm" onclick="clip(\`${body.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy text</button>${c.email&&nt.channel==='email'?`<button class="btn btn-sm btn-li" onclick="mailtoSeq('${c.id}',${nt.num})">Open in email ↗</button>`:''}<button class="btn btn-sm" onclick="openC('${c.id}')">View contact</button></div></div></div>`;
 }
 
 function rcard(c){
@@ -1093,6 +1197,8 @@ function rcontacts(){
   if(filt==='seq')cs=cs.filter(c=>c.seq_id&&c.seq_active);
   else if(filt==='fifa')cs=cs.filter(c=>c.seq_id==='fifa_14day'&&c.seq_active);
   else if(filt==='lb')cs=cs.filter(c=>c.seq_id==='luxury_builder_warm'&&c.seq_active);
+  else if(filt==='cgc')cs=cs.filter(c=>c.seq_id==='commercial_gc_warm'&&c.seq_active);
+  else if(filt==='edc')cs=cs.filter(c=>c.seq_id==='city_edc_warm'&&c.seq_active);
   else if(filt==='tier1')cs=cs.filter(c=>c.tier==='tier1');
   else if(filt==='tier2')cs=cs.filter(c=>c.tier==='tier2');
   else if(filt==='tier3')cs=cs.filter(c=>c.tier==='tier3');
@@ -1110,11 +1216,12 @@ function rcontacts(){
     const du=isSeq?seqIsDue(c):due(c);
     // Email-only badge in sequence column
     const eoBadge=eo?`<span class="badge beo" style="font-size:9px;margin-left:4px">📧</span>`:'';
-    const seqLabel=isSeq?(SEQUENCES[c.seq_id]?`<span class="badge ${lb?'blb':'bseq'}">${SEQUENCES[c.seq_id].name}</span>${eoBadge}`:''):'—';
+    const cgcT=isCommGC(c);const edcT=isEDC(c);
+    const seqLabel=isSeq?(SEQUENCES[c.seq_id]?`<span class="badge ${lb?'blb':cgcT?'bcgc':edcT?'bedc':'bseq'}">${SEQUENCES[c.seq_id].name}</span>${eoBadge}`:''):'—';
     const nextLabel=isSeq&&nt?`Touch ${nt.num} · ${bch(nt.channel)}`:n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Complete</span>';
     const dueLabel=du?'<span class="badge bt1">Due now</span>':isSeq&&nt?`<span class="badge bt3t">in ${seqDaysUntil(c)||0}d</span>`:'—';
-    const actionBtn=isSeq?`<button class="btn btn-sm ${lb?'btn-lb':'btn-p'}" onclick="openLogModal('${c.id}')">Log touch</button>`:`<button class="btn btn-sm" onclick="sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button>`;
-    return`<tr class="${sel?'selected':''}" id="row-${c.id}"><td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel('${c.id}',this.checked)" onclick="event.stopPropagation()"></td><td onclick="openC('${c.id}')" style="cursor:pointer"><div style="display:flex;align-items:center;gap:8px"><div class="av ${lb?'lb':isSeq?'seq':''}" style="width:28px;height:28px;font-size:10px">${ini(c.fn+' '+(c.ln||''))}</div><span style="font-weight:500">${c.fn} ${c.ln||''}</span></div></td><td onclick="openC('${c.id}')" style="cursor:pointer">${c.co||'—'}</td><td style="color:var(--mu)">${c.role||'—'}</td><td>${bt(c.tier||'tier3')}</td><td>${seqLabel}</td><td>${nextLabel}</td><td>${dueLabel}</td><td>${actionBtn}</td></tr>`;
+    const actionBtn=isSeq?`<button class="btn btn-sm ${lb?'btn-lb':cgcT?'btn-cgc':edcT?'btn-edc':'btn-p'}" onclick="openLogModal('${c.id}')">Log touch</button>`:`<button class="btn btn-sm" onclick="sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button>`;
+    return`<tr class="${sel?'selected':''}" id="row-${c.id}"><td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel('${c.id}',this.checked)" onclick="event.stopPropagation()"></td><td onclick="openC('${c.id}')" style="cursor:pointer"><div style="display:flex;align-items:center;gap:8px"><div class="av ${lb?'lb':cgcT?'cgc':edcT?'edc':isSeq?'seq':''}" style="width:28px;height:28px;font-size:10px">${ini(c.fn+' '+(c.ln||''))}</div><span style="font-weight:500">${c.fn} ${c.ln||''}</span></div></td><td onclick="openC('${c.id}')" style="cursor:pointer">${c.co||'—'}</td><td style="color:var(--mu)">${c.role||'—'}</td><td>${bt(c.tier||'tier3')}</td><td>${seqLabel}</td><td>${nextLabel}</td><td>${dueLabel}</td><td>${actionBtn}</td></tr>`;
   }).join('');
   updateBulkBar();updateSelAll(cs);
 }
@@ -1132,6 +1239,8 @@ function toggleSelAll(checked){
   if(filt==='seq')cs=cs.filter(c=>c.seq_id&&c.seq_active);
   else if(filt==='fifa')cs=cs.filter(c=>c.seq_id==='fifa_14day'&&c.seq_active);
   else if(filt==='lb')cs=cs.filter(c=>c.seq_id==='luxury_builder_warm'&&c.seq_active);
+  else if(filt==='cgc')cs=cs.filter(c=>c.seq_id==='commercial_gc_warm'&&c.seq_active);
+  else if(filt==='edc')cs=cs.filter(c=>c.seq_id==='city_edc_warm'&&c.seq_active);
   else if(filt==='tier1')cs=cs.filter(c=>c.tier==='tier1');
   else if(filt==='tier2')cs=cs.filter(c=>c.tier==='tier2');
   else if(filt==='tier3')cs=cs.filter(c=>c.tier==='tier3');
@@ -1254,7 +1363,7 @@ function renderModal(id){
     document.getElementById('mod-acts').innerHTML=`
       <button class="btn btn-sm btn-danger" onclick="doDNC()">Do not contact</button>
       <button class="btn btn-sm btn-warn" onclick="doResp()">Mark responded</button>
-      ${isSeq&&nt?`<button class="btn btn-sm ${lb?'btn-lb':'btn-seq'}" onclick="closeModal();openLogModal('${id}')">Log touch ✓</button>`:''}
+      ${isSeq&&nt?`<button class="btn btn-sm ${lb?'btn-lb':cgcM?'btn-cgc':edcM?'btn-edc':'btn-seq'}" onclick="closeModal();openLogModal('${id}')">Log touch ✓</button>`:''}
       ${isSeq&&!eo?`<button class="btn btn-sm btn-eo" onclick="closeModal();markEmailOnly('${id}')">Set email only</button>`:''}
       <button class="btn btn-sm btn-p" onclick="editMode=true;renderModal('${id}')">Edit contact</button>
       <button class="btn btn-sm" onclick="closeModal()">Close</button>`;
@@ -1324,7 +1433,7 @@ function saveContact(){
 
 function switchLibTab(tab){
   currentLibTab=tab;
-  ['standard','fifa','lb','custom','add'].forEach(t=>{
+  ['standard','fifa','lb','cgc','edc','custom','add'].forEach(t=>{
     const el=document.getElementById('lib-'+t);
     if(el)el.style.display=t===tab?(t==='standard'?'grid':'block'):'none';
     const tab2=document.getElementById('tab-'+t);
@@ -1333,6 +1442,8 @@ function switchLibTab(tab){
   if(tab==='standard')rlib();
   if(tab==='fifa')rFifaLib();
   if(tab==='lb')rLBLib();
+  if(tab==='cgc')rCGCLib();
+  if(tab==='edc')rEDCLib();
   if(tab==='custom')rCustomBlocks();
   if(tab==='add')clearAddForm();
 }
@@ -1383,6 +1494,27 @@ function rLBLib(){
           <button class="btn btn-sm" style="margin-top:8px" onclick="clip(\`${(t.body||'').replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button>`}
       </div>`;
     }).join('')}`;
+}
+
+
+function rCGCLib(){
+  const seq=SEQUENCES.commercial_gc_warm;
+  document.getElementById('lib-cgc-content').innerHTML=`
+    <div style="background:#eef4fb;border:.5px solid #185FA5;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:#0C447C;margin-bottom:4px">Commercial GC Warm — 6 touch sequence</div>
+      <div style="font-size:11px;color:#185FA5;line-height:1.6">LinkedIn-first strategy for DFW commercial interior GCs. AI draft button personalizes each touch using contact card intel — school ties, civic involvement, recent projects, career background. Touches 1–2 are LinkedIn, 3–4 are email, 5 is phone, 6 is final email.</div>
+    </div>
+    ${seq.touches.map(t=>{const body=(t.body||'').replace(/</g,'&lt;');return`<div class="cblock" style="border-left:3px solid #185FA5"><div class="cblock-hd"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div class="seq-touch-num cgc">${t.num}</div><span style="font-size:12px;font-weight:600">${t.label}</span>${bch(t.channel)}<span style="font-size:10px;color:var(--mu)">Day ${t.day_offset}</span></div></div><div class="cblock-actions"><button class="btn btn-sm" onclick="clip(\`${(t.body||'').replace(/\`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button></div></div>${t.subject?`<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Subject: <strong style="color:var(--tx)">${t.subject}</strong></div>`:''}<div class="ctext">${body}</div></div>`;}).join('')}`;
+}
+
+function rEDCLib(){
+  const seq=SEQUENCES.city_edc_warm;
+  document.getElementById('lib-edc-content').innerHTML=`
+    <div style="background:#fdf5e6;border:.5px solid #BA7517;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:#633806;margin-bottom:4px">City EDC Warm — 4 touch sequence</div>
+      <div style="font-size:11px;color:#854F0B;line-height:1.6">Email-first, phone-forward sequence for city economic development contacts. Gets Eridion on approved subcontractor lists for facade and storefront grant programs. EDC contacts are not active on LinkedIn — skip LinkedIn touches and use email-only mode.</div>
+    </div>
+    ${seq.touches.map(t=>{const body=(t.body||'').replace(/</g,'&lt;');return`<div class="cblock" style="border-left:3px solid #BA7517"><div class="cblock-hd"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div class="seq-touch-num edc">${t.num}</div><span style="font-size:12px;font-weight:600">${t.label}</span>${bch(t.channel)}<span style="font-size:10px;color:var(--mu)">Day ${t.day_offset}</span></div></div><div class="cblock-actions"><button class="btn btn-sm" onclick="clip(\`${(t.body||'').replace(/\`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button></div></div>${t.subject?`<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Subject: <strong style="color:var(--tx)">${t.subject}</strong></div>`:''}<div class="ctext">${body}</div></div>`;}).join('')}`;
 }
 
 function updateCustomBadge(){
@@ -1780,7 +1912,34 @@ async function aiDraft(){
   const priorExchangeBlurb=msg?`\n\nPrior exchange / inbound message:\n"${msg}"`:'';
   const contextBlurb=contextRaw?`\n\nNew intel / context from Erika:\n${contextRaw}`:'';
 
-  const systemPrompt=`You are Erika Harrison, co-founder of Eridion Glass — a Dallas-based, self-performing glass and mirror subcontractor specializing in custom and luxury residential builders in DFW. 
+  const isCommercial=c&&(isCommGC(c)||isEDC(c)||['VP Business Development','Preconstruction Manager','Project Executive','EDC Director'].includes(c.role||''));
+
+  const systemPrompt=isCommercial?
+`You are Erika Harrison, co-founder of Eridion Glass — a Dallas-based, self-performing glass and mirror subcontractor. For commercial outreach, Erika is reaching out to commercial general contractors, preconstruction managers, and city economic development contacts.
+
+Erika's voice: warm, confident, direct, peer-to-peer. No filler. Sounds like a real person, not a sales email.
+
+Eridion Glass — commercial facts:
+- Interior commercial glass scope: glass office partitions, restroom/fitness mirror packages, lobby and reception glass, Colorback back-painted glass feature walls, frameless enclosures, glass railings
+- Self-performing — own crew on every job, no labor brokering, no subbing out scope
+- Dion leads every install personally, 25+ years as master glazier
+- WBE certified, UEI: W5S8MAEZTUQ6, North Texas Business Connect Program
+- Builder roster (credibility signal): luxury custom (Lingenfelter, Gutman, Martyn Hammer) to production (DR Horton) — shows logistics discipline + craft
+- 318.458.1786 | erika@eridionglass.com | www.eridionglass.com | www.eridionglass.com/colorback
+
+CRITICAL personalization rules — if the contact notes contain ANY of these, weave them in naturally:
+- School ties (Texas A&M, UT, Purdue, OU, etc.) → reference casually as a fellow alum connection
+- Civic/nonprofit involvement (Momentous Institute, Rise School, TREC, TEXO, CREW Dallas) → reference as shared values
+- Association memberships (AGC, TEXO, NAMC, Dallas Regional Chamber) → mention as industry peers
+- Recent projects (Knox Street, Health Wildcatters, BNY Mellon, etc.) → reference specifically
+- Career background (CBRE, DPR, Balfour Beatty, etc.) → reference to show you've done your homework
+- Women-in-industry angle (for Shandra Colón etc.) → woman-founder to woman-in-construction peer tone
+
+DO NOT list these signals — reference them the way a real person would in conversation.
+
+Channel: ${chan}. ${chan==='linkedin'?'Keep under 4 sentences — LinkedIn DM brevity. No subject line.':'3–4 short paragraphs. Include subject line prefixed "Subject: ".'}`
+:
+`You are Erika Harrison, co-founder of Eridion Glass — a Dallas-based, self-performing glass and mirror subcontractor specializing in custom and luxury residential builders in DFW. 
 
 Erika's voice: warm, confident, direct, no filler phrases, sounds like a real person not a sales email. She does NOT work for any builder — she IS the subcontractor.
 
