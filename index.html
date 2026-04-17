@@ -256,15 +256,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div id="bulk-bar" style="display:none" class="bulk-bar">
         <span id="bulk-count">0 contacts selected</span>
-        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-sm btn-seq" onclick="bulkAssignSeq('fifa_14day')">+ FIFA sequence</button>
-          <button class="btn btn-sm btn-lb" onclick="bulkAssignSeq('luxury_builder_warm')">+ Builder Warm</button>
-          <button class="btn btn-sm btn-cgc" onclick="bulkAssignSeq('commercial_gc_warm')">+ Commercial GC</button>
-          <button class="btn btn-sm btn-edc" onclick="bulkAssignSeq('city_edc_warm')">+ City EDC</button>
-          <button class="btn btn-sm btn-warn" onclick="bulkDNC()">Mark DNC</button>
-          <button class="btn btn-sm btn-danger" onclick="bulkDelete()">Delete selected</button>
-          <button class="btn btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3)" onclick="clearSel()">Cancel</button>
-        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap" id="bulk-seq-btns"></div>
       </div>
       <div class="panel" style="padding:0;overflow:hidden">
         <table class="ctbl">
@@ -1217,7 +1209,9 @@ function rcontacts(){
     // Email-only badge in sequence column
     const eoBadge=eo?`<span class="badge beo" style="font-size:9px;margin-left:4px">📧</span>`:'';
     const cgcT=isCommGC(c);const edcT=isEDC(c);
-    const seqLabel=isSeq?(SEQUENCES[c.seq_id]?`<span class="badge ${lb?'blb':cgcT?'bcgc':edcT?'bedc':'bseq'}">${SEQUENCES[c.seq_id].name}</span>${eoBadge}`:''):'—';
+    const _seqN=c.seq_id&&SEQUENCES[c.seq_id]?SEQUENCES[c.seq_id].name:null;
+    const _seqC=lb?'blb':cgcT?'bcgc':edcT?'bedc':'bseq';
+    const seqLabel=_seqN?(isSeq?`<span class="badge ${_seqC}">${_seqN}</span>${eoBadge}`:`<span class="badge" style="background:var(--bg);color:var(--mu);border:.5px solid var(--bd)">${_seqN}</span> <span style="font-size:9px;color:var(--ht)">${c.responded?'⏸ responded':'⏸ paused'}</span>`):'—';
     const nextLabel=isSeq&&nt?`Touch ${nt.num} · ${bch(nt.channel)}`:n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Complete</span>';
     const dueLabel=du?'<span class="badge bt1">Due now</span>':isSeq&&nt?`<span class="badge bt3t">in ${seqDaysUntil(c)||0}d</span>`:'—';
     const actionBtn=isSeq?`<button class="btn btn-sm ${lb?'btn-lb':cgcT?'btn-cgc':edcT?'btn-edc':'btn-p'}" onclick="openLogModal('${c.id}')">Log touch</button>`:`<button class="btn btn-sm" onclick="sent('${c.id}','${n||''}')" ${!n?'disabled':''}>Send next</button>`;
@@ -1258,9 +1252,30 @@ function updateSelAll(cs){
   document.getElementById('sel-count').textContent=selectedIds.size+' selected';
 }
 
+// Sequence button style map — add new sequences here to get colored buttons
+const SEQ_BTN_CLASS={
+  fifa_14day:'btn-seq',
+  luxury_builder_warm:'btn-lb',
+  commercial_gc_warm:'btn-cgc',
+  city_edc_warm:'btn-edc'
+};
+
+function renderBulkBar(){
+  const el=document.getElementById('bulk-seq-btns');if(!el)return;
+  const seqBtns=Object.values(SEQUENCES).map(s=>{
+    const cls=SEQ_BTN_CLASS[s.id]||'btn-seq';
+    return`<button class="btn btn-sm ${cls}" onclick="bulkAssignSeq('${s.id}')">+ ${s.name}</button>`;
+  }).join('');
+  el.innerHTML=seqBtns+`
+    <button class="btn btn-sm btn-warn" onclick="bulkDNC()">Mark DNC</button>
+    <button class="btn btn-sm btn-danger" onclick="bulkDelete()">Delete selected</button>
+    <button class="btn btn-sm" style="color:#fff;border-color:rgba(255,255,255,0.3)" onclick="clearSel()">Cancel</button>`;
+}
+
 function updateBulkBar(){
   document.getElementById('bulk-count').textContent=selectedIds.size+' contact'+(selectedIds.size!==1?'s':'')+' selected';
   document.getElementById('bulk-bar').style.display=selectedIds.size>0?'flex':'none';
+  if(selectedIds.size>0)renderBulkBar();
 }
 
 function clearSel(){selectedIds.clear();rcontacts();}
@@ -1335,7 +1350,10 @@ function renderModal(id){
       <div class="ff" style="margin-bottom:4px"><label class="flbl">Notes</label><textarea class="rbox" id="e-notes" rows="4">${c.notes||''}</textarea></div>`;
     document.getElementById('mod-acts').innerHTML=`<button class="btn btn-p btn-sm" onclick="saveEdit()">Save changes</button><button class="btn btn-sm" onclick="editMode=false;renderModal('${id}')">Cancel</button>`;
   }else{
-    const seqBadge=isSeq?`<span class="badge ${lb?'blb':'bseq'}">${SEQUENCES[c.seq_id].name} — Touch ${nt?nt.num:(c.seq_log||[]).length} of ${SEQUENCES[c.seq_id].touches.length}</span>`:n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">Sequence complete</span>';
+    const cgcM=isCommGC(c);const edcM=isEDC(c);
+    const _seqName=c.seq_id&&SEQUENCES[c.seq_id]?SEQUENCES[c.seq_id].name:null;
+    const _seqCls=lb?'blb':cgcM?'bcgc':edcM?'bedc':'bseq';
+    const seqBadge=_seqName?(isSeq?`<span class="badge ${_seqCls}">${_seqName} — Touch ${nt?nt.num:(c.seq_log||[]).length} of ${SEQUENCES[c.seq_id].touches.length}</span>`:`<span class="badge" style="background:var(--bg);color:var(--mu);border:.5px solid var(--bd)">${_seqName} — ${c.responded?'⏸ responded':'⏸ paused'}</span>`):n?btouch(n):'<span class="badge" style="background:var(--bg);color:var(--mu)">—</span>';
     document.getElementById('mod-body').innerHTML=`
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div class="metric"><div class="mlbl">Company</div><div style="font-size:13px;font-weight:600;margin-top:2px">${c.co||'—'}</div></div>
@@ -2077,7 +2095,7 @@ function showMap(rows,fname){
   const crmFields=['Contact Name','First Name','Last Name','Company','Role','Email','LinkedIn','Phone','Address','Notes','Last Outreach Date'];
   const autoMap={};headers.forEach((h,i)=>{const m=bestMatch(h);if(m&&autoMap[m]===undefined)autoMap[m]=i;});
   const preview=rows.slice(1,4).filter(r=>r.some(c=>String(c).trim()));
-  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns pre-selected. Set any field to "— skip —" to ignore.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}<div style="margin-bottom:8px;margin-top:14px"><label class="flbl">Assign sequence to imported contacts</label><select class="fsel" id="imp-seq" style="margin-top:4px"><option value="">None</option><option value="fifa_14day">FIFA 14-day sprint</option><option value="luxury_builder_warm">Luxury Builder Warm</option></select></div>${preview.length?`<div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import →</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns pre-selected. Set any field to "— skip —" to ignore.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}<div style="margin-bottom:8px;margin-top:14px"><label class="flbl">Assign sequence to imported contacts</label><select class="fsel" id="imp-seq" style="margin-top:4px"><option value="">None</option>${Object.values(SEQUENCES).map(s=>`<option value="${s.id}">${s.name}</option>`).join("")}</select></div>${preview.length?`<div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import →</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
 }
 
 function getFieldIndex(field){const el=document.getElementById('mp-'+field.replace(/ /g,'_').replace(/[()\/]/g,''));return el&&el.value!==''?parseInt(el.value):undefined;}
