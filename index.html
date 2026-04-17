@@ -1066,7 +1066,7 @@ function rsequences(){
     const hdClass=lb?'seq-panel-hd lb':'seq-panel-hd';
     const tnClass=lb?'seq-touch-num lb':'seq-touch-num';
     const seqBadge=lb?'<span class="badge blb" style="font-size:9px">Builder Warm</span>':'<span class="badge bseq" style="font-size:9px">FIFA sprint</span>';
-    const eoBadge=eo?'<span class="badge beo" style="font-size:9px">Email only</span>':'';
+    const eoBadge=eo?`<span class="badge beo" style="font-size:9px;cursor:pointer" title="Email only — click to re-enable LinkedIn" onclick="toggleEmailOnly('${c.id}')">📧 email only ✕</span>`:'';
     return`<div class="seq-panel">
       <div class="${hdClass}">
         <div class="av ${lb?'lb':'seq'}">${ini(c.fn+' '+(c.ln||''))}</div>
@@ -1134,7 +1134,7 @@ function rseqCard(c){
   const cardCls=lb?'qcard lb-card':cgc?'qcard cgc-card':edc?'qcard edc-card':'qcard seq-card';
   const avCls=lb?'av lb':cgc?'av cgc':edc?'av edc':'av seq';
   const seqLabel=lb?'<span class="badge blb">Builder Warm</span>':cgc?'<span class="badge bcgc">Commercial GC</span>':edc?'<span class="badge bedc">City EDC</span>':'<span class="badge bseq">FIFA sprint</span>';
-  const eoBadge=eo?'<span class="badge beo">Email only</span>':'';
+  const eoBadge=eo?`<span class="badge beo" style="cursor:pointer" title="Email only — click to re-enable LinkedIn" onclick="event.stopPropagation();toggleEmailOnly('${c.id}')">📧 email only ✕</span>`:'';
   const logBtnCls=lb?'btn-lb':cgc?'btn-cgc':edc?'btn-edc':'btn-p';
   const logBtn=`<button class="btn ${logBtnCls} btn-sm" onclick="openLogModal('${c.id}')">Log touch ✓</button>`;
   const warmingTip=lb&&isLiTouch(nt)&&!eo?`<div style="font-size:10px;color:var(--lb);margin-bottom:8px;font-weight:500">💡 Like 2–3 of their posts before sending</div>`:cgc&&isLiTouch(nt)&&!eo?`<div style="font-size:10px;color:#185FA5;margin-bottom:8px;font-weight:500">💡 Warm up: engage with 2–3 of their recent posts first</div>`:'';
@@ -1365,7 +1365,7 @@ function renderModal(id){
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
         ${bt(c.tier||'tier3')} ${seqBadge}
-        ${eo?'<span class="badge beo">Email only — LinkedIn skipped</span>':''}
+        ${eo?`<span class="badge beo" style="cursor:pointer" title="Click to re-enable LinkedIn touches" onclick="toggleEmailOnly('${c.id}');closeModal();renderModal('${c.id}')">📧 Email only — click to re-enable ✕</span>`:''}
         ${c.dnc?' <span class="badge bdnc">DNC</span>':''}
         ${c.responded?' <span class="badge bresp">Responded</span>':''}
       </div>
