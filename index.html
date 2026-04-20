@@ -195,6 +195,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="ni" onclick="go('sequences')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H2zm0 4h10v2H2zm0 4h7v2H2z"/><circle cx="13" cy="11" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M12 11l.8.8 1.5-1.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>Sequences<span class="nbadge" id="seqbadge" style="background:#534AB7">0</span></div>
     <div class="ni" onclick="go('responses')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>Response intake</div>
     <div class="ni" onclick="go('library')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3h8v1H4zm0 3h8v1H4zm0 3h5v1H4z"/></svg>Copy library</div>
+    <div class="ni" onclick="go('reports')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13V5m4 8V2m4 11V8m4 5v-6" stroke-linecap="round"/></svg>Reports</div>
     <div class="ni" onclick="go('import')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>Import from Excel</div>
   </div>
   <div class="ns" style="margin-top:auto;padding-bottom:16px">
@@ -424,6 +425,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="screen" id="s-reports">
+      <div class="lib-tabs" style="align-items:center">
+        <div class="lib-tab active" id="rtab-perf" onclick="switchReportsTab('perf')">Performance</div>
+        <div class="lib-tab" id="rtab-pipe" onclick="switchReportsTab('pipe')">Pipeline</div>
+        <div class="lib-tab" id="rtab-act" onclick="switchReportsTab('act')">Activity</div>
+        <div class="lib-tab" id="rtab-cont" onclick="switchReportsTab('cont')">Content</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <label class="flbl" style="margin:0">Range</label>
+          <select class="fsel" style="width:130px;padding:5px 10px" id="r-range" onchange="rReports()">
+            <option value="all">All time</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="qtr">This quarter</option>
+          </select>
+        </div>
+      </div>
+      <div id="r-content"></div>
     </div>
 
     <!-- IMPORT -->
@@ -746,8 +767,8 @@ li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. Fellow DBA 
 
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:'Touch 1 — intro',t2:'Touch 2 — value add',t3:'Touch 3 — check in',t4:'Touch 4 — last one'};
-const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact'};
-const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually'};
+const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',reports:'Reports',import:'Import from Excel',add:'Add contact'};
+const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',reports:'Sequence performance, activity, and pipeline reporting',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually'};
 const CH_LABELS={linkedin:'LinkedIn connect',email:'Email',phone:'Phone call',linkedin_dm:'LinkedIn DM'};
 const CH_CLASSES={linkedin:'bch-li',email:'bch-em',phone:'bch-ph',linkedin_dm:'bch-ld'};
 
@@ -1180,6 +1201,7 @@ function go(id){
   if(id==='contacts'){rcontacts();updateLastImportInfo();}
   if(id==='sequences')rsequences();
   if(id==='library'){rlib();updateCustomBadge();}
+  if(id==='reports')rReports();
   if(id==='responses'){rpopsel();document.getElementById('rcontact-chip').style.display='none';document.getElementById('rout').innerHTML='';}
   if(id==='import')updateLastImportInfo();
   if(id==='add'){const d=document.getElementById('a11');if(d)d.value=new Date().toISOString().slice(0,10);}
@@ -2159,6 +2181,215 @@ function exportCSV(){
 
 function clip(txt){navigator.clipboard.writeText(txt).then(()=>toast('Copied!')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!');});}
 function toast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2400);}
+
+// ── REPORTS ───────────────────────────────────────────────────────────────────
+let currentReportsTab='perf';
+const MIN_N=5;
+const DAY=86400000;
+
+function switchReportsTab(tab){currentReportsTab=tab;['perf','pipe','act','cont'].forEach(t=>{const el=document.getElementById('rtab-'+t);if(el)el.classList.toggle('active',t===tab);});rReports();}
+
+function rRangeCutoff(){
+  const v=document.getElementById('r-range')?document.getElementById('r-range').value:'30';
+  if(v==='all')return null;
+  if(v==='qtr'){const d=new Date();const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3,1).getTime();}
+  return Date.now()-parseInt(v)*DAY;
+}
+
+function rInWindow(iso,cutoff){if(!cutoff)return true;if(!iso)return false;return new Date(iso).getTime()>=cutoff;}
+
+// Non-skipped seq_log entries (skipped entries have "Auto-skipped" in note)
+function rRealLog(c){return (c.seq_log||[]).filter(l=>!(l.note||'').includes('Auto-skipped'));}
+
+// Count of active touches in a sequence for a given contact (accounting for email-only)
+function rActiveTouchCount(c){
+  const seq=SEQUENCES[c.seq_id];if(!seq)return 0;
+  const eo=isEmailOnly(c);
+  return seq.touches.filter(t=>!(eo&&isLiTouch(t))).length;
+}
+
+function rComputeScorecard(cutoff){
+  const cs=gc();
+  return Object.values(SEQUENCES).map(seq=>{
+    const pool=cs.filter(c=>c.seq_id===seq.id&&!c.dnc&&rInWindow(c.seq_start,cutoff));
+    const n=pool.length;
+    if(n<MIN_N)return{seq,n,under:true};
+    const replied=pool.filter(c=>c.responded).length;
+    const t1=pool.filter(c=>c.tier==='tier1').length;
+    const repliedLogs=pool.filter(c=>c.responded).map(c=>rRealLog(c).length).filter(x=>x>0);
+    const avg=repliedLogs.length?repliedLogs.reduce((a,b)=>a+b,0)/repliedLogs.length:null;
+    const completed=pool.filter(c=>!c.seq_active&&!c.responded).length+pool.filter(c=>{const active=rActiveTouchCount(c);return active>0&&rRealLog(c).length>=active;}).length;
+    return{seq,n,under:false,reply_rate:replied/n,t1_rate:t1/n,avg_touches:avg,complete_rate:Math.min(completed,n)/n};
+  });
+}
+
+function rComputeDropoff(seqId,cutoff){
+  const seq=SEQUENCES[seqId];if(!seq)return null;
+  const cs=gc().filter(c=>c.seq_id===seqId&&!c.dnc&&rInWindow(c.seq_start,cutoff));
+  const rows=seq.touches.map(t=>{
+    const sent=cs.filter(c=>{
+      if(isEmailOnly(c)&&isLiTouch(t))return false;
+      return rRealLog(c).some(l=>l.touch_num===t.num);
+    }).length;
+    const replied=cs.filter(c=>{
+      if(!c.responded)return false;
+      const log=rRealLog(c);if(!log.length)return false;
+      return Math.max(...log.map(l=>l.touch_num))===t.num;
+    }).length;
+    return{touch:t,sent,replied};
+  });
+  return{seq,rows,total:cs.length};
+}
+
+function rComputeWeekly(){
+  const acts=ga();
+  const cs=gc();
+  const now=Date.now();
+  const wk=7*DAY;
+  function inWin(iso,start,end){const t=new Date(iso).getTime();return t>=start&&t<end;}
+  const thisStart=now-wk,prevStart=now-2*wk;
+
+  const touchMatch=a=>/^Touch \d/i.test(a.action)||/ sent$/.test(a.action)||/touch \d+ sent/i.test(a.action);
+  const replyMatch=a=>/responded/i.test(a.action)||/upgraded to Tier 1/i.test(a.action);
+  const upgradeMatch=a=>/upgraded to Tier 1/i.test(a.action)||/Tier 1/i.test(a.action);
+
+  const touches_now=acts.filter(a=>inWin(a.date,thisStart,now)&&touchMatch(a)).length;
+  const touches_prev=acts.filter(a=>inWin(a.date,prevStart,thisStart)&&touchMatch(a)).length;
+  const replies_now=acts.filter(a=>inWin(a.date,thisStart,now)&&replyMatch(a)).length;
+  const replies_prev=acts.filter(a=>inWin(a.date,prevStart,thisStart)&&replyMatch(a)).length;
+  const new_now=cs.filter(c=>c.ca&&inWin(c.ca,thisStart,now)).length;
+  const new_prev=cs.filter(c=>c.ca&&inWin(c.ca,prevStart,thisStart)).length;
+  const upgrades_now=acts.filter(a=>inWin(a.date,thisStart,now)&&upgradeMatch(a)).length;
+  const upgrades_prev=acts.filter(a=>inWin(a.date,prevStart,thisStart)&&upgradeMatch(a)).length;
+
+  return{
+    touches:{now:touches_now,delta:touches_now-touches_prev},
+    replies:{now:replies_now,delta:replies_now-replies_prev},
+    contacts:{now:new_now,delta:new_now-new_prev},
+    upgrades:{now:upgrades_now,delta:upgrades_now-upgrades_prev}
+  };
+}
+
+function rComputeForecast(){
+  const cs=gc();
+  const now=new Date();now.setHours(0,0,0,0);
+  const tStart=now.getTime();
+  let today=0,in7=0,in14=0,in30=0;
+  cs.forEach(c=>{
+    if(c.dnc)return;
+    let dueIso=null;
+    if(c.seq_id&&c.seq_active){const nt=seqNextTouch(c);if(nt)dueIso=seqTouchDueDate(c,nt);}
+    else if(!c.seq_id){
+      const n=nxt(c);if(!n)return;
+      if(n==='t1'){dueIso=new Date().toISOString().slice(0,10);}
+      else if(c.ltd){const d=new Date(c.ltd);d.setDate(d.getDate()+TD[n]);dueIso=d.toISOString().slice(0,10);}
+    }
+    if(!dueIso)return;
+    const due=new Date(dueIso).getTime();
+    const diff=due-tStart;
+    if(diff<=0)today++;
+    if(diff<=7*DAY)in7++;
+    if(diff<=14*DAY)in14++;
+    if(diff<=30*DAY)in30++;
+  });
+  return{today,in7,in14,in30};
+}
+
+function rDeltaBadge(d){
+  if(d>0)return`<span style="font-size:11px;color:var(--ac);margin-top:2px;display:block">↑ ${d} vs last week</span>`;
+  if(d<0)return`<span style="font-size:11px;color:var(--dn);margin-top:2px;display:block">↓ ${Math.abs(d)} vs last week</span>`;
+  return`<span style="font-size:11px;color:var(--mu);margin-top:2px;display:block">— same as last week</span>`;
+}
+
+function rFmtPct(v){return v==null?'—':Math.round(v*100)+'%';}
+function rFmtNum(v,d){return v==null?'—':d!=null?v.toFixed(d):Math.round(v);}
+
+function rRenderPerf(cutoff){
+  const scorecard=rComputeScorecard(cutoff);
+  const hasAny=scorecard.some(r=>!r.under);
+
+  // Sequence selector for drop-off (default: largest pool that isn't under-n)
+  const eligibleSeqs=scorecard.filter(r=>!r.under).sort((a,b)=>b.n-a.n);
+  const sel=document.getElementById('r-drop-seq');
+  const selected=sel?sel.value:(eligibleSeqs[0]?eligibleSeqs[0].seq.id:Object.values(SEQUENCES)[0].id);
+
+  let scoreHtml=`<div class="panel"><div class="ptitle" style="margin-bottom:4px">Sequence scorecard</div><div style="font-size:11px;color:var(--mu);margin-bottom:14px">Which sequence is producing results per contact?</div>`;
+  scoreHtml+=`<table class="ctbl" style="table-layout:fixed"><thead><tr><th style="width:28%">Sequence</th><th style="text-align:right">Contacts</th><th style="text-align:right">Reply rate</th><th style="text-align:right">Tier 1</th><th style="text-align:right">Avg touch</th><th style="text-align:right">Complete</th></tr></thead><tbody>`;
+  scorecard.forEach(r=>{
+    if(r.under){
+      scoreHtml+=`<tr><td style="color:var(--mu)">${r.seq.name} <span style="font-size:10px;color:var(--ht)">(n&lt;${MIN_N})</span></td><td style="text-align:right;color:var(--mu)">${r.n}</td><td colspan="4" style="text-align:right;color:var(--ht);font-size:11px">Need at least ${MIN_N} contacts to show</td></tr>`;
+    }else{
+      const hiRep=r.reply_rate>=0.2?'color:var(--ac);font-weight:500':'';
+      scoreHtml+=`<tr><td>${r.seq.name}</td><td style="text-align:right">${r.n}</td><td style="text-align:right;${hiRep}">${rFmtPct(r.reply_rate)}</td><td style="text-align:right">${rFmtPct(r.t1_rate)}</td><td style="text-align:right">${r.avg_touches==null?'—':r.avg_touches.toFixed(1)}</td><td style="text-align:right">${rFmtPct(r.complete_rate)}</td></tr>`;
+    }
+  });
+  scoreHtml+=`</tbody></table><div style="margin-top:10px;font-size:11px;color:var(--ht);line-height:1.6">Results hidden when sample &lt; ${MIN_N} contacts to avoid misleading readouts on small cohorts.</div></div>`;
+
+  // Drop-off
+  let dropHtml=`<div class="panel">`;
+  const drop=rComputeDropoff(selected,cutoff);
+  const seqOptions=Object.values(SEQUENCES).map(s=>`<option value="${s.id}"${s.id===selected?' selected':''}>${s.name}</option>`).join('');
+  dropHtml+=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px;flex-wrap:wrap"><div><div style="font-size:13px;font-weight:600">Touch-level drop-off${drop?' — '+drop.seq.name:''}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Where in the sequence do replies cluster?</div></div><select class="fsel" style="width:180px;padding:5px 10px" id="r-drop-seq" onchange="rReports()">${seqOptions}</select></div>`;
+
+  if(!drop||drop.total<MIN_N){
+    dropHtml+=`<div class="empty" style="padding:30px"><div class="empty-icon">○</div>Need at least ${MIN_N} contacts on this sequence (currently ${drop?drop.total:0}) to show drop-off.</div></div>`;
+  }else{
+    const maxSent=Math.max(1,...drop.rows.map(r=>r.sent));
+    const maxReplied=Math.max(...drop.rows.map(r=>r.replied));
+    dropHtml+=`<div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">`;
+    drop.rows.forEach(r=>{
+      const pct=Math.round((r.sent/maxSent)*100);
+      const isTop=r.replied===maxReplied&&r.replied>0;
+      const fill=isTop?'#5DCAA5':'#AFA9EC';
+      dropHtml+=`<div style="display:grid;grid-template-columns:64px 1fr 120px;gap:10px;align-items:center;font-size:12px"><div style="color:var(--mu)${isTop?';font-weight:600;color:var(--tx)':''}">Touch ${r.touch.num}</div><div style="height:20px;background:var(--bg);border-radius:4px;overflow:hidden;border:.5px solid var(--bd)"><div style="width:${pct}%;height:100%;background:${fill}"></div></div><div style="text-align:right;color:var(--mu)${isTop?';color:var(--ac);font-weight:500':''}">${r.sent} sent · ${r.replied} reply</div></div>`;
+    });
+    dropHtml+=`</div>`;
+    const topTouch=drop.rows.find(r=>r.replied===maxReplied&&r.replied>0);
+    if(topTouch&&maxReplied>0){
+      const laterSent=drop.rows.filter(r=>r.touch.num>topTouch.touch.num).reduce((a,b)=>a+b.sent,0);
+      const laterReplies=drop.rows.filter(r=>r.touch.num>topTouch.touch.num).reduce((a,b)=>a+b.replied,0);
+      const insight=laterSent>0&&laterReplies===0?`Replies cluster on Touch ${topTouch.touch.num} (${topTouch.touch.label}). Touches ${topTouch.touch.num+1}+ have produced ${laterSent} sends with no replies at this sample size.`:`Replies cluster on Touch ${topTouch.touch.num} (${topTouch.touch.label}).`;
+      dropHtml+=`<div style="margin-top:14px;padding:10px 12px;background:#E6F1FB;border-radius:7px;font-size:11px;color:#0C447C;line-height:1.6">${insight}</div>`;
+    }
+    dropHtml+=`</div>`;
+  }
+
+  return scoreHtml+dropHtml;
+}
+
+function rRenderAct(){
+  const w=rComputeWeekly();
+  const f=rComputeForecast();
+  let html=`<div class="metrics" style="margin-bottom:10px">
+    <div class="metric"><div class="mlbl">Touches sent</div><div class="mval">${w.touches.now}</div>${rDeltaBadge(w.touches.delta)}</div>
+    <div class="metric"><div class="mlbl">Replies received</div><div class="mval" style="color:var(--in)">${w.replies.now}</div>${rDeltaBadge(w.replies.delta)}</div>
+    <div class="metric"><div class="mlbl">New contacts</div><div class="mval">${w.contacts.now}</div>${rDeltaBadge(w.contacts.delta)}</div>
+    <div class="metric"><div class="mlbl">Tier upgrades</div><div class="mval" style="color:var(--ac)">${w.upgrades.now}</div>${rDeltaBadge(w.upgrades.delta)}</div>
+  </div>`;
+  html+=`<div class="panel"><div class="ptitle" style="margin-bottom:4px">Touch forecast</div><div style="font-size:11px;color:var(--mu);margin-bottom:14px">How much outreach is coming due?</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      <div style="text-align:center;padding:10px 4px;border-right:.5px solid var(--bd)"><div style="font-size:22px;font-weight:600;color:var(--ac)">${f.today}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Due today</div></div>
+      <div style="text-align:center;padding:10px 4px;border-right:.5px solid var(--bd)"><div style="font-size:22px;font-weight:600">${f.in7}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Next 7 days</div></div>
+      <div style="text-align:center;padding:10px 4px;border-right:.5px solid var(--bd)"><div style="font-size:22px;font-weight:600">${f.in14}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Next 14 days</div></div>
+      <div style="text-align:center;padding:10px 4px"><div style="font-size:22px;font-weight:600">${f.in30}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Next 30 days</div></div>
+    </div>
+    <div style="margin-top:12px;text-align:center"><button class="btn btn-sm" onclick="go('queue')">Go to today's queue →</button></div>
+  </div>`;
+  return html;
+}
+
+function rRenderPhase(num,desc){
+  return`<div class="panel" style="text-align:center;padding:40px 20px"><div style="font-size:24px;margin-bottom:10px;opacity:.3">◎</div><div style="font-size:13px;font-weight:600;margin-bottom:6px">Coming in Phase ${num}</div><div style="font-size:11px;color:var(--mu);line-height:1.7;max-width:380px;margin:0 auto">${desc}</div></div>`;
+}
+
+function rReports(){
+  const cutoff=rRangeCutoff();
+  const el=document.getElementById('r-content');if(!el)return;
+  if(currentReportsTab==='perf')el.innerHTML=rRenderPerf(cutoff);
+  else if(currentReportsTab==='act')el.innerHTML=rRenderAct();
+  else if(currentReportsTab==='pipe')el.innerHTML=rRenderPhase(2,'Source → Tier 1 funnel · Tier progression tracker · Stalled contacts report · Time-to-response distribution. Will show which contact lists (DBA, FIFA, Boutique, Referral) produce the warmest contacts and flag contacts going cold.');
+  else if(currentReportsTab==='cont')el.innerHTML=rRenderPhase(3,'Copy usage heatmap · Custom copy performance · Role track performance · Cold vs warm LinkedIn copy · FIFA company-specific vs generic. Will tell you which copy blocks actually drive replies so you know what to keep, retire, or iterate on.');
+}
 
 rdash();
 </script>
