@@ -2119,7 +2119,7 @@ function handleFile(input){
 
 function handleDrop(e){e.preventDefault();document.getElementById('uz').style.borderColor='';const file=e.dataTransfer.files[0];if(!file)return;const dt=new DataTransfer();dt.items.add(file);document.getElementById('fi2').files=dt.files;handleFile(document.getElementById('fi2'));}
 
-const FIELD_AUTO={'First Name':['first name','firstname','fname','first','given name'],'Last Name':['last name','lastname','lname','last','surname'],'Contact Name':['contact name','contact','name','full name','rep name'],'Company':['company','builder','firm','organization','account','lead'],'Role':['role','title','job title','position'],'Email':['email','email address','e-mail'],'LinkedIn':['linkedin','linkedin url','li'],'Phone':['phone','mobile','cell','tel'],'Address':['address','location','street'],'Notes':['notes','note','comments'],'Last Outreach Date':['date','last touch','last outreach','outreach date']};
+const FIELD_AUTO={'First Name':['first name','firstname','fname','first','given name'],'Last Name':['last name','lastname','lname','last','surname'],'Contact Name':['contact name','contact','name','full name','rep name'],'Company':['company','firm','organization','account','builder name','company name'],'Role':['role','title','job title','position'],'Email':['email','email address','e-mail'],'LinkedIn':['linkedin','linkedin url','li'],'Phone':['phone','mobile','cell','tel'],'Address':['address','location','street'],'Notes':['notes','note','comments'],'Last Outreach Date':['date','last touch','last outreach','outreach date']};
 function bestMatch(h){const hl=h.toLowerCase().trim();for(const[field,variants]of Object.entries(FIELD_AUTO)){if(variants.some(v=>hl===v||hl.startsWith(v)||v.startsWith(hl)))return field;}return null;}
 
 function showMap(rows,fname){
@@ -2511,14 +2511,29 @@ function runCompanyExpansion(){
   if(coIdx===undefined&&nameIdx===undefined){
     alert('Please map the Company or Name column so Claude knows what companies to research.');return;
   }
+  // Detect if the mapped Company column actually contains lead types (e.g. "Luxury Home Builder")
+  // If so, fall back to the Name column for actual company names
+  const _ltDetect=/(luxury home builder|custom home builder|home builder|remodeler|architect.?designer|general contractor|commercial gc)/i;
+  const _sampleCo=importRows.slice(1,5).map(r=>String(r[coIdx!==undefined?coIdx:nameIdx]||'').trim());
+  const _coHasLeadTypes=_sampleCo.filter(v=>_ltDetect.test(v)).length>=Math.ceil(_sampleCo.filter(v=>v).length*0.5);
+  // If company column has lead types and name column exists, use name column for companies
+  const _actualCoIdx=(_coHasLeadTypes&&nameIdx!==undefined)?nameIdx:(coIdx!==undefined?coIdx:nameIdx);
+  const _ltIdx=(coIdx!==undefined&&_coHasLeadTypes)?coIdx:undefined;
+
   const companies=[];
   importRows.slice(1).forEach(row=>{
-    const co=String(row[coIdx!==undefined?coIdx:nameIdx]||'').trim();
+    const co=String(row[_actualCoIdx]||'').trim();
     if(!co)return;
     let lt='';
-    for(let i=0;i<row.length;i++){
-      const val=String(row[i]||'').trim().toLowerCase();
-      if(val.match(/builder|architect|designer|remodeler|contractor|\bgc\b/)){lt=String(row[i]||'').trim();break;}
+    // First try the dedicated lead type column if we found one
+    if(_ltIdx!==undefined){lt=String(row[_ltIdx]||'').trim();}
+    // Otherwise scan all columns for lead type patterns
+    if(!lt){
+      for(let i=0;i<row.length;i++){
+        if(i===_actualCoIdx)continue; // skip the company column
+        const val=String(row[i]||'').trim().toLowerCase();
+        if(val.match(/builder|architect|designer|remodeler|contractor|gc/)){lt=String(row[i]||'').trim();break;}
+      }
     }
     companies.push({name:co,leadType:lt});
   });
