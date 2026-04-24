@@ -206,6 +206,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="ni" onclick="go('sequences')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H2zm0 4h10v2H2zm0 4h7v2H2z"/><circle cx="13" cy="11" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M12 11l.8.8 1.5-1.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>Sequences<span class="nbadge" id="seqbadge" style="background:#534AB7">0</span></div>
     <div class="ni" onclick="go('responses')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>Response intake</div>
     <div class="ni" onclick="go('library')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3h8v1H4zm0 3h8v1H4zm0 3h5v1H4z"/></svg>Copy library</div>
+    <div class="ni" onclick="go('rocketreach')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 3 3.5.5-2.5 2.5.6 3.5L8 9l-3.1 1.5.6-3.5L3 4.5l3.5-.5z"/></svg>RocketReach queue<span class="nbadge" id="rrbadge" style="background:#BA7517">0</span></div>
     <div class="ni" onclick="go('import')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>Import from Excel</div>
   </div>
   <div class="ns" style="margin-top:auto;padding-bottom:16px">
@@ -469,6 +470,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
+    <!-- ROCKETREACH QUEUE -->
+    <div class="screen" id="s-rocketreach">
+      <div class="shdr">
+        <div class="stitle">RocketReach Priority Queue</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" onclick="clearRRQueue()">Clear completed</button>
+          <button class="btn btn-sm btn-warn" style="background:#FAEEDA;color:#633806;border-color:#BA7517" onclick="exportRRList()">Export RR list</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--mu);margin-bottom:14px;background:#FAEEDA;border:.5px solid #BA7517;border-radius:8px;padding:10px 14px;line-height:1.7">
+        <strong>You have 100 RocketReach credits/month.</strong> Contacts below are flagged as high-value and missing email or phone. Use your credits on these first — highest sequence stage + most intel = most likely to convert.
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden"><div id="rr-list"></div></div>
+    </div>
+
     <!-- ADD CONTACT -->
     <div class="screen" id="s-add">
       <div class="panel" style="max-width:560px">
@@ -498,6 +514,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="frow">
           <div class="ff"><label class="flbl">Email</label><input class="fi" id="a5" placeholder="name@company.com" type="email"></div>
           <div class="ff"><label class="flbl">LinkedIn URL</label><input class="fi" id="a6" placeholder="linkedin.com/in/..."></div>
+        </div>
+        <div class="frow">
+          <div class="ff"><label class="flbl">Phone</label><input class="fi" id="a-phone" placeholder="(214) 555-0100"></div>
+          <div class="ff"><label class="flbl">Office Address</label><input class="fi" id="a-addr" placeholder="123 Main St, Dallas TX 75201"></div>
         </div>
         <div class="frow">
           <div class="ff"><label class="flbl">LinkedIn account to use</label>
@@ -763,8 +783,8 @@ t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. Hoping our
 
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:'Touch 1 — intro',t2:'Touch 2 — value add',t3:'Touch 3 — check in',t4:'Touch 4 — last one'};
-const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact'};
-const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually'};
+const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact',rocketreach:'RocketReach Queue'};
+const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually',rocketreach:'Contacts missing email or phone — use your 100 monthly credits here first'};
 const CH_LABELS={linkedin:'LinkedIn connect',email:'Email',phone:'Phone call',linkedin_dm:'LinkedIn DM'};
 const CH_CLASSES={linkedin:'bch-li',email:'bch-em',phone:'bch-ph',linkedin_dm:'bch-ld'};
 
@@ -1210,6 +1230,7 @@ function go(id){
   if(id==='library'){rlib();updateCustomBadge();}
   if(id==='responses'){rpopsel();document.getElementById('rcontact-chip').style.display='none';document.getElementById('rout').innerHTML='';}
   if(id==='import')updateLastImportInfo();
+  if(id==='rocketreach'){rRocketReachQueue();updateRRBadge();}
   if(id==='add'){const d=document.getElementById('a11');if(d)d.value=new Date().toISOString().slice(0,10);}
 }
 
@@ -1344,6 +1365,10 @@ function renderModal(id){
         <div class="ff"><label class="flbl">LinkedIn URL</label><input class="fi" id="e-li" value="${(c.li||'').replace(/"/g,'&quot;')}"></div>
       </div>
       <div class="frow">
+        <div class="ff"><label class="flbl">Phone</label><input class="fi" id="e-phone" value="${(c.phone||'').replace(/"/g,'&quot;')}" placeholder="(214) 555-0100"></div>
+        <div class="ff"><label class="flbl">Office Address</label><input class="fi" id="e-addr" value="${(c.addr||'').replace(/"/g,'&quot;')}" placeholder="123 Main St, Dallas TX"></div>
+      </div>
+      <div class="frow">
         <div class="ff"><label class="flbl">LinkedIn account</label>
           <select class="fsel" id="e-liact">
             <option value="personal"${(c.li_account||'personal')==='personal'?' selected':''}>Erika Harrison (personal)</option>
@@ -1391,6 +1416,8 @@ function renderModal(id){
         <div class="metric"><div class="mlbl">Role</div><div style="font-size:13px;font-weight:600;margin-top:2px">${c.role||'—'}</div></div>
         <div class="metric"><div class="mlbl">Email</div><div style="font-size:11px;margin-top:2px;color:var(--in);word-break:break-all">${c.email||'—'}</div></div>
         <div class="metric"><div class="mlbl">LinkedIn</div><div style="font-size:11px;margin-top:2px;word-break:break-all">${c.li?`<a href="https://${c.li.replace(/^https?:\/\//,'')}" style="color:var(--in)" target="_blank">${c.li}</a>`:'—'}</div></div>
+        <div class="metric"><div class="mlbl">Phone</div><div style="font-size:11px;margin-top:2px">${c.phone?`<a href="tel:${c.phone}" style="color:var(--in)">${c.phone}</a>`:'—'}</div></div>
+        <div class="metric"><div class="mlbl">Office Address</div><div style="font-size:11px;margin-top:2px;color:var(--mu)">${c.addr||'—'}</div></div>
         <div class="metric"><div class="mlbl">Last touch</div><div style="font-size:11px;margin-top:2px">${fd(c.ltd)}</div></div>
         <div class="metric"><div class="mlbl">Outreach mode</div><div style="font-size:11px;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${eo?'<span class="badge beo">Email only</span>':(c.li_account?bliact(c.li_account):'')} ${!eo?`<span class="badge ${c.li_status==='warm'?'bwarm':'bcold'}">${c.li_status==='warm'?'Connected':'Not connected'}</span>`:''}</div></div>
       </div>
@@ -1434,6 +1461,8 @@ function saveEdit(){
   c.li_status=liStatRaw==='none'?'cold':liStatRaw;
   c.email_only=liStatRaw==='none';
   c.fn=fn;c.ln=document.getElementById('e-ln').value.trim();c.co=document.getElementById('e-co').value.trim();c.role=document.getElementById('e-role').value;c.email=document.getElementById('e-email').value.trim();c.li=document.getElementById('e-li').value.trim();
+  c.phone=(document.getElementById('e-phone')||{}).value||c.phone||'';
+  c.addr=(document.getElementById('e-addr')||{}).value||c.addr||'';
   c.li_account=document.getElementById('e-liact').value;
   c.tier=document.getElementById('e-tier').value;c.src=document.getElementById('e-src').value.trim();c.notes=document.getElementById('e-notes').value.trim();
   sc(cs);addA(curC,'Contact updated','');editMode=false;renderModal(curC);rcontacts();updateSeqBadge();toast('Contact saved!');
@@ -1472,7 +1501,7 @@ function saveContact(){
   const seqId=document.getElementById('a10').value;
   const seqStart=document.getElementById('a11').value||new Date().toISOString().slice(0,10);
   const liStatRaw=document.getElementById('a-listat').value;
-  const c={id:'c'+Date.now()+Math.random().toString(36).slice(2,6),fn,ln:document.getElementById('a2').value.trim(),co:document.getElementById('a3').value.trim(),role:document.getElementById('a4').value,email:document.getElementById('a5').value.trim(),li:document.getElementById('a6').value.trim(),li_account:document.getElementById('a-liact').value,li_status:liStatRaw==='none'?'cold':liStatRaw,email_only:liStatRaw==='none',tier:document.getElementById('a7').value,src:document.getElementById('a8').value,notes:document.getElementById('a9').value.trim(),ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString()};
+  const c={id:'c'+Date.now()+Math.random().toString(36).slice(2,6),fn,ln:document.getElementById('a2').value.trim(),co:document.getElementById('a3').value.trim(),role:document.getElementById('a4').value,email:document.getElementById('a5').value.trim(),li:document.getElementById('a6').value.trim(),phone:(document.getElementById('a-phone')||{}).value||'',addr:(document.getElementById('a-addr')||{}).value||'',li_account:document.getElementById('a-liact').value,li_status:liStatRaw==='none'?'cold':liStatRaw,email_only:liStatRaw==='none',tier:document.getElementById('a7').value,src:document.getElementById('a8').value,notes:document.getElementById('a9').value.trim(),ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString()};
   if(seqId){c.seq_id=seqId;c.seq_start=seqStart;c.seq_active=true;c.seq_current_touch=1;c.seq_log=[];}
   cs.push(c);sc(cs);addA(c.id,'Contact added',c.co);
   ['a1','a2','a3','a5','a6','a9'].forEach(id=>document.getElementById(id).value='');
@@ -2250,6 +2279,8 @@ async function prepareJerichoHandoff(cid){
 Company: ${c.co||'Unknown'}
 Role: ${c.role||'Unknown'}
 Email: ${c.email||'Not on file'}
+Phone: ${c.phone||'Not on file'}
+Office Address: ${c.addr||'Not on file'}
 LinkedIn: ${c.li||'Not on file'}
 Tier: ${c.tier||'tier3'}
 Notes / Intel:
@@ -2618,8 +2649,8 @@ async function expandCompany(companyName,leadType){
       model:'claude-sonnet-4-20250514',
       max_tokens:900,
       tools:[{"type":"web_search_20250305","name":"web_search"}],
-      system:`You are a B2B prospect researcher for Eridion Glass, a Dallas-based WBE glass and mirror subcontractor serving DFW builders, architects, and GCs. Find 2-3 real, named decision-makers at the given company who would be right contacts for a specialty glass sub. Prioritize: Owner/CEO/Founder, Purchasing Manager, Project Manager, or Designer. Return ONLY a valid JSON array with no markdown, no explanation, no code blocks. Each object: {"fn":"","ln":"","title":"","role":"CEO/Owner|Purchasing|Operations|Supervisor|Designer|VP Business Development","linkedin":"linkedin.com/in/... or empty","email_guess":"jsmith@company.com or empty","notes":"2-4 lines of intel: school, career, civic, projects"}. If no real individuals found, return [].`,
-      messages:[{role:'user',content:'Company: '+companyName+'\nLead Type: '+(leadType||'Custom Home Builder')+'\nLocation: DFW Texas\n\nFind 2-3 decision-maker contacts. JSON array only.'}]
+      system:`You are a B2B prospect researcher for Eridion Glass, a Dallas-based WBE glass and mirror subcontractor. Your job is to find REAL named individuals at the company — check the company website About/Team page, LinkedIn company page, and news mentions. Search aggressively. For small DFW builders and design firms, the owner's name is almost always findable on their website. Prioritize: Owner/Founder/Principal, Project Manager, Purchasing Manager, Designer. Return ONLY a valid JSON array — no markdown, no explanation, no code fences. Each object must have exactly these fields: {"fn":"first name","ln":"last name","title":"their actual job title","role":"CEO/Owner|Purchasing|Operations|Supervisor|Designer|VP Business Development","linkedin":"linkedin.com/in/handle or empty string","email_guess":"firstname@companydomain.com or empty string","phone_guess":"direct phone if found else empty string","notes":"3-5 lines: school/university, career background, personal interests, civic involvement, relevant projects, any useful outreach angle"}. Search the company website team/about page FIRST. Return [] only if truly no individuals can be found after thorough searching.`,
+      messages:[{role:'user',content:'Company: '+companyName+'\nLead Type: '+(leadType||'Custom Home Builder')+'\nLocation: DFW Texas area\n\nSearch their website about/team page, LinkedIn, and any news mentions. Find 2-3 real decision-makers. JSON array only — no other text.'}]
     })
   });
   const data=await resp.json();
@@ -2642,9 +2673,11 @@ async function expandCompany(companyName,leadType){
     role:p.role||defaultRole,
     email:String(p.email_guess||'').trim(),
     li:String(p.linkedin||'').trim().replace(/^https?:\/\//,''),
+    phone:String(p.phone_guess||'').trim(),
     notes:('[AI Research '+today+' — Company Expansion]\nTitle: '+(p.title||p.role||'')+'\n'+(p.notes||'')).trim(),
     tier:'tier3',src:'Company Expansion Import',
     _seqOverride:seqId,
+    _rr_priority:(!p.email_guess||p.email_guess.length<5)?'high':'low', // flag for RocketReach queue
     ts:[],ltd:null,dnc:false,responded:false,
     ca:new Date().toISOString(),
     li_account:'personal',li_status:'cold',email_only:false
@@ -2652,7 +2685,88 @@ async function expandCompany(companyName,leadType){
 }
 
 
+// ══════════════════════════════════════════════════════════════════════
+// ROCKETREACH PRIORITY QUEUE
+// ══════════════════════════════════════════════════════════════════════
+
+function getRRQueue(){
+  // Contacts missing email OR phone, not DNC, scored by priority
+  const cs=gc().filter(c=>!c.dnc&&(!c.email||!c.phone));
+  return cs.map(c=>{
+    // Score: higher = more valuable to get contact info for
+    let score=0;
+    if(c.tier==='tier1')score+=30;
+    if(c.tier==='tier2')score+=20;
+    if(c.tier==='tier3')score+=10;
+    if(c.seq_id&&c.seq_active)score+=15;
+    if(c.seq_log&&c.seq_log.length>0)score+=c.seq_log.length*5; // more touches = more invested
+    if(!c.email&&!c.phone)score+=20; // missing both = highest priority
+    else if(!c.email)score+=10;
+    else score+=5; // missing only phone
+    if(c.li)score+=5; // has LinkedIn = easier to find on RR
+    if(c.notes&&c.notes.length>50)score+=5; // has intel = worth investing
+    if(c._rr_priority==='high')score+=10;
+    return{...c,_rrScore:score};
+  }).sort((a,b)=>b._rrScore-a._rrScore);
+}
+
+function updateRRBadge(){
+  const q=getRRQueue();
+  const badge=document.getElementById('rrbadge');
+  if(badge)badge.textContent=q.length;
+}
+
+function rRocketReachQueue(){
+  updateRRBadge();
+  const q=getRRQueue();
+  const el=document.getElementById('rr-list');if(!el)return;
+  if(!q.length){
+    el.innerHTML='<div class="empty" style="padding:24px"><div class="empty-icon">🎯</div><div style="font-weight:600;margin-bottom:6px">All caught up!</div><div>Every contact in your CRM has both an email and phone number on file.</div></div>';
+    return;
+  }
+  el.innerHTML=`<table class="ctbl">
+    <thead><tr>
+      <th>Contact</th><th>Company</th><th>Missing</th><th>Sequence stage</th>
+      <th>Priority</th><th>LinkedIn</th><th></th>
+    </tr></thead>
+    <tbody>${q.map((c,i)=>{
+      const missing=[];
+      if(!c.email)missing.push('email');
+      if(!c.phone)missing.push('phone');
+      const seqInfo=c.seq_id&&SEQUENCES[c.seq_id]?SEQUENCES[c.seq_id].name+'  T'+(c.seq_log||[]).filter(l=>!l.note.includes('Auto-skipped')).length:'No sequence';
+      const priorityBadge=i<10?'<span class="badge" style="background:#FCEBEB;color:#C0392B">🔴 Top 10</span>':i<25?'<span class="badge" style="background:#FAEEDA;color:#854F0B">🟡 High</span>':'<span class="badge" style="background:var(--bg);color:var(--mu)">Low</span>';
+      const liLink=c.li?`<a href="https://${c.li.replace(/^https?:\/\//,'')}" target="_blank" class="btn btn-sm btn-li" style="font-size:10px">Open ↗</a>`:'—';
+      return`<tr>
+        <td style="font-weight:500">${c.fn} ${c.ln||''}</td>
+        <td style="color:var(--mu)">${c.co||'—'}</td>
+        <td>${missing.map(m=>`<span class="badge" style="background:#FCEBEB;color:var(--dn)">${m}</span>`).join(' ')}</td>
+        <td style="font-size:11px;color:var(--mu)">${seqInfo}</td>
+        <td>${priorityBadge}</td>
+        <td>${liLink}</td>
+        <td><button class="btn btn-sm btn-p" onclick="openC('${c.id}')">Edit</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function clearRRQueue(){
+  // Mark contacts with email as "done" by just refreshing — they'll drop off when email is added
+  toast('Add emails via Edit contact to remove from queue');
+}
+
+function exportRRList(){
+  const q=getRRQueue().slice(0,100); // max 100 = one month's credits
+  if(!q.length){toast('Queue is empty!');return;}
+  const hd=['First Name','Last Name','Company','Role','LinkedIn URL','Notes'];
+  const rows=q.map(c=>[c.fn,c.ln||'',c.co||'',c.role||'',c.li||'',c.notes||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  const csv=[hd.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='eridion_rocketreach_queue_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('RocketReach list exported — '+q.length+' contacts');
+}
+
+
 rdash();
 </script>
-</body>
-</html>
