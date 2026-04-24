@@ -2127,14 +2127,35 @@ function showMap(rows,fname){
   const crmFields=['Contact Name','First Name','Last Name','Company','Role','Email','LinkedIn','Phone','Address','Notes','Last Outreach Date'];
   const autoMap={};headers.forEach((h,i)=>{const m=bestMatch(h);if(m&&autoMap[m]===undefined)autoMap[m]=i;});
   const preview=rows.slice(1,4).filter(r=>r.some(c=>String(c).trim()));
-  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns pre-selected. Set any field to "— skip —" to ignore.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}<div style="margin-bottom:8px;margin-top:14px"><label class="flbl">Assign sequence to imported contacts</label><select class="fsel" id="imp-seq" style="margin-top:4px"><option value="">None</option>${Object.values(SEQUENCES).map(s=>`<option value="${s.id}">${s.name}</option>`).join("")}</select></div>${preview.length?`<div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:14px;background:#F0FDF8;border:.5px solid var(--ac);border-radius:8px;padding:12px 14px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <input type="checkbox" id="ai-research-toggle" style="width:auto;cursor:pointer">
-      <label for="ai-research-toggle" style="font-size:12px;font-weight:600;color:var(--ad);cursor:pointer">🔍 AI Research Mode — enrich contacts before importing</label>
+  // Auto-detect if list looks like companies (not individual names)
+  const sampleNames=rows.slice(1,6).map(r=>String(r[0]||'').trim().toLowerCase());
+  const looksLikeCompanies=sampleNames.filter(n=>n.match(/homes|builders|design|construction|remodel|custom|builders|group|company|llc|inc|corp/)).length>=Math.ceil(sampleNames.filter(n=>n).length*0.5);
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} row${rows.length-1!==1?"s":""} found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:10px;line-height:1.6">Auto-detected columns pre-selected. Set any field to "— skip —" to ignore.</p><div id="mode-hint" style="font-size:11px;background:#FAEEDA;border:.5px solid #BA7517;border-radius:7px;padding:8px 12px;margin-bottom:12px;line-height:1.6;display:none">💡 <strong>Tip:</strong> Your list looks like it contains company names rather than individual contacts. Consider using <strong>🏢 Company Expansion Mode</strong> below — Claude will find 2–3 real decision-makers per company automatically.</div>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}<div style="margin-bottom:8px;margin-top:14px"><label class="flbl">Assign sequence to imported contacts</label><select class="fsel" id="imp-seq" style="margin-top:4px"><option value="">None</option>${Object.values(SEQUENCES).map(s=>`<option value="${s.id}">${s.name}</option>`).join("")}</select></div>${preview.length?`<div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:14px;background:var(--bg);border:.5px solid var(--bd);border-radius:10px;overflow:hidden">
+    <div style="padding:10px 14px;background:var(--nav);color:#fff;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">AI Import Mode</div>
+    <div style="padding:4px 0">
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:.5px solid var(--bd)" onclick="document.getElementById('imp-mode-standard').checked=true">
+        <input type="radio" name="imp-mode" id="imp-mode-standard" value="standard" checked style="width:auto;margin-top:2px;cursor:pointer">
+        <div><div style="font-size:12px;font-weight:600;color:var(--tx)">No AI — standard import</div><div style="font-size:10px;color:var(--mu);margin-top:2px;line-height:1.5">Import as-is. Fast. Use when your list already has individual contact names and notes.</div></div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:.5px solid var(--bd)" onclick="document.getElementById('imp-mode-enrich').checked=true">
+        <input type="radio" name="imp-mode" id="imp-mode-enrich" value="enrich" style="width:auto;margin-top:2px;cursor:pointer">
+        <div><div style="font-size:12px;font-weight:600;color:var(--tx)">🔍 Research Mode — enrich individual contacts</div><div style="font-size:10px;color:var(--mu);margin-top:2px;line-height:1.5">Your list has named contacts. Claude web-searches each one and adds LinkedIn URLs, email patterns, career background, and intel to their Notes. ~15–30s per contact.</div></div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer" onclick="document.getElementById('imp-mode-expand').checked=true">
+        <input type="radio" name="imp-mode" id="imp-mode-expand" value="expand" style="width:auto;margin-top:2px;cursor:pointer">
+        <div><div style="font-size:12px;font-weight:600;color:var(--ac)">🏢 Company Expansion Mode — find contacts inside companies</div><div style="font-size:10px;color:var(--mu);margin-top:2px;line-height:1.5">Your list has company names only (like a lead sheet). Claude finds 2–3 real decision-makers per company — CEO, purchasing, designer — and creates a separate enriched contact record for each person. Sequence auto-assigned from Lead Type column. ~30–45s per company.</div></div>
+      </label>
     </div>
-    <div style="font-size:10px;color:var(--mu);line-height:1.6">Claude will web-search each contact to find LinkedIn URLs, email patterns, career background, civic involvement, and project intel — and add it all to their Notes field automatically. Takes ~15–30 seconds per contact.</div>
   </div>
   <div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupesOrResearch()">Check for duplicates & import →</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
+  // Show company hint if applicable
+  if(looksLikeCompanies){
+    const hint=document.getElementById('mode-hint');
+    if(hint){hint.style.display='block';}
+    // Auto-select expansion mode
+    const expRadio=document.getElementById('imp-mode-expand');
+    if(expRadio)expRadio.checked=true;
+  }
 }
 
 function getFieldIndex(field){const el=document.getElementById('mp-'+field.replace(/ /g,'_').replace(/[()\/]/g,''));return el&&el.value!==''?parseInt(el.value):undefined;}
@@ -2150,7 +2171,15 @@ function parseRows(){
     const roleRaw=get(ri).toLowerCase();let role='CEO/Owner';for(const[k,v]of Object.entries(roleMap)){if(roleRaw.includes(k)){role=v;break;}}
     const noteParts=[];if(get(pi))noteParts.push('Phone: '+get(pi));if(get(ai))noteParts.push('Address: '+get(ai));if(get(ni))noteParts.push(get(ni));
     let ltd=null;const dr=get(di);if(dr){try{const d=new Date(dr);if(!isNaN(d.getTime()))ltd=d.toISOString();}catch(e){}}
-    return{fn,ln,co:get(coi),role,email:get(ei),li:get(lii),notes:noteParts.join('\n'),ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[],li_account:'personal',li_status:'cold',email_only:false};
+    let _co=get(coi);
+    const _ltPat=/(luxury home builder|custom home builder|home builder|remodeler|architect|designer|general contractor|commercial gc)/i;
+    // If co looks like a lead type and fn looks like a company name, use fn as co
+    if(_co&&_ltPat.test(_co)&&fn&&!_ltPat.test(fn)){
+      if(_co)noteParts.unshift('Lead Type: '+_co);
+      _co=fn; // company name was in fn column
+    }
+    return{fn,ln,co:_co,role,email:get(ei),li:get(lii),notes:noteParts.join('
+'),ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[],li_account:'personal',li_status:'cold',email_only:false};
   }).filter(r=>r.fn||r.ln||r.co);
 }
 
@@ -2174,7 +2203,8 @@ function doImport(clean,overwrites,total){
   clean.forEach(p=>{
     const id='c'+Date.now()+Math.random().toString(36).slice(2,6);
     const contact={id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString(),li_account:p.li_account||'personal',li_status:p.li_status||'cold',email_only:p.email_only||false};
-    if(seqId){contact.seq_id=seqId;contact.seq_start=seqStart;contact.seq_active=true;contact.seq_current_touch=1;contact.seq_log=[];}
+    const effectiveSeq=p._seqOverride!==undefined?p._seqOverride:seqId;
+    if(effectiveSeq){contact.seq_id=effectiveSeq;contact.seq_start=seqStart;contact.seq_active=true;contact.seq_current_touch=1;contact.seq_log=[];}
     cs.push(contact);batchIds.push(id);added++;
   });
   overwrites.forEach(p=>{const idx=cs.findIndex(e=>(p.email&&e.email&&e.email.toLowerCase()===p.email.toLowerCase())||(e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()));if(idx>=0){Object.assign(cs[idx],{co:p.co||cs[idx].co,role:p.role||cs[idx].role,email:p.email||cs[idx].email,notes:p.notes||cs[idx].notes});updated++;}else{const id='c'+Date.now()+Math.random().toString(36).slice(2,6);cs.push({id,...p,src:'Import',dnc:false,responded:false,ca:new Date().toISOString(),li_account:'personal',li_status:'cold',email_only:false});batchIds.push(id);added++;}});
@@ -2325,11 +2355,14 @@ document.getElementById('jerichomodal').addEventListener('click',e=>{
 // ══════════════════════════════════════════════════════════════════════
 
 function checkDupesOrResearch(){
-  const researchOn=document.getElementById('ai-research-toggle')&&document.getElementById('ai-research-toggle').checked;
-  if(researchOn){
+  const modeEl=document.querySelector('input[name="imp-mode"]:checked');
+  const mode=modeEl?modeEl.value:'standard';
+  if(mode==='enrich'){
     const parsed=parseRows();
     if(!parsed.length){alert('No valid contacts found.');return;}
     runAIResearchThenImport(parsed);
+  }else if(mode==='expand'){
+    runCompanyExpansion();
   }else{
     checkDupes();
   }
@@ -2363,7 +2396,21 @@ async function runAIResearchThenImport(contacts){
     document.getElementById('research-summary').textContent=done+' of '+contacts.length+' complete...';
     try{
       const notes=await researchContact(c);
-      if(notes)c.notes=(c.notes?c.notes+'\n\n':'')+notes;
+      if(notes){
+        c.notes=(c.notes?c.notes+'
+
+':'')+notes;
+        // If fn looks like a company name, try to extract person name from notes
+        const looksLikeCo=c.fn&&/(homes|builders?|design|construction|remodel|custom|group|llc|inc|corp|studio)/i.test(c.fn);
+        if(looksLikeCo){
+          const nameMatch=notes.match(/([A-Z][a-z]{1,15}\s+[A-Z][a-z]{1,20}),?\s+(CEO|Owner|President|Founder|Director|Manager|Principal|VP|Partner)/);
+          if(nameMatch){const parts=nameMatch[1].split(' ');if(!c.co)c.co=c.fn;c.fn=parts[0];c.ln=parts.slice(1).join(' ');}
+        }
+        // Extract email from notes if field empty
+        if(!c.email){const em=notes.match(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);if(em)c.email=em[0];}
+        // Extract LinkedIn from notes if field empty
+        if(!c.li){const li=notes.match(/linkedin\.com\/in\/[\w-]+/i);if(li)c.li=li[0];}
+      }
       if(statusEl){statusEl.className='research-status rs-done';statusEl.textContent='✓';}
       if(msgEl)msgEl.textContent=notes?'Enriched ✓':'No new intel found';
       done++;
@@ -2424,6 +2471,172 @@ function finalizeDupesEnriched(){
   const total=window._dupeTotal||clean.length;
   const overwrites=(window._dupeActions||[]).map((a,i)=>a==='overwrite'?window._dupes[i].new:null).filter(Boolean);
   doImport(clean,overwrites,total);
+}
+
+
+
+// ══════════════════════════════════════════════════════════════════════
+// COMPANY EXPANSION MODE
+// Takes a company-name list, finds 2-3 real decision-makers per company
+// Creates separate enriched contact records for each person found
+// ══════════════════════════════════════════════════════════════════════
+
+const LEAD_TYPE_SEQ={
+  'luxury home builder':'luxury_builder_warm','custom home builder':'luxury_builder_warm',
+  'luxury builder':'luxury_builder_warm','custom builder':'luxury_builder_warm',
+  'home builder':'luxury_builder_warm','remodeler':'luxury_builder_warm',
+  'remodeling':'luxury_builder_warm','architect/designer':'','architect':'',
+  'designer':'','interior designer':'','commercial gc':'commercial_gc_warm',
+  'general contractor':'commercial_gc_warm','gc':'commercial_gc_warm',
+};
+const LEAD_TYPE_ROLE={
+  'luxury home builder':'CEO/Owner','custom home builder':'CEO/Owner',
+  'remodeler':'CEO/Owner','architect/designer':'Designer','architect':'Designer',
+  'designer':'Designer','commercial gc':'VP Business Development',
+  'general contractor':'VP Business Development',
+};
+function getSeqForLeadType(lt){
+  if(!lt)return'luxury_builder_warm';
+  const low=lt.toLowerCase().trim();
+  for(const[key,seq] of Object.entries(LEAD_TYPE_SEQ)){if(low.includes(key))return seq;}
+  return'luxury_builder_warm';
+}
+function getRoleForLeadType(lt){
+  if(!lt)return'CEO/Owner';
+  const low=lt.toLowerCase().trim();
+  for(const[key,role] of Object.entries(LEAD_TYPE_ROLE)){if(low.includes(key))return role;}
+  return'CEO/Owner';
+}
+
+function runCompanyExpansion(){
+  const coIdx=getFieldIndex('Company');
+  const nameIdx=getFieldIndex('Contact Name');
+  if(coIdx===undefined&&nameIdx===undefined){
+    alert('Please map the Company or Name column so Claude knows what companies to research.');return;
+  }
+  const companies=[];
+  importRows.slice(1).forEach(row=>{
+    const co=String(row[coIdx!==undefined?coIdx:nameIdx]||'').trim();
+    if(!co)return;
+    let lt='';
+    for(let i=0;i<row.length;i++){
+      const val=String(row[i]||'').trim().toLowerCase();
+      if(val.match(/builder|architect|designer|remodeler|contractor|\bgc\b/)){lt=String(row[i]||'').trim();break;}
+    }
+    companies.push({name:co,leadType:lt});
+  });
+  const seen=new Set();
+  const unique=companies.filter(c=>{
+    if(!c.name||seen.has(c.name.toLowerCase()))return false;
+    seen.add(c.name.toLowerCase());return true;
+  });
+  if(!unique.length){alert('No companies found. Make sure your Name or Company column is mapped.');return;}
+  // Show dedup notice if any were removed
+  const dupeCount=companies.length-unique.length;
+  if(dupeCount>0)console.log('Company Expansion: removed '+dupeCount+' duplicate company rows — researching '+unique.length+' unique companies');
+
+  const rows=unique.map((c,i)=>`
+    <div class="research-row" id="xrow-${i}">
+      <div class="research-status rs-pending" id="xstatus-${i}">·</div>
+      <div style="flex:1"><strong>${c.name}</strong>${c.leadType?`<span style="font-size:9px;background:#EEEDFE;color:#534AB7;padding:1px 6px;border-radius:8px;margin-left:6px">${c.leadType}</span>`:''}</div>
+      <div style="font-size:10px;color:var(--mu)" id="xmsg-${i}">Waiting...</div>
+    </div>`).join('');
+
+  document.getElementById('imp-preview').innerHTML=`
+    <div class="panel">
+      <div class="ptitle">🏢 Company Expansion — ${unique.length} compan${unique.length!==1?'ies':'y'}</div>
+      <p style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6">Finding 2–3 decision-makers per company. ~30–45s each. Don't close this tab.</p>
+      <div class="research-bar">${rows}</div>
+      <div id="expansion-summary" style="font-size:11px;color:var(--mu);margin-top:8px">Starting...</div>
+    </div>`;
+
+  (async()=>{
+    const allContacts=[];
+    let done=0,totalFound=0,errors=0;
+    for(let i=0;i<unique.length;i++){
+      const co=unique[i];
+      const statusEl=document.getElementById('xstatus-'+i);
+      const msgEl=document.getElementById('xmsg-'+i);
+      if(statusEl)statusEl.className='research-status rs-working';
+      if(msgEl)msgEl.textContent='Finding contacts...';
+      document.getElementById('expansion-summary').textContent=done+' of '+unique.length+' done — '+totalFound+' contacts found...';
+      try{
+        const contacts=await expandCompany(co.name,co.leadType);
+        if(contacts&&contacts.length){
+          allContacts.push(...contacts);totalFound+=contacts.length;
+          if(statusEl){statusEl.className='research-status rs-done';statusEl.textContent='✓';}
+          if(msgEl)msgEl.textContent=contacts.length+' contact'+(contacts.length!==1?'s':'')+' found ✓';
+        }else{
+          allContacts.push({fn:co.name,ln:'',co:co.name,role:getRoleForLeadType(co.leadType),
+            email:'',li:'',notes:'No individual contacts found via research.',
+            tier:'tier3',src:'Company Expansion Import',_seqOverride:getSeqForLeadType(co.leadType),
+            ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString(),li_account:'personal',li_status:'cold',email_only:false});
+          if(statusEl){statusEl.className='research-status rs-err';statusEl.textContent='!';}
+          if(msgEl)msgEl.textContent='No contacts found — placeholder created';
+          totalFound++;errors++;
+        }
+      }catch(err){
+        allContacts.push({fn:co.name,ln:'',co:co.name,role:getRoleForLeadType(co.leadType),
+          email:'',li:'',notes:'Research failed: '+err.message,
+          tier:'tier3',src:'Company Expansion Import',_seqOverride:getSeqForLeadType(co.leadType),
+          ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString(),li_account:'personal',li_status:'cold',email_only:false});
+        if(statusEl){statusEl.className='research-status rs-err';statusEl.textContent='!';}
+        if(msgEl)msgEl.textContent='Research failed — placeholder created';
+        totalFound++;errors++;
+      }
+      done++;
+      if(i<unique.length-1)await new Promise(r=>setTimeout(r,2000));
+    }
+    document.getElementById('expansion-summary').innerHTML=
+      '<strong style="color:var(--ac)">✓ '+unique.length+' companies → <span style="font-size:14px;font-weight:700">'+totalFound+'</span> contacts ready'+(errors?' ('+errors+' placeholders)':'')+'. Checking duplicates...</strong>';
+    await new Promise(r=>setTimeout(r,800));
+    checkDupesEnriched(allContacts);
+  })();
+}
+
+async function expandCompany(companyName,leadType){
+  const defaultRole=getRoleForLeadType(leadType||'');
+  const seqId=getSeqForLeadType(leadType||'');
+  const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  const resp=await fetch(WORKER_BASE+'/api/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:900,
+      tools:[{"type":"web_search_20250305","name":"web_search"}],
+      system:`You are a B2B prospect researcher for Eridion Glass, a Dallas-based WBE glass and mirror subcontractor serving DFW builders, architects, and GCs. Find 2-3 real, named decision-makers at the given company who would be right contacts for a specialty glass sub. Prioritize: Owner/CEO/Founder, Purchasing Manager, Project Manager, or Designer. Return ONLY a valid JSON array with no markdown, no explanation, no code blocks. Each object: {"fn":"","ln":"","title":"","role":"CEO/Owner|Purchasing|Operations|Supervisor|Designer|VP Business Development","linkedin":"linkedin.com/in/... or empty","email_guess":"jsmith@company.com or empty","notes":"2-4 lines of intel: school, career, civic, projects"}. If no real individuals found, return [].`,
+      messages:[{role:'user',content:'Company: '+companyName+'\nLead Type: '+(leadType||'Custom Home Builder')+'\nLocation: DFW Texas\n\nFind 2-3 decision-maker contacts. JSON array only.'}]
+    })
+  });
+  const data=await resp.json();
+  let text='';
+  if(data.content&&Array.isArray(data.content)){
+    data.content.forEach(b=>{if(b.type==='text'&&b.text)text+=b.text;});
+  }else if(data.text)text=data.text;
+
+  let contacts=[];
+  try{
+    const match=text.match(/\[\s*[\s\S]*?\]/);
+    if(match)contacts=JSON.parse(match[0]);
+  }catch(e){return[];}
+  if(!Array.isArray(contacts)||!contacts.length)return[];
+
+  return contacts.slice(0,3).map(p=>({
+    fn:String(p.fn||'').trim()||companyName,
+    ln:String(p.ln||'').trim(),
+    co:companyName,
+    role:p.role||defaultRole,
+    email:String(p.email_guess||'').trim(),
+    li:String(p.linkedin||'').trim().replace(/^https?:\/\//,''),
+    notes:('[AI Research '+today+' — Company Expansion]\nTitle: '+(p.title||p.role||'')+'\n'+(p.notes||'')).trim(),
+    tier:'tier3',src:'Company Expansion Import',
+    _seqOverride:seqId,
+    ts:[],ltd:null,dnc:false,responded:false,
+    ca:new Date().toISOString(),
+    li_account:'personal',li_status:'cold',email_only:false
+  }));
 }
 
 
