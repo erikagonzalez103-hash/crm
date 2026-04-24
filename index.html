@@ -178,6 +178,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bedc{background:#FAEEDA;color:#633806}
 .seq-panel-hd.cgc{background:linear-gradient(to right,#eef4fb,var(--sf))}
 .seq-panel-hd.edc{background:linear-gradient(to right,#fdf5e6,var(--sf))}
+.jericho-modal{background:var(--sf);border-radius:12px;padding:20px;width:640px;max-height:720px;overflow-y:auto;border:.5px solid var(--bd)}
+.jericho-card{background:#0f1a2a;color:#e2f4ed;border-radius:10px;padding:18px;font-family:'Courier New',monospace;font-size:11px;line-height:1.8;white-space:pre-wrap;max-height:380px;overflow-y:auto;border:.5px solid #1D9E75}
+.research-bar{background:#E1F5EE;border:.5px solid var(--ac);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.research-row{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:11px;border-bottom:.5px solid rgba(0,0,0,0.06)}
+.research-row:last-child{border-bottom:none}
+.research-status{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px}
+.rs-pending{background:#f0f0f0;color:#999}
+.rs-working{background:#FAEEDA;color:#BA7517;animation:pulse .8s infinite}
+.rs-done{background:var(--ac);color:#fff}
+.rs-err{background:#FCEBEB;color:var(--dn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 </style>
 </head>
 <body>
@@ -195,7 +206,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="ni" onclick="go('sequences')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H2zm0 4h10v2H2zm0 4h7v2H2z"/><circle cx="13" cy="11" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M12 11l.8.8 1.5-1.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>Sequences<span class="nbadge" id="seqbadge" style="background:#534AB7">0</span></div>
     <div class="ni" onclick="go('responses')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>Response intake</div>
     <div class="ni" onclick="go('library')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3h8v1H4zm0 3h8v1H4zm0 3h5v1H4z"/></svg>Copy library</div>
-    <div class="ni" onclick="go('reports')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13V5m4 8V2m4 11V8m4 5v-6" stroke-linecap="round"/></svg>Reports</div>
     <div class="ni" onclick="go('import')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>Import from Excel</div>
   </div>
   <div class="ns" style="margin-top:auto;padding-bottom:16px">
@@ -427,26 +437,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
-    <!-- REPORTS -->
-    <div class="screen" id="s-reports">
-      <div class="lib-tabs" style="align-items:center">
-        <div class="lib-tab active" id="rtab-perf" onclick="switchReportsTab('perf')">Performance</div>
-        <div class="lib-tab" id="rtab-pipe" onclick="switchReportsTab('pipe')">Pipeline</div>
-        <div class="lib-tab" id="rtab-act" onclick="switchReportsTab('act')">Activity</div>
-        <div class="lib-tab" id="rtab-cont" onclick="switchReportsTab('cont')">Content</div>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-          <label class="flbl" style="margin:0">Range</label>
-          <select class="fsel" style="width:130px;padding:5px 10px" id="r-range" onchange="rReports()">
-            <option value="all">All time</option>
-            <option value="30" selected>Last 30 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="qtr">This quarter</option>
-          </select>
-        </div>
-      </div>
-      <div id="r-content"></div>
-    </div>
-
     <!-- IMPORT -->
     <div class="screen" id="s-import">
       <div class="panel" style="max-width:580px">
@@ -575,6 +565,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-title" id="mod-name">Contact</div>
     <div id="mod-body"></div>
     <div class="modal-acts" id="mod-acts"></div>
+  </div>
+</div>
+
+<!-- JERICHO HANDOFF MODAL -->
+<div class="modal-ov" id="jerichomodal">
+  <div class="jericho-modal">
+    <div class="modal-title">📋 Dion Visit Brief — Send to Jericho</div>
+    <div id="jericho-body"></div>
+    <div class="modal-acts" id="jericho-acts"></div>
   </div>
 </div>
 
@@ -730,45 +729,42 @@ t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nThis is my last outr
 li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. We specialize in precision glass and mirror work for custom and luxury builders in DFW — frameless showers, staircase glass, wine rooms, pool fencing and more. I'd love to connect and be a resource when glass comes up on a project."},
 "Purchasing":{
 t1:{s:"Competitive glass & mirror pricing for your 2026 builds",b:"Hi [First Name],\n\nPredictable pricing and zero-callback installs are table stakes for a glass sub on custom and luxury builds — but they're harder to find than they should be.\n\nI'm Erika Harrison, co-founder of Eridion Glass. We work with custom and luxury builders across DFW, and because we also support select production builders, we're able to pass along real cost efficiencies without touching the quality our luxury partners expect.\n\nIf you have an upcoming project with a glass scope, I'd love to offer a complimentary spec review at no charge.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t2:{s:"How Colorback glass added value without adding cost",b:"Hi [First Name],\n\nFollowing up on my earlier introduction — I wanted to share a project that illustrates how we approach value on a custom build.\n\nA builder brought us in on a large master bathroom where the homeowner wanted the look of tile without the long-term maintenance. Colorback glass solved both the design and durability concern in one move. The result ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's the kind of spec decision that makes everyone look good.\n\nIf you have a project in the pipeline and want a complimentary spec review on the glass scope, I'd welcome the chance.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t2:{s:"How Colorback glass added value without adding cost",b:"Hi [First Name],\n\nFollowing up on my earlier introduction — I wanted to share a project that illustrates how we approach value on a custom build.\n\nA builder brought us in on a large master bathroom where the homeowner wanted the look of tile without the long-term maintenance. Colorback glass solved both the design and durability concern in one move. The result ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's the kind of spec decision that makes everyone look good.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop. If there's ever a project where you want a competitive bid or a complimentary spec review — we're here.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one from me. If you ever need a reliable, competitively priced glass sub in DFW — we'd love the chance.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. We support custom & luxury builders in DFW with consistent glass pricing and zero-callback installs. Happy to connect."},
 "Operations":{
-t1:{s:"A glass sub that makes your job easier",b:"Hi [First Name],\n\nA glass sub who shows up on time, communicates clearly, keeps the site clean, and doesn't generate callbacks — that's not a high bar, but it's surprisingly rare.\n\nI'm Erika Harrison, co-founder of Eridion Glass. My husband Dion leads our field operations with 25+ years as a master glazier.\n\nIf you have a project with a glass scope coming up, I'd love to offer a complimentary spec review — no strings attached. We'll flag anything that could create install friction down the line.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t2:{s:"A recent project — this is what we do",b:"Hi [First Name],\n\nFollowing up with something concrete. This bathroom came together because the builder brought us in early. Clean execution, on schedule, ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nIf you have a project coming up where glass could use a sub that won't slow you down, I'd love to offer a complimentary spec review — no strings attached.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"A glass sub that makes your job easier",b:"Hi [First Name],\n\nA glass sub who shows up on time, communicates clearly, keeps the site clean, and doesn't generate callbacks — that's not a high bar, but it's surprisingly rare.\n\nI'm Erika Harrison, co-founder of Eridion Glass. My husband Dion leads our field operations with 25+ years as a master glazier.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
+t2:{s:"A recent project — this is what we do",b:"Hi [First Name],\n\nFollowing up with something concrete. This bathroom came together because the builder brought us in early. Clean execution, on schedule, ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop. If glass ever comes up and you want a sub who won't make your life harder — we're here.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If you ever need a reliable glass sub in DFW — we'd love to earn a spot on your list.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. DFW glass & mirror sub known for clean installs, reliable schedules, zero drama. Happy to connect."},
 "Supervisor":{
-t1:{s:"Glass sub who respects your schedule and your site",b:"Hi [First Name],\n\nA sub who doesn't communicate, shows up late, or leaves a mess doesn't just slow down one trade — they slow down everyone behind them.\n\nI'm Erika Harrison, co-founder of Eridion Glass. My husband Dion runs field operations with 25+ years as a master glazier. We show up when we say we will, keep the site clean, and communicate before problems become surprises.\n\nIf you have a project with glass on the schedule, I'd love to offer a complimentary spec review — no strings attached. Happy to walk through timing and sequencing before the scope gets locked in.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t2:{s:"A recent project — this is what we do",b:"Hi [First Name],\n\nOn schedule, no surprises — ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nIf you have a project where glass is on the schedule, I'd love to offer a complimentary spec review. Happy to walk through timing before the scope gets locked.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"Glass sub who respects your schedule and your site",b:"Hi [First Name],\n\nA sub who doesn't communicate, shows up late, or leaves a mess doesn't just slow down one trade — they slow down everyone behind them.\n\nI'm Erika Harrison, co-founder of Eridion Glass. My husband Dion runs field operations with 25+ years as a master glazier. We show up when we say we will, keep the site clean, and communicate before problems become surprises.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
+t2:{s:"A recent project — this is what we do",b:"Hi [First Name],\n\nOn schedule, no surprises — ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop. If you ever need a glass sub who treats your schedule like it's ours — we're here.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If glass comes up and you need someone reliable — we'd love to earn the call.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
-li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. Dion has 25+ years as a master glazier. We've built our whole operation around being the glass sub that makes a supervisor's day easier. I'd love to connect."},
+li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. Dion has 25+ years as a master glazier. We've built our whole operation around being the glass sub that makes a supervisor's day easier."},
 "Designer":{
-t1:{s:"A glass partner who can actually execute your vision",b:"Hi [First Name],\n\nMost glass subs are great at standard work. Where things get complicated is when a project calls for something more — a custom mirror, an architectural railing, a glass application that doesn't have a catalog number. That's exactly where we thrive.\n\nI'm Erika Harrison, co-founder of Eridion Glass. We're one of the few glaziers in DFW who works extensively with Colorback glass.\n\nIf you have a project where glass is part of the design, I'd love to offer a complimentary spec review — no strings attached. We love being in the conversation early, when there's still room to make the glass do something special.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t2:{s:"Colorback in action — thought you'd appreciate this",b:"Hi [First Name],\n\nCobalt picket tile, sculptural freestanding tub, brushed gold hardware. Colorback glass in crisp white became the canvas that let the tile be the star.\n\nwww.eridionglass.com/colorback\n\nIf you have a project where glass could do something similar, I'd love to offer a complimentary spec review — no strings attached.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"A glass partner who can actually execute your vision",b:"Hi [First Name],\n\nMost glass subs are great at standard work. Where things get complicated is when a project calls for something more — a custom mirror, an architectural railing, a glass application that doesn't have a catalog number. That's exactly where we thrive.\n\nI'm Erika Harrison, co-founder of Eridion Glass. We're one of the few glaziers in DFW who works extensively with Colorback glass.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
+t2:{s:"Colorback in action — thought you'd appreciate this",b:"Hi [First Name],\n\nCobalt picket tile, sculptural freestanding tub, brushed gold hardware. Colorback glass in crisp white became the canvas that let the tile be the star.\n\nwww.eridionglass.com/colorback\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust closing the loop. If you ever have a project where glass is part of the design and you want a sub who can actually execute the vision — we'd love to be a resource.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If you've ever had a glass sub tell you something \"can't be done\" — it's worth a second opinion. We'll be here.\n\nErika Harrison\nCo-Founder, Eridion Glass"},
 li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. We work with designers on custom and luxury residential glass in DFW — architectural railings, bespoke mirrors, Colorback glass. We love collaborating early."},
 "Woman-Owned":{
-t1:{s:"One woman-owned business to another",b:"Hi [First Name],\n\nI'll be direct — I reached out because of what you've built.\n\nI'm Erika Harrison, co-founder of Eridion Glass. I came from 20 years in corporate advertising before Dion and I built this together. Precision glass and mirror work for custom and luxury residential projects.\n\nIf you ever have a project with a glass scope, I'd love to offer a complimentary spec review — no strings attached. Either way, I'd love to connect.\n\nWarmly,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t2:{s:"A project worth sharing",b:"Hi [First Name],\n\nFollowing up on my intro from a couple weeks ago — wanted to share something more tangible than an introduction.\n\nThis master bathroom came together because the builder brought us in early. The homeowner had a tile and design conflict that needed solving, and Colorback glass in crisp white became the canvas that let everything else be the star. It ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's the kind of outcome we aim for on every project. If you have something coming up where glass is part of the story, I'd love to offer a complimentary spec review — no strings attached.\n\nWarmly,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"One woman-owned business to another",b:"Hi [First Name],\n\nI'll be direct — I reached out because of what you've built.\n\nI'm Erika Harrison, co-founder of Eridion Glass. I came from 20 years in corporate advertising before Dion and I built this together. Precision glass and mirror work for custom and luxury residential projects.\n\nWarmly,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
 t3:{s:"Still happy to connect",b:"Hi [First Name],\n\nJust following up. No pressure — I just wanted to leave the door open.\n\nWarmly,\nErika Harrison\nCo-Founder, Eridion Glass"},
 t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If glass ever comes up, or you ever want to connect as fellow women in construction — I'm here.\n\nErika Harrison\nCo-Founder, Eridion Glass"},
-li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. Reaching out woman-founder to woman-founder. Precision glass & mirror sub serving custom and luxury builders in DFW. Would love to connect."},
+li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. Reaching out woman-founder to woman-founder. Precision glass & mirror sub serving custom and luxury builders in DFW."},
 "DBA":{
-t1:{s:"Fellow DBA member — glass & mirror sub introduction",b:"Hi [First Name],\n\nOne thing I've noticed about DBA membership is that we're often better at building homes than building relationships with each other. I'd like to fix that.\n\nI'm Erika Harrison, co-founder of Eridion Glass. Glass and mirror subcontractor specializing in custom and luxury residential projects in DFW.\n\nIf you have a project coming up with a glass scope, I'd love to offer a complimentary spec review — fellow DBA member to fellow DBA member, no strings attached.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
-t2:{s:"A project worth sharing — fellow DBA member",b:"Hi [First Name],\n\nFollowing up on my intro — wanted to share a project that tells the Eridion story better than I can.\n\nA builder brought us in early on this master bath, the homeowner had a design conflict between their tile choice and the rest of the space, and Colorback glass became the canvas that let the tile be the star. It ended up in print advertising.\n\nwww.eridionglass.com/colorback\n\nThat's the kind of outcome we aim for on every glass scope. If you have a project coming up and want a complimentary spec review — fellow DBA member to fellow DBA member — I'd welcome the chance.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
+t1:{s:"Fellow DBA member — glass & mirror sub introduction",b:"Hi [First Name],\n\nOne thing I've noticed about DBA membership is that we're often better at building homes than building relationships with each other. I'd like to fix that.\n\nI'm Erika Harrison, co-founder of Eridion Glass. Glass and mirror subcontractor specializing in custom and luxury residential projects in DFW.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com"},
 t3:{s:"Still happy to connect — fellow DBA member",b:"Hi [First Name],\n\nJust closing the loop. If glass ever comes up and you want a reliable DBA partner — we'd love to be on your list.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
-t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. Hoping our paths cross at a DBA event.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"},
-li:"Hi [First Name] — Erika Harrison, co-founder of Eridion Glass. Fellow DBA member reaching out — we do precision glass and mirror work for custom and luxury builders in DFW. Would love to connect and be a resource when glass comes up on a project."}};
+t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. Hoping our paths cross at a DBA event.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass"}}};
 
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:'Touch 1 — intro',t2:'Touch 2 — value add',t3:'Touch 3 — check in',t4:'Touch 4 — last one'};
-const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',reports:'Reports',import:'Import from Excel',add:'Add contact'};
-const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',reports:'Sequence performance, activity, and pipeline reporting',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually'};
+const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact'};
+const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually'};
 const CH_LABELS={linkedin:'LinkedIn connect',email:'Email',phone:'Phone call',linkedin_dm:'LinkedIn DM'};
 const CH_CLASSES={linkedin:'bch-li',email:'bch-em',phone:'bch-ph',linkedin_dm:'bch-ld'};
 
@@ -1030,6 +1026,17 @@ function doLogTouch(cid,touchNum){
   if(act&&act.id==='s-queue')rqueue();
   if(act&&act.id==='s-contacts')rcontacts();
   if(act&&act.id==='s-sequences')rsequences();
+  // Check if sequence is now complete — prompt for Jericho handoff
+  const cAfter=gc().find(x=>x.id===cid);
+  if(cAfter&&cAfter.seq_id&&!cAfter.seq_active){
+    const nt2=seqNextTouch(cAfter);
+    if(!nt2){
+      setTimeout(()=>{
+        const go=confirm('✅ Sequence complete for '+cAfter.fn+'!\n\nWould you like to prepare a Dion visit brief and send it to Jericho?');
+        if(go)prepareJerichoHandoff(cid);
+      },400);
+    }
+  }
 }
 
 function skipTouch(cid,touchNum){addA(cid,'Touch '+touchNum+' skipped','');closeLogModal();toast('Touch skipped');}
@@ -1201,7 +1208,6 @@ function go(id){
   if(id==='contacts'){rcontacts();updateLastImportInfo();}
   if(id==='sequences')rsequences();
   if(id==='library'){rlib();updateCustomBadge();}
-  if(id==='reports')rReports();
   if(id==='responses'){rpopsel();document.getElementById('rcontact-chip').style.display='none';document.getElementById('rout').innerHTML='';}
   if(id==='import')updateLastImportInfo();
   if(id==='add'){const d=document.getElementById('a11');if(d)d.value=new Date().toISOString().slice(0,10);}
@@ -1409,6 +1415,7 @@ function renderModal(id){
       ${isSeq&&nt?`<button class="btn btn-sm ${lb?'btn-lb':cgcM?'btn-cgc':edcM?'btn-edc':'btn-seq'}" onclick="closeModal();openLogModal('${id}')">Log touch ✓</button>`:''}
       ${isSeq&&!eo?`<button class="btn btn-sm btn-eo" onclick="closeModal();markEmailOnly('${id}')">Set email only</button>`:''}
       <button class="btn btn-sm btn-p" onclick="editMode=true;renderModal('${id}')">Edit contact</button>
+      <button class="btn btn-sm" style="background:#0f1a2a;color:#1D9E75;border-color:#1D9E75" onclick="closeModal();prepareJerichoHandoff('${id}')">📋 Prep Dion Visit</button>
       <button class="btn btn-sm" onclick="closeModal()">Close</button>`;
   }
 }
@@ -2120,7 +2127,14 @@ function showMap(rows,fname){
   const crmFields=['Contact Name','First Name','Last Name','Company','Role','Email','LinkedIn','Phone','Address','Notes','Last Outreach Date'];
   const autoMap={};headers.forEach((h,i)=>{const m=bestMatch(h);if(m&&autoMap[m]===undefined)autoMap[m]=i;});
   const preview=rows.slice(1,4).filter(r=>r.some(c=>String(c).trim()));
-  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns pre-selected. Set any field to "— skip —" to ignore.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}<div style="margin-bottom:8px;margin-top:14px"><label class="flbl">Assign sequence to imported contacts</label><select class="fsel" id="imp-seq" style="margin-top:4px"><option value="">None</option>${Object.values(SEQUENCES).map(s=>`<option value="${s.id}">${s.name}</option>`).join("")}</select></div>${preview.length?`<div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupes()">Check for duplicates & import →</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${rows.length-1} contacts found in "${fname}"</div><p style="font-size:11px;color:var(--mu);margin-bottom:14px;line-height:1.6">Auto-detected columns pre-selected. Set any field to "— skip —" to ignore.</p>${crmFields.map(f=>`<div class="map-row"><div class="map-lbl">${f}</div><select class="fsel" id="mp-${f.replace(/ /g,'_').replace(/[()\/]/g,'')}"><option value="">— skip —</option>${headers.map((h,i)=>`<option value="${i}"${autoMap[f]===i?' selected':''}>${h}</option>`).join('')}</select></div>`).join('')}<div style="margin-bottom:8px;margin-top:14px"><label class="flbl">Assign sequence to imported contacts</label><select class="fsel" id="imp-seq" style="margin-top:4px"><option value="">None</option>${Object.values(SEQUENCES).map(s=>`<option value="${s.id}">${s.name}</option>`).join("")}</select></div>${preview.length?`<div style="overflow-x:auto"><table class="ctbl" style="font-size:10px"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${headers.map((_,i)=>`<td>${String(r[i]||'').slice(0,25)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div style="margin-top:14px;background:#F0FDF8;border:.5px solid var(--ac);border-radius:8px;padding:12px 14px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <input type="checkbox" id="ai-research-toggle" style="width:auto;cursor:pointer">
+      <label for="ai-research-toggle" style="font-size:12px;font-weight:600;color:var(--ad);cursor:pointer">🔍 AI Research Mode — enrich contacts before importing</label>
+    </div>
+    <div style="font-size:10px;color:var(--mu);line-height:1.6">Claude will web-search each contact to find LinkedIn URLs, email patterns, career background, civic involvement, and project intel — and add it all to their Notes field automatically. Takes ~15–30 seconds per contact.</div>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="checkDupesOrResearch()">Check for duplicates & import →</button><button class="btn" onclick="document.getElementById('imp-preview').innerHTML='';document.getElementById('fi2').value=''">Cancel</button></div></div>`;
 }
 
 function getFieldIndex(field){const el=document.getElementById('mp-'+field.replace(/ /g,'_').replace(/[()\/]/g,''));return el&&el.value!==''?parseInt(el.value):undefined;}
@@ -2182,214 +2196,236 @@ function exportCSV(){
 function clip(txt){navigator.clipboard.writeText(txt).then(()=>toast('Copied!')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!');});}
 function toast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2400);}
 
-// ── REPORTS ───────────────────────────────────────────────────────────────────
-let currentReportsTab='perf';
-const MIN_N=5;
-const DAY=86400000;
+// ══════════════════════════════════════════════════════════════════════
+// JERICHO HANDOFF — Dion visit brief generator
+// ══════════════════════════════════════════════════════════════════════
 
-function switchReportsTab(tab){currentReportsTab=tab;['perf','pipe','act','cont'].forEach(t=>{const el=document.getElementById('rtab-'+t);if(el)el.classList.toggle('active',t===tab);});rReports();}
+const WORKER_BASE='https://frosty-base-f01e.erikagonzalez103.workers.dev';
 
-function rRangeCutoff(){
-  const v=document.getElementById('r-range')?document.getElementById('r-range').value:'30';
-  if(v==='all')return null;
-  if(v==='qtr'){const d=new Date();const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3,1).getTime();}
-  return Date.now()-parseInt(v)*DAY;
-}
+async function prepareJerichoHandoff(cid){
+  const c=gc().find(x=>x.id===cid);if(!c)return;
+  const acts=ga().filter(a=>a.cid===cid);
+  const seq=c.seq_id&&SEQUENCES[c.seq_id]?SEQUENCES[c.seq_id]:null;
+  const touchLog=(c.seq_log||[]).filter(l=>!(l.note||'').includes('Auto-skipped'));
 
-function rInWindow(iso,cutoff){if(!cutoff)return true;if(!iso)return false;return new Date(iso).getTime()>=cutoff;}
+  document.getElementById('jericho-body').innerHTML=`
+    <div style="text-align:center;padding:30px 20px">
+      <div style="font-size:24px;margin-bottom:10px">⚙️</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">Generating visit brief...</div>
+      <div style="font-size:11px;color:var(--mu)">Claude is pulling everything we know about ${c.fn} and writing Dion's briefing card</div>
+    </div>`;
+  document.getElementById('jericho-acts').innerHTML='';
+  document.getElementById('jerichomodal').classList.add('open');
 
-// Non-skipped seq_log entries (skipped entries have "Auto-skipped" in note)
-function rRealLog(c){return (c.seq_log||[]).filter(l=>!(l.note||'').includes('Auto-skipped'));}
+  const contactSummary=`Name: ${c.fn} ${c.ln||''}
+Company: ${c.co||'Unknown'}
+Role: ${c.role||'Unknown'}
+Email: ${c.email||'Not on file'}
+LinkedIn: ${c.li||'Not on file'}
+Tier: ${c.tier||'tier3'}
+Notes / Intel:
+${c.notes||'No notes on file'}`;
 
-// Count of active touches in a sequence for a given contact (accounting for email-only)
-function rActiveTouchCount(c){
-  const seq=SEQUENCES[c.seq_id];if(!seq)return 0;
-  const eo=isEmailOnly(c);
-  return seq.touches.filter(t=>!(eo&&isLiTouch(t))).length;
-}
+  const touchHistory=touchLog.length?touchLog.map(l=>{
+    const t=seq?seq.touches.find(x=>x.num===l.touch_num):null;
+    return`  Touch ${l.touch_num} (${t?t.channel:'unknown'}) — ${fd(l.date)}${l.note?' — '+l.note:''}`;
+  }).join('\n'):'No touches logged yet';
 
-function rComputeScorecard(cutoff){
-  const cs=gc();
-  return Object.values(SEQUENCES).map(seq=>{
-    const pool=cs.filter(c=>c.seq_id===seq.id&&!c.dnc&&rInWindow(c.seq_start,cutoff));
-    const n=pool.length;
-    if(n<MIN_N)return{seq,n,under:true};
-    const replied=pool.filter(c=>c.responded).length;
-    const t1=pool.filter(c=>c.tier==='tier1').length;
-    const repliedLogs=pool.filter(c=>c.responded).map(c=>rRealLog(c).length).filter(x=>x>0);
-    const avg=repliedLogs.length?repliedLogs.reduce((a,b)=>a+b,0)/repliedLogs.length:null;
-    const completed=pool.filter(c=>!c.seq_active&&!c.responded).length+pool.filter(c=>{const active=rActiveTouchCount(c);return active>0&&rRealLog(c).length>=active;}).length;
-    return{seq,n,under:false,reply_rate:replied/n,t1_rate:t1/n,avg_touches:avg,complete_rate:Math.min(completed,n)/n};
-  });
-}
+  const actHistory=acts.slice(0,10).map(a=>`  ${fd(a.date)}: ${a.action}`).join('\n')||'No activity';
 
-function rComputeDropoff(seqId,cutoff){
-  const seq=SEQUENCES[seqId];if(!seq)return null;
-  const cs=gc().filter(c=>c.seq_id===seqId&&!c.dnc&&rInWindow(c.seq_start,cutoff));
-  const rows=seq.touches.map(t=>{
-    const sent=cs.filter(c=>{
-      if(isEmailOnly(c)&&isLiTouch(t))return false;
-      return rRealLog(c).some(l=>l.touch_num===t.num);
-    }).length;
-    const replied=cs.filter(c=>{
-      if(!c.responded)return false;
-      const log=rRealLog(c);if(!log.length)return false;
-      return Math.max(...log.map(l=>l.touch_num))===t.num;
-    }).length;
-    return{touch:t,sent,replied};
-  });
-  return{seq,rows,total:cs.length};
-}
+  const systemPrompt=`You are Francisco, the AI assistant for Erika Harrison at Eridion Glass. You are preparing a visit brief for Dion Harrison — Erika's husband and master glazier — who will be doing a casual in-person or phone drop-in on a prospect.
 
-function rComputeWeekly(){
-  const acts=ga();
-  const cs=gc();
-  const now=Date.now();
-  const wk=7*DAY;
-  function inWin(iso,start,end){const t=new Date(iso).getTime();return t>=start&&t<end;}
-  const thisStart=now-wk,prevStart=now-2*wk;
+Dion's style: direct, trade-to-trade, unpretentious. He doesn't do sales pitches. He shows up, introduces himself as the guy who does the work, and builds trust through craft credibility.
 
-  const touchMatch=a=>/^Touch \d/i.test(a.action)||/ sent$/.test(a.action)||/touch \d+ sent/i.test(a.action);
-  const replyMatch=a=>/responded/i.test(a.action)||/upgraded to Tier 1/i.test(a.action);
-  const upgradeMatch=a=>/upgraded to Tier 1/i.test(a.action)||/Tier 1/i.test(a.action);
+Eridion Glass: Dion has 25+ years as a master glazier, leads every install personally. Self-performing, WBE certified. Scope: frameless enclosures, staircase glass, wine rooms, Colorback, pool fencing, mirrors, commercial partitions, lobby glass. Builder roster: DR Horton to Lingenfelter Luxury Homes.
 
-  const touches_now=acts.filter(a=>inWin(a.date,thisStart,now)&&touchMatch(a)).length;
-  const touches_prev=acts.filter(a=>inWin(a.date,prevStart,thisStart)&&touchMatch(a)).length;
-  const replies_now=acts.filter(a=>inWin(a.date,thisStart,now)&&replyMatch(a)).length;
-  const replies_prev=acts.filter(a=>inWin(a.date,prevStart,thisStart)&&replyMatch(a)).length;
-  const new_now=cs.filter(c=>c.ca&&inWin(c.ca,thisStart,now)).length;
-  const new_prev=cs.filter(c=>c.ca&&inWin(c.ca,prevStart,thisStart)).length;
-  const upgrades_now=acts.filter(a=>inWin(a.date,thisStart,now)&&upgradeMatch(a)).length;
-  const upgrades_prev=acts.filter(a=>inWin(a.date,prevStart,thisStart)&&upgradeMatch(a)).length;
+Format as a structured plain-text brief with sections labeled in ALL CAPS — no markdown:
+CONTACT AT A GLANCE
+WHO THEY ARE
+WHERE WE LEFT OFF
+WHY NOW
+RECOMMENDED OPENING LINE
+TALKING POINTS (3-4 specific ones tied to their intel)
+WATCH OUT FOR
+WHAT WE WANT FROM THIS VISIT`;
 
-  return{
-    touches:{now:touches_now,delta:touches_now-touches_prev},
-    replies:{now:replies_now,delta:replies_now-replies_prev},
-    contacts:{now:new_now,delta:new_now-new_prev},
-    upgrades:{now:upgrades_now,delta:upgrades_now-upgrades_prev}
-  };
-}
+  const userPrompt=`Prepare Dion's visit brief.
 
-function rComputeForecast(){
-  const cs=gc();
-  const now=new Date();now.setHours(0,0,0,0);
-  const tStart=now.getTime();
-  let today=0,in7=0,in14=0,in30=0;
-  cs.forEach(c=>{
-    if(c.dnc)return;
-    let dueIso=null;
-    if(c.seq_id&&c.seq_active){const nt=seqNextTouch(c);if(nt)dueIso=seqTouchDueDate(c,nt);}
-    else if(!c.seq_id){
-      const n=nxt(c);if(!n)return;
-      if(n==='t1'){dueIso=new Date().toISOString().slice(0,10);}
-      else if(c.ltd){const d=new Date(c.ltd);d.setDate(d.getDate()+TD[n]);dueIso=d.toISOString().slice(0,10);}
-    }
-    if(!dueIso)return;
-    const due=new Date(dueIso).getTime();
-    const diff=due-tStart;
-    if(diff<=0)today++;
-    if(diff<=7*DAY)in7++;
-    if(diff<=14*DAY)in14++;
-    if(diff<=30*DAY)in30++;
-  });
-  return{today,in7,in14,in30};
-}
+${contactSummary}
 
-function rDeltaBadge(d){
-  if(d>0)return`<span style="font-size:11px;color:var(--ac);margin-top:2px;display:block">↑ ${d} vs last week</span>`;
-  if(d<0)return`<span style="font-size:11px;color:var(--dn);margin-top:2px;display:block">↓ ${Math.abs(d)} vs last week</span>`;
-  return`<span style="font-size:11px;color:var(--mu);margin-top:2px;display:block">— same as last week</span>`;
-}
+OUTREACH HISTORY (${touchLog.length} touch${touchLog.length!==1?'es':''} on ${seq?seq.name:'sequence'}):
+${touchHistory}
 
-function rFmtPct(v){return v==null?'—':Math.round(v*100)+'%';}
-function rFmtNum(v,d){return v==null?'—':d!=null?v.toFixed(d):Math.round(v);}
+ACTIVITY LOG:
+${actHistory}
 
-function rRenderPerf(cutoff){
-  const scorecard=rComputeScorecard(cutoff);
-  const hasAny=scorecard.some(r=>!r.under);
+Write the complete visit brief now. Use specific intel from their notes — be concrete, not generic.`;
 
-  // Sequence selector for drop-off (default: largest pool that isn't under-n)
-  const eligibleSeqs=scorecard.filter(r=>!r.under).sort((a,b)=>b.n-a.n);
-  const sel=document.getElementById('r-drop-seq');
-  const selected=sel?sel.value:(eligibleSeqs[0]?eligibleSeqs[0].seq.id:Object.values(SEQUENCES)[0].id);
-
-  let scoreHtml=`<div class="panel"><div class="ptitle" style="margin-bottom:4px">Sequence scorecard</div><div style="font-size:11px;color:var(--mu);margin-bottom:14px">Which sequence is producing results per contact?</div>`;
-  scoreHtml+=`<table class="ctbl" style="table-layout:fixed"><thead><tr><th style="width:28%">Sequence</th><th style="text-align:right">Contacts</th><th style="text-align:right">Reply rate</th><th style="text-align:right">Tier 1</th><th style="text-align:right">Avg touch</th><th style="text-align:right">Complete</th></tr></thead><tbody>`;
-  scorecard.forEach(r=>{
-    if(r.under){
-      scoreHtml+=`<tr><td style="color:var(--mu)">${r.seq.name} <span style="font-size:10px;color:var(--ht)">(n&lt;${MIN_N})</span></td><td style="text-align:right;color:var(--mu)">${r.n}</td><td colspan="4" style="text-align:right;color:var(--ht);font-size:11px">Need at least ${MIN_N} contacts to show</td></tr>`;
-    }else{
-      const hiRep=r.reply_rate>=0.2?'color:var(--ac);font-weight:500':'';
-      scoreHtml+=`<tr><td>${r.seq.name}</td><td style="text-align:right">${r.n}</td><td style="text-align:right;${hiRep}">${rFmtPct(r.reply_rate)}</td><td style="text-align:right">${rFmtPct(r.t1_rate)}</td><td style="text-align:right">${r.avg_touches==null?'—':r.avg_touches.toFixed(1)}</td><td style="text-align:right">${rFmtPct(r.complete_rate)}</td></tr>`;
-    }
-  });
-  scoreHtml+=`</tbody></table><div style="margin-top:10px;font-size:11px;color:var(--ht);line-height:1.6">Results hidden when sample &lt; ${MIN_N} contacts to avoid misleading readouts on small cohorts.</div></div>`;
-
-  // Drop-off
-  let dropHtml=`<div class="panel">`;
-  const drop=rComputeDropoff(selected,cutoff);
-  const seqOptions=Object.values(SEQUENCES).map(s=>`<option value="${s.id}"${s.id===selected?' selected':''}>${s.name}</option>`).join('');
-  dropHtml+=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px;flex-wrap:wrap"><div><div style="font-size:13px;font-weight:600">Touch-level drop-off${drop?' — '+drop.seq.name:''}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Where in the sequence do replies cluster?</div></div><select class="fsel" style="width:180px;padding:5px 10px" id="r-drop-seq" onchange="rReports()">${seqOptions}</select></div>`;
-
-  if(!drop||drop.total<MIN_N){
-    dropHtml+=`<div class="empty" style="padding:30px"><div class="empty-icon">○</div>Need at least ${MIN_N} contacts on this sequence (currently ${drop?drop.total:0}) to show drop-off.</div></div>`;
-  }else{
-    const maxSent=Math.max(1,...drop.rows.map(r=>r.sent));
-    const maxReplied=Math.max(...drop.rows.map(r=>r.replied));
-    dropHtml+=`<div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">`;
-    drop.rows.forEach(r=>{
-      const pct=Math.round((r.sent/maxSent)*100);
-      const isTop=r.replied===maxReplied&&r.replied>0;
-      const fill=isTop?'#5DCAA5':'#AFA9EC';
-      dropHtml+=`<div style="display:grid;grid-template-columns:64px 1fr 120px;gap:10px;align-items:center;font-size:12px"><div style="color:var(--mu)${isTop?';font-weight:600;color:var(--tx)':''}">Touch ${r.touch.num}</div><div style="height:20px;background:var(--bg);border-radius:4px;overflow:hidden;border:.5px solid var(--bd)"><div style="width:${pct}%;height:100%;background:${fill}"></div></div><div style="text-align:right;color:var(--mu)${isTop?';color:var(--ac);font-weight:500':''}">${r.sent} sent · ${r.replied} reply</div></div>`;
+  try{
+    const resp=await fetch(WORKER_BASE+'/api/reply',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:systemPrompt,messages:[{role:'user',content:userPrompt}]})
     });
-    dropHtml+=`</div>`;
-    const topTouch=drop.rows.find(r=>r.replied===maxReplied&&r.replied>0);
-    if(topTouch&&maxReplied>0){
-      const laterSent=drop.rows.filter(r=>r.touch.num>topTouch.touch.num).reduce((a,b)=>a+b.sent,0);
-      const laterReplies=drop.rows.filter(r=>r.touch.num>topTouch.touch.num).reduce((a,b)=>a+b.replied,0);
-      const insight=laterSent>0&&laterReplies===0?`Replies cluster on Touch ${topTouch.touch.num} (${topTouch.touch.label}). Touches ${topTouch.touch.num+1}+ have produced ${laterSent} sends with no replies at this sample size.`:`Replies cluster on Touch ${topTouch.touch.num} (${topTouch.touch.label}).`;
-      dropHtml+=`<div style="margin-top:14px;padding:10px 12px;background:#E6F1FB;border-radius:7px;font-size:11px;color:#0C447C;line-height:1.6">${insight}</div>`;
+    const data=await resp.json();
+    const brief=data.text||'';
+    if(!brief)throw new Error('Empty response');
+
+    document.getElementById('jericho-body').innerHTML=`
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;color:var(--mu);margin-bottom:8px">Visit brief for <strong>${c.fn} ${c.ln||''}</strong> at <strong>${c.co||'—'}</strong> · ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>
+        <div class="jericho-card" id="jericho-brief-text">${brief.replace(/</g,'&lt;')}</div>
+      </div>
+      <div style="font-size:11px;color:var(--mu);background:var(--bg);border-radius:6px;padding:8px 10px;line-height:1.6">
+        Sending to <strong>Jericho</strong> (Dion's AI) via the Francisco → Jericho handoff channel. Dion will see this in his next Command Center check-in.
+      </div>`;
+    document.getElementById('jericho-acts').innerHTML=`
+      <button class="btn btn-sm" onclick="document.getElementById('jerichomodal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-sm btn-p" onclick="navigator.clipboard.writeText(document.getElementById('jericho-brief-text').innerText).then(()=>toast('Brief copied!'))">Copy brief</button>
+      <button class="btn btn-sm" style="background:#0f1a2a;color:#1D9E75;border-color:#1D9E75" id="jericho-send-btn" onclick="sendToJericho('${cid}',document.getElementById('jericho-brief-text').innerText)">📤 Send to Jericho</button>`;
+  }catch(err){
+    document.getElementById('jericho-body').innerHTML=`<div style="font-size:12px;color:var(--dn);font-weight:600;margin-bottom:8px">Brief generation failed</div><div style="font-size:11px;color:var(--mu);line-height:1.6">Check that /api/reply is deployed to your Cloudflare Worker.<br>Error: ${err.message}</div>`;
+    document.getElementById('jericho-acts').innerHTML=`<button class="btn btn-sm" onclick="document.getElementById('jerichomodal').classList.remove('open')">Close</button>`;
+  }
+}
+
+async function sendToJericho(cid,briefText){
+  const c=gc().find(x=>x.id===cid);if(!c)return;
+  const btn=document.getElementById('jericho-send-btn');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+  try{
+    const resp=await fetch(WORKER_BASE+'/handoff/create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        from:'francisco',to:'biff',type:'INFO',priority:'high',
+        subject:'VISIT BRIEF: '+c.fn+' '+(c.ln||'')+' — '+(c.co||''),
+        body:briefText,jobRef:cid,builder:c.co||'',
+        metadata:{type:'PROSPECT_VISIT_BRIEF',contact_id:cid,generated:new Date().toISOString()}
+      })
+    });
+    const data=await resp.json();
+    if(data.success){
+      addA(cid,'Dion visit brief sent to Jericho','','email');
+      document.getElementById('jerichomodal').classList.remove('open');
+      toast('📤 Brief sent to Jericho!');
+    }else throw new Error(data.error||'Handoff failed');
+  }catch(err){
+    if(btn){btn.disabled=false;btn.textContent='📤 Send to Jericho';}
+    toast('Send failed: '+err.message);
+  }
+}
+
+document.getElementById('jerichomodal').addEventListener('click',e=>{
+  if(e.target.id==='jerichomodal')document.getElementById('jerichomodal').classList.remove('open');
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// AI RESEARCH MODE — enriches contacts during import via web search
+// ══════════════════════════════════════════════════════════════════════
+
+function checkDupesOrResearch(){
+  const researchOn=document.getElementById('ai-research-toggle')&&document.getElementById('ai-research-toggle').checked;
+  if(researchOn){
+    const parsed=parseRows();
+    if(!parsed.length){alert('No valid contacts found.');return;}
+    runAIResearchThenImport(parsed);
+  }else{
+    checkDupes();
+  }
+}
+
+async function runAIResearchThenImport(contacts){
+  const rows=contacts.map((c,i)=>`
+    <div class="research-row" id="rrow-${i}">
+      <div class="research-status rs-pending" id="rstatus-${i}">·</div>
+      <div style="flex:1"><strong>${c.fn} ${c.ln||''}</strong> ${c.co?'— '+c.co:''}</div>
+      <div style="font-size:10px;color:var(--mu)" id="rmsg-${i}">Waiting...</div>
+    </div>`).join('');
+
+  document.getElementById('imp-preview').innerHTML=`
+    <div class="panel">
+      <div class="ptitle">🔍 AI Research — ${contacts.length} contact${contacts.length!==1?'s':''}</div>
+      <p style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.6">Claude is web-searching each contact. ~15–30s per contact. Don't close this tab.</p>
+      <div class="research-bar">${rows}</div>
+      <div id="research-summary" style="font-size:11px;color:var(--mu);margin-top:8px">Starting...</div>
+    </div>`;
+
+  let done=0,errors=0;
+  const enriched=[];
+
+  for(let i=0;i<contacts.length;i++){
+    const c=contacts[i];
+    const statusEl=document.getElementById('rstatus-'+i);
+    const msgEl=document.getElementById('rmsg-'+i);
+    if(statusEl)statusEl.className='research-status rs-working';
+    if(msgEl)msgEl.textContent='Researching...';
+    document.getElementById('research-summary').textContent=done+' of '+contacts.length+' complete...';
+    try{
+      const notes=await researchContact(c);
+      if(notes)c.notes=(c.notes?c.notes+'\n\n':'')+notes;
+      if(statusEl){statusEl.className='research-status rs-done';statusEl.textContent='✓';}
+      if(msgEl)msgEl.textContent=notes?'Enriched ✓':'No new intel found';
+      done++;
+    }catch(err){
+      if(statusEl){statusEl.className='research-status rs-err';statusEl.textContent='!';}
+      if(msgEl)msgEl.textContent='Skipped — importing as-is';
+      errors++;done++;
     }
-    dropHtml+=`</div>`;
+    enriched.push(c);
+    if(i<contacts.length-1)await new Promise(r=>setTimeout(r,1500));
   }
 
-  return scoreHtml+dropHtml;
+  document.getElementById('research-summary').innerHTML='<strong style="color:var(--ac)">'+done+' contacts researched'+(errors?' ('+errors+' skipped)':'')+'. Checking duplicates...</strong>';
+  await new Promise(r=>setTimeout(r,600));
+  checkDupesEnriched(enriched);
 }
 
-function rRenderAct(){
-  const w=rComputeWeekly();
-  const f=rComputeForecast();
-  let html=`<div class="metrics" style="margin-bottom:10px">
-    <div class="metric"><div class="mlbl">Touches sent</div><div class="mval">${w.touches.now}</div>${rDeltaBadge(w.touches.delta)}</div>
-    <div class="metric"><div class="mlbl">Replies received</div><div class="mval" style="color:var(--in)">${w.replies.now}</div>${rDeltaBadge(w.replies.delta)}</div>
-    <div class="metric"><div class="mlbl">New contacts</div><div class="mval">${w.contacts.now}</div>${rDeltaBadge(w.contacts.delta)}</div>
-    <div class="metric"><div class="mlbl">Tier upgrades</div><div class="mval" style="color:var(--ac)">${w.upgrades.now}</div>${rDeltaBadge(w.upgrades.delta)}</div>
-  </div>`;
-  html+=`<div class="panel"><div class="ptitle" style="margin-bottom:4px">Touch forecast</div><div style="font-size:11px;color:var(--mu);margin-bottom:14px">How much outreach is coming due?</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-      <div style="text-align:center;padding:10px 4px;border-right:.5px solid var(--bd)"><div style="font-size:22px;font-weight:600;color:var(--ac)">${f.today}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Due today</div></div>
-      <div style="text-align:center;padding:10px 4px;border-right:.5px solid var(--bd)"><div style="font-size:22px;font-weight:600">${f.in7}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Next 7 days</div></div>
-      <div style="text-align:center;padding:10px 4px;border-right:.5px solid var(--bd)"><div style="font-size:22px;font-weight:600">${f.in14}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Next 14 days</div></div>
-      <div style="text-align:center;padding:10px 4px"><div style="font-size:22px;font-weight:600">${f.in30}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Next 30 days</div></div>
-    </div>
-    <div style="margin-top:12px;text-align:center"><button class="btn btn-sm" onclick="go('queue')">Go to today's queue →</button></div>
-  </div>`;
-  return html;
+async function researchContact(contact){
+  const name=(contact.fn+' '+(contact.ln||'')).trim();
+  const company=contact.co||'';
+  if(!name&&!company)return null;
+
+  const resp=await fetch(WORKER_BASE+'/api/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:500,
+      tools:[{"type":"web_search_20250305","name":"web_search"}],
+      system:'You are a B2B prospect researcher for Eridion Glass, a Dallas-based WBE glass and mirror subcontractor. Research the contact and return a concise plain-text intel note (no markdown). Include: confirmed LinkedIn URL if found, likely email format, education/university, career history, civic involvement, associations, and any relevant project intel. 3-6 lines max. If nothing found, return empty string.',
+      messages:[{role:'user',content:'Research: '+name+(company?' at '+company:'')+'. Role: '+(contact.role||'')+'. DFW Texas area. Return intel note only.'}]
+    })
+  });
+  const data=await resp.json();
+  let text='';
+  if(data.content&&Array.isArray(data.content)){
+    data.content.forEach(b=>{if(b.type==='text'&&b.text)text+=b.text;});
+  }else if(data.text)text=data.text;
+  const clean=text.trim();
+  return clean&&clean.length>10?'[AI Research '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+']\n'+clean:null;
 }
 
-function rRenderPhase(num,desc){
-  return`<div class="panel" style="text-align:center;padding:40px 20px"><div style="font-size:24px;margin-bottom:10px;opacity:.3">◎</div><div style="font-size:13px;font-weight:600;margin-bottom:6px">Coming in Phase ${num}</div><div style="font-size:11px;color:var(--mu);line-height:1.7;max-width:380px;margin:0 auto">${desc}</div></div>`;
+function checkDupesEnriched(contacts){
+  const existing=gc(),dupes=[],clean=[];
+  contacts.forEach(p=>{
+    const byEmail=p.email&&existing.find(e=>e.email&&e.email.toLowerCase()===p.email.toLowerCase());
+    const byName=existing.find(e=>e.fn.toLowerCase()===p.fn.toLowerCase()&&(e.ln||'').toLowerCase()===(p.ln||'').toLowerCase()&&(e.co||'').toLowerCase()===(p.co||'').toLowerCase());
+    if(byEmail||byName)dupes.push({new:p,existing:byEmail||byName});
+    else clean.push(p);
+  });
+  if(!dupes.length){doImport(clean,[],contacts.length);return;}
+  document.getElementById('imp-preview').innerHTML=`<div class="panel"><div class="ptitle">${dupes.length} duplicate${dupes.length>1?'s':''} found</div><p style="font-size:11px;color:var(--mu);margin-bottom:12px">${clean.length} contacts are new and ready to import.</p><div id="dupe-list">${dupes.map((d,i)=>`<div class="dup-row" id="dr-${i}"><div><div style="font-size:11px;font-weight:500">${d.new.fn} ${d.new.ln||''} — ${d.new.co||'?'}</div><div style="font-size:10px;color:var(--mu);margin-top:2px">${d.new.email||'no email'} · ${d.new.role}</div></div><button class="btn btn-sm" onclick="setDupeAction(${i},'skip',this)" style="font-weight:700">Skip</button><button class="btn btn-sm btn-warn" onclick="setDupeAction(${i},'overwrite',this)">Overwrite</button></div>`).join('')}</div><div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="finalizeDupesEnriched()">Import with these choices</button><button class="btn btn-sm" onclick="setAllDupes('skip')">Skip all</button><button class="btn btn-sm btn-warn" onclick="setAllDupes('overwrite')">Overwrite all</button></div></div>`;
+  window._dupes=dupes;window._clean=clean;window._dupeTotal=contacts.length;window._dupeActions=dupes.map(()=>'skip');
 }
 
-function rReports(){
-  const cutoff=rRangeCutoff();
-  const el=document.getElementById('r-content');if(!el)return;
-  if(currentReportsTab==='perf')el.innerHTML=rRenderPerf(cutoff);
-  else if(currentReportsTab==='act')el.innerHTML=rRenderAct();
-  else if(currentReportsTab==='pipe')el.innerHTML=rRenderPhase(2,'Source → Tier 1 funnel · Tier progression tracker · Stalled contacts report · Time-to-response distribution. Will show which contact lists (DBA, FIFA, Boutique, Referral) produce the warmest contacts and flag contacts going cold.');
-  else if(currentReportsTab==='cont')el.innerHTML=rRenderPhase(3,'Copy usage heatmap · Custom copy performance · Role track performance · Cold vs warm LinkedIn copy · FIFA company-specific vs generic. Will tell you which copy blocks actually drive replies so you know what to keep, retire, or iterate on.');
+function finalizeDupesEnriched(){
+  const clean=window._clean||[];
+  const total=window._dupeTotal||clean.length;
+  const overwrites=(window._dupeActions||[]).map((a,i)=>a==='overwrite'?window._dupes[i].new:null).filter(Boolean);
+  doImport(clean,overwrites,total);
 }
+
 
 rdash();
 </script>
