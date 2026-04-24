@@ -2178,8 +2178,7 @@ function parseRows(){
       if(_co)noteParts.unshift('Lead Type: '+_co);
       _co=fn; // company name was in fn column
     }
-    return{fn,ln,co:_co,role,email:get(ei),li:get(lii),notes:noteParts.join('
-'),ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[],li_account:'personal',li_status:'cold',email_only:false};
+    return{fn,ln,co:_co,role,email:get(ei),li:get(lii),notes:noteParts.join('\n'),ltd,tier:ltd?'tier2':'tier3',ts:ltd?['t1']:[],li_account:'personal',li_status:'cold',email_only:false};
   }).filter(r=>r.fn||r.ln||r.co);
 }
 
@@ -2397,9 +2396,7 @@ async function runAIResearchThenImport(contacts){
     try{
       const notes=await researchContact(c);
       if(notes){
-        c.notes=(c.notes?c.notes+'
-
-':'')+notes;
+        c.notes=(c.notes?c.notes+'\n\n':'')+notes;
         // If fn looks like a company name, try to extract person name from notes
         const looksLikeCo=c.fn&&/(homes|builders?|design|construction|remodel|custom|group|llc|inc|corp|studio)/i.test(c.fn);
         if(looksLikeCo){
