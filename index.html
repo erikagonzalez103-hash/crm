@@ -212,6 +212,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="ns" style="margin-top:auto;padding-bottom:16px">
     <div class="nl">Actions</div>
     <div class="ni" onclick="go('add')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a1 1 0 011 1v4h4a1 1 0 010 2H9v4a1 1 0 01-2 0V9H3a1 1 0 010-2h4V3a1 1 0 011-1z"/></svg>Add contact</div>
+    <div class="ni" onclick="go('pasteback')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h7l3 3v9H3z"/><path d="M10 2v3h3M5 8h6M5 11h6" stroke-linecap="round"/></svg>Paste-back enrichment</div>
     <div class="ni" onclick="go('settings')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.2v2M8 12.8v2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M1.2 8h2M12.8 8h2M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg>Settings</div>
     <div class="ni" onclick="exportCSV()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V2M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>Export CSV</div>
   </div>
@@ -579,6 +580,59 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
+    <!-- PASTE-BACK ENRICHMENT -->
+    <div class="screen" id="s-pasteback">
+      <div class="panel" style="max-width:980px">
+        <div class="ptitle">Bulk-update contacts from enriched data</div>
+        <p style="font-size:12px;color:var(--mu);margin-bottom:14px;line-height:1.6">Paste a CSV or upload a file with enriched contact data — RocketReach exports, research findings, or your own corrections. The CRM will fuzzy-match each row to your existing contacts, show you exactly what's going to change, and apply everything in one click. Contacts that don't match anything get flagged so you can decide whether to skip or add them as new.</p>
+
+        <div style="background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:600;color:var(--mu);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Update behavior</div>
+          <div style="font-size:12px;color:var(--tx);line-height:1.7">
+            <div>• <strong>Email, LinkedIn, phone, role, company, address, tier:</strong> overwrite (newer data wins)</div>
+            <div>• <strong>Notes:</strong> append with <code style="font-size:10px;background:var(--card);padding:1px 5px;border-radius:3px">[Pasted Apr 29, 2026]</code> timestamp (preserves history)</div>
+            <div>• <strong>Sequence assignment, touches sent, response state:</strong> never touched by paste-back</div>
+            <div style="margin-top:6px;color:var(--mu);font-size:11px">A snapshot is saved before applying — you can undo from the danger zone below.</div>
+          </div>
+        </div>
+
+        <!-- Step 1: Paste / upload -->
+        <div class="ff" style="margin-bottom:14px">
+          <label class="flbl">Step 1 — Paste your enriched CSV here, or upload a file</label>
+          <textarea class="rbox" id="pb-csv" rows="8" placeholder="First Name,Last Name,Company,Email,LinkedIn,Phone,Role,Notes&#10;Tyler,Brabec,Brabec Custom Homes,Tyler@BrabecCustomHomes.com,https://linkedin.com/in/...,8172197053,Owner,UT Austin Civil Engineer&#10;..." style="font-family:ui-monospace,monospace;font-size:12px"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <input type="file" id="pb-file" accept=".csv,.txt" style="font-size:12px" onchange="pbLoadFile(this)">
+            <button class="btn btn-sm" onclick="document.getElementById('pb-csv').value=''">Clear</button>
+            <div style="font-size:11px;color:var(--mu);margin-left:auto">Headers are auto-detected — common variants are recognized</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn btn-p" onclick="pbBuildPreview()">Match contacts &amp; preview changes →</button>
+        </div>
+
+        <!-- Step 2: Preview -->
+        <div id="pb-preview" style="display:none">
+          <div style="border-top:1px solid var(--bd);padding-top:14px;margin-top:14px">
+            <div class="ptitle" style="font-size:14px;margin-bottom:10px">Step 2 — Review matches</div>
+            <div id="pb-summary" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"></div>
+            <div id="pb-rows"></div>
+            <div id="pb-apply" style="margin-top:14px;display:none">
+              <button class="btn btn-p" onclick="pbApply()">Apply all matches</button>
+              <button class="btn" onclick="document.getElementById('pb-preview').style.display='none'">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger zone -->
+        <div style="border-top:1px solid var(--bd);padding-top:14px;margin-top:24px">
+          <div style="font-size:11px;font-weight:600;color:var(--mu);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Danger zone</div>
+          <div id="pb-undo-status" style="font-size:12px;color:var(--mu);margin-bottom:8px"></div>
+          <button class="btn btn-sm" onclick="pbUndo()" id="pb-undo-btn">Undo last paste-back</button>
+        </div>
+      </div>
+    </div>
+
     <!-- SETTINGS -->
     <div class="screen" id="s-settings">
       <div class="panel" style="max-width:680px">
@@ -834,8 +888,8 @@ t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If glass e
 
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:'Touch 1 — intro',t2:'Touch 2 — value add',t3:'Touch 3 — check in',t4:'Touch 4 — last one'};
-const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact',rocketreach:'RocketReach Queue',settings:'Settings'};
-const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually',rocketreach:'Contacts missing email or phone — use your 100 monthly credits here first',settings:'Email signature & application preferences'};
+const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact',rocketreach:'RocketReach Queue',pasteback:'Paste-back enrichment',settings:'Settings'};
+const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually',rocketreach:'Contacts missing email or phone — use your 100 monthly credits here first',pasteback:'Bulk-update existing contacts from an enriched CSV (RocketReach, research, etc.)',settings:'Email signature & application preferences'};
 const CH_LABELS={linkedin:'LinkedIn connect',email:'Email',phone:'Phone call',linkedin_dm:'LinkedIn DM'};
 const CH_CLASSES={linkedin:'bch-li',email:'bch-em',phone:'bch-ph',linkedin_dm:'bch-ld'};
 
@@ -1284,6 +1338,7 @@ function go(id){
   if(id==='rocketreach'){rRocketReachQueue();updateRRBadge();}
   if(id==='add'){const d=document.getElementById('a11');if(d)d.value=new Date().toISOString().slice(0,10);}
   if(id==='settings')rSettings();
+  if(id==='pasteback')rPasteBack();
 }
 
 function rcontacts(){
@@ -3133,6 +3188,373 @@ function clearSignature(){
   localStorage.removeItem('eg_sig_active');
   rSettings();
   toast('Signature cleared');
+}
+
+
+// ═══════════ PASTE-BACK ENRICHMENT ═══════════════════════════════════════════
+
+// Header normalization — maps various column header styles to canonical field names
+const PB_HEADER_MAP = {
+  'first name': 'fn', 'firstname': 'fn', 'first_name': 'fn', 'first': 'fn', 'fn': 'fn', 'givenname': 'fn',
+  'last name': 'ln', 'lastname': 'ln', 'last_name': 'ln', 'last': 'ln', 'ln': 'ln', 'surname': 'ln', 'familyname': 'ln',
+  'company': 'co', 'company name': 'co', 'organization': 'co', 'employer': 'co', 'co': 'co',
+  'email': 'email', 'email address': 'email', 'work email': 'email', 'business email': 'email', 'e-mail': 'email',
+  'linkedin': 'li', 'linkedin url': 'li', 'linkedin profile': 'li', 'profile url': 'li', 'li': 'li', 'linkedin link': 'li',
+  'phone': 'phone', 'phone number': 'phone', 'mobile': 'phone', 'cell': 'phone', 'work phone': 'phone', 'direct phone': 'phone',
+  'role': 'role', 'title': 'role', 'job title': 'role', 'position': 'role',
+  'address': 'addr', 'addr': 'addr', 'location': 'addr', 'office address': 'addr',
+  'tier': 'tier',
+  'notes': 'notes', 'research notes': 'notes', 'note': 'notes', 'comments': 'notes',
+};
+
+// Normalize a string for fuzzy comparison: lowercase, strip punctuation, strip common suffixes
+function pbNormalize(s){
+  if(!s)return '';
+  let n = String(s).toLowerCase().trim();
+  // Strip common company suffixes
+  n = n.replace(/\b(llc|inc|inc\.|incorporated|ltd|co|company|corp|corporation|& sons|and sons|custom homes|homes|builders|construction|design|group|services|llp)\b/gi,' ');
+  // Strip punctuation
+  n = n.replace(/[.,'"&()/\-_]/g,' ');
+  // Collapse whitespace
+  n = n.replace(/\s+/g,' ').trim();
+  return n;
+}
+
+// Levenshtein distance
+function pbLev(a, b){
+  if(a===b)return 0;
+  if(!a)return b.length; if(!b)return a.length;
+  const m = a.length, n = b.length;
+  let prev = new Array(n+1), curr = new Array(n+1);
+  for(let j=0;j<=n;j++) prev[j]=j;
+  for(let i=1;i<=m;i++){
+    curr[0]=i;
+    for(let j=1;j<=n;j++){
+      curr[j] = a[i-1]===b[j-1] ? prev[j-1] : 1+Math.min(prev[j-1], prev[j], curr[j-1]);
+    }
+    [prev,curr] = [curr,prev];
+  }
+  return prev[n];
+}
+
+// Similarity score 0..1, where 1 = identical
+function pbSim(a, b){
+  const na = pbNormalize(a), nb = pbNormalize(b);
+  if(!na && !nb)return 1;
+  if(!na || !nb)return 0;
+  if(na===nb)return 1;
+  // For very short strings, exact match required
+  if(na.length<3 || nb.length<3)return na===nb ? 1 : 0;
+  const maxLen = Math.max(na.length, nb.length);
+  return 1 - (pbLev(na, nb) / maxLen);
+}
+
+// Robust CSV parser — handles quoted fields, escaped quotes, embedded commas/newlines
+function pbParseCSV(text){
+  if(!text)return {headers:[], rows:[]};
+  const rows = [];
+  let cur = [], field = '', inQuote = false;
+  for(let i=0;i<text.length;i++){
+    const ch = text[i], next = text[i+1];
+    if(inQuote){
+      if(ch==='"' && next==='"'){ field+='"'; i++; }
+      else if(ch==='"'){ inQuote = false; }
+      else field += ch;
+    } else {
+      if(ch==='"' && field===''){ inQuote = true; }
+      else if(ch===','){ cur.push(field); field=''; }
+      else if(ch==='\n' || ch==='\r'){
+        if(ch==='\r' && next==='\n')i++;
+        cur.push(field); field='';
+        if(cur.some(c=>c.length>0)) rows.push(cur);
+        cur = [];
+      }
+      else field += ch;
+    }
+  }
+  if(field || cur.length){ cur.push(field); if(cur.some(c=>c.length>0)) rows.push(cur); }
+  if(!rows.length)return {headers:[], rows:[]};
+  // First row is headers — map to canonical names
+  const headers = rows[0].map(h=>{
+    const norm = String(h).toLowerCase().trim().replace(/^["']|["']$/g,'');
+    return PB_HEADER_MAP[norm] || null;
+  });
+  // Convert remaining rows to objects keyed by canonical names
+  const objects = rows.slice(1).map(r=>{
+    const o = {};
+    headers.forEach((h,i)=>{ if(h && r[i]!==undefined && r[i]!=='') o[h] = String(r[i]).trim(); });
+    return o;
+  }).filter(o=>o.fn||o.ln||o.co||o.email);
+  return {headers, rows: objects, headerCount: headers.filter(h=>h).length};
+}
+
+// Find best matching contact for an import row
+// Returns {match: contact|null, confidence: 0..1, reason: string}
+function pbMatchContact(row, contacts){
+  if(!row.fn && !row.ln && !row.email)return {match:null, confidence:0, reason:'no name or email'};
+
+  // First try email exact match (highest confidence)
+  if(row.email){
+    const byEmail = contacts.find(c=>c.email && c.email.toLowerCase()===row.email.toLowerCase());
+    if(byEmail)return {match: byEmail, confidence: 1.0, reason: 'email exact match'};
+  }
+
+  // Score all contacts by name + company similarity
+  const importName = ((row.fn||'')+' '+(row.ln||'')).trim();
+  const importCo = row.co||'';
+  const scored = contacts.map(c=>{
+    const cName = (c.fn||'')+' '+(c.ln||'');
+    const cCo = c.co||'';
+    const nameSim = pbSim(importName, cName);
+    const coSim = importCo && cCo ? pbSim(importCo, cCo) : (importCo || cCo ? 0.3 : 0.7);
+    const score = nameSim * 0.6 + coSim * 0.4;
+    return {contact: c, nameSim, coSim, score};
+  }).sort((a,b)=>b.score-a.score);
+
+  if(!scored.length)return {match:null, confidence:0, reason:'no contacts in CRM'};
+  const best = scored[0];
+
+  // Build reason string for logging
+  function reasonStr(s){
+    const parts = [];
+    if(s.nameSim >= 0.95) parts.push('name exact');
+    else if(s.nameSim >= 0.8) parts.push('name fuzzy');
+    else if(s.nameSim > 0) parts.push('name '+Math.round(s.nameSim*100)+'%');
+    if(s.coSim >= 0.95) parts.push('company exact');
+    else if(s.coSim >= 0.8) parts.push('company fuzzy');
+    else if(s.coSim > 0) parts.push('company '+Math.round(s.coSim*100)+'%');
+    return parts.join(' + ');
+  }
+
+  // STANDARD MATCH: combined score above threshold
+  if(best.score >= 0.7){
+    return {match: best.contact, confidence: best.score, reason: reasonStr(best)};
+  }
+
+  // MOVED-COMPANIES CASE: exact name match (≥0.95) and unambiguous (no other contact has the same name)
+  // In this case, the row is updating a contact who changed companies — the company difference is the point.
+  if(best.nameSim >= 0.95){
+    const sameName = scored.filter(s=>s.nameSim >= 0.95);
+    if(sameName.length === 1){
+      // Only one contact has this name — safe to match despite company difference
+      return {
+        match: best.contact,
+        confidence: 0.85,
+        reason: 'name exact, company changed (' + (best.contact.co||'(empty)') + ' → ' + importCo + ')'
+      };
+    }
+    // Multiple contacts with same name — ambiguous, don't auto-match
+    return {match: null, confidence: best.score, reason: sameName.length+' contacts have this exact name — cannot disambiguate by company'};
+  }
+
+  return {match:null, confidence: best.score, reason: 'no confident match (best '+Math.round(best.score*100)+'%)'};
+}
+
+// Compute the diff for a matched row — what fields will change
+function pbDiff(importRow, contact){
+  const changes = [];
+  const fields = [
+    {k:'fn', label:'First name'}, {k:'ln', label:'Last name'}, {k:'co', label:'Company'},
+    {k:'email', label:'Email'}, {k:'li', label:'LinkedIn'}, {k:'phone', label:'Phone'},
+    {k:'role', label:'Role'}, {k:'addr', label:'Address'}, {k:'tier', label:'Tier'}
+  ];
+  for(const f of fields){
+    const newVal = (importRow[f.k]||'').trim();
+    const oldVal = (contact[f.k]||'').trim();
+    if(newVal && newVal !== oldVal){
+      changes.push({field: f.label, key: f.k, from: oldVal||'(empty)', to: newVal, type: oldVal ? 'overwrite' : 'fill'});
+    }
+  }
+  // Notes are appended, not overwritten
+  if(importRow.notes && importRow.notes.trim()){
+    const stamp = '[Pasted '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+']';
+    changes.push({field:'Notes', key:'notes', from:contact.notes||'(empty)', to:stamp+' '+importRow.notes.trim(), type:'append'});
+  }
+  return changes;
+}
+
+// Render the paste-back screen
+function rPasteBack(){
+  // Update undo button state
+  const snap = localStorage.getItem('eg_pasteback_undo');
+  const undoStatus = document.getElementById('pb-undo-status');
+  const undoBtn = document.getElementById('pb-undo-btn');
+  if(snap){
+    try{
+      const s = JSON.parse(snap);
+      undoStatus.textContent = `Last paste-back: ${s.affected} contacts modified on ${s.date}. Undo will restore them to their previous state.`;
+      undoBtn.disabled = false;
+    }catch(e){
+      undoStatus.textContent = 'No paste-back history available.';
+      undoBtn.disabled = true;
+    }
+  } else {
+    undoStatus.textContent = 'No paste-back history available — undo is empty.';
+    undoBtn.disabled = true;
+  }
+  // Clear preview if any
+  document.getElementById('pb-preview').style.display = 'none';
+}
+
+// File upload handler
+function pbLoadFile(input){
+  const file = input.files[0];
+  if(!file)return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('pb-csv').value = e.target.result;
+  };
+  reader.readAsText(file);
+}
+
+// Cache parsed preview data so apply() can use it
+let _pbPreviewData = null;
+
+// Build the preview UI from pasted CSV
+function pbBuildPreview(){
+  const csv = document.getElementById('pb-csv').value;
+  if(!csv.trim()){toast('Paste a CSV first or upload a file');return;}
+  const parsed = pbParseCSV(csv);
+  if(!parsed.rows.length){toast('Could not parse any rows — check that the first line has column headers like "First Name", "Email", etc.');return;}
+  if(parsed.headerCount < 2){toast('Could not recognize enough column headers. Make sure your headers are like "First Name", "Last Name", "Company", "Email", "LinkedIn".');return;}
+
+  const contacts = gc();
+  const results = parsed.rows.map(row => {
+    const matchInfo = pbMatchContact(row, contacts);
+    const changes = matchInfo.match ? pbDiff(row, matchInfo.match) : [];
+    return {row, matchInfo, changes};
+  });
+
+  // Cache for apply
+  _pbPreviewData = results;
+
+  // Render summary
+  const matched = results.filter(r=>r.matchInfo.match && r.changes.length > 0);
+  const matchedNoChanges = results.filter(r=>r.matchInfo.match && r.changes.length === 0);
+  const unmatched = results.filter(r=>!r.matchInfo.match);
+  document.getElementById('pb-summary').innerHTML = `
+    <span class="badge" style="background:rgba(16,185,129,.15);color:#059669;border:1px solid rgba(16,185,129,.3)">✓ ${matched.length} will update</span>
+    ${matchedNoChanges.length?`<span class="badge" style="background:var(--bg);color:var(--mu);border:1px solid var(--bd)">○ ${matchedNoChanges.length} matched, no changes</span>`:''}
+    ${unmatched.length?`<span class="badge" style="background:rgba(239,68,68,.15);color:#dc2626;border:1px solid rgba(239,68,68,.3)">✗ ${unmatched.length} no match (will skip)</span>`:''}
+  `;
+
+  // Render rows
+  const rowsHtml = results.map((r, idx) => {
+    const importName = ((r.row.fn||'')+' '+(r.row.ln||'')).trim() || '(no name)';
+    const importCo = r.row.co || '(no company)';
+
+    if(!r.matchInfo.match){
+      return `<div style="padding:10px 12px;border:1px solid rgba(239,68,68,.3);border-radius:6px;margin-bottom:6px;background:rgba(239,68,68,.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>${importName}</strong> <span style="color:var(--mu);font-size:11px">— ${importCo}</span></div>
+          <span style="font-size:10px;color:#dc2626">✗ NO MATCH — will skip</span>
+        </div>
+        <div style="font-size:11px;color:var(--mu);margin-top:3px">${r.matchInfo.reason}</div>
+      </div>`;
+    }
+
+    if(r.changes.length === 0){
+      return `<div style="padding:10px 12px;border:1px solid var(--bd);border-radius:6px;margin-bottom:6px;background:var(--bg);opacity:.7">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>${importName}</strong> → matches <strong>${r.matchInfo.match.fn} ${r.matchInfo.match.ln||''}</strong></div>
+          <span style="font-size:10px;color:var(--mu)">○ no new info</span>
+        </div>
+      </div>`;
+    }
+
+    const isHighConf = r.matchInfo.confidence >= 0.95;
+    const borderColor = isHighConf ? 'rgba(16,185,129,.3)' : 'rgba(245,158,11,.4)';
+    const bgColor = isHighConf ? 'rgba(16,185,129,.04)' : 'rgba(245,158,11,.04)';
+    const badgeText = isHighConf ? '✓ '+Math.round(r.matchInfo.confidence*100)+'% match' : '⚠ '+Math.round(r.matchInfo.confidence*100)+'% match';
+    const badgeColor = isHighConf ? '#059669' : '#d97706';
+
+    const changesList = r.changes.map(ch => {
+      const arrow = ch.type === 'append' ? 'append' : (ch.type === 'fill' ? 'fill' : 'overwrite');
+      const arrowColor = ch.type === 'append' ? 'var(--mu)' : (ch.type === 'fill' ? '#059669' : '#d97706');
+      return `<div style="font-size:11px;margin-top:3px;line-height:1.5">
+        <span style="color:var(--mu);display:inline-block;width:80px">${ch.field}:</span>
+        ${ch.from!=='(empty)'?`<span style="color:var(--mu);text-decoration:line-through">${ch.from.length>50?ch.from.slice(0,50)+'…':ch.from}</span> → `:''}
+        <strong style="color:var(--tx)">${ch.to.length>80?ch.to.slice(0,80)+'…':ch.to}</strong>
+        <span style="color:${arrowColor};font-size:10px;margin-left:6px">[${arrow}]</span>
+      </div>`;
+    }).join('');
+
+    return `<div style="padding:10px 12px;border:1px solid ${borderColor};border-radius:6px;margin-bottom:6px;background:${bgColor}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div><strong>${importName}</strong> → <strong>${r.matchInfo.match.fn} ${r.matchInfo.match.ln||''}</strong> <span style="color:var(--mu);font-size:11px">at ${r.matchInfo.match.co||'—'}</span></div>
+        <span style="font-size:10px;color:${badgeColor};white-space:nowrap;margin-left:8px">${badgeText}</span>
+      </div>
+      <div style="font-size:10px;color:var(--mu);margin-bottom:6px">${r.matchInfo.reason}</div>
+      ${changesList}
+    </div>`;
+  }).join('');
+
+  document.getElementById('pb-rows').innerHTML = rowsHtml || '<div class="empty" style="padding:16px">No rows to preview</div>';
+  document.getElementById('pb-preview').style.display = 'block';
+  document.getElementById('pb-apply').style.display = matched.length > 0 ? 'block' : 'none';
+}
+
+// Apply all matches — snapshot first, then write
+function pbApply(){
+  if(!_pbPreviewData){toast('Build the preview first');return;}
+  const toApply = _pbPreviewData.filter(r => r.matchInfo.match && r.changes.length > 0);
+  if(!toApply.length){toast('No changes to apply');return;}
+  if(!confirm(`Apply ${toApply.length} contact updates? A snapshot will be saved so you can undo.`))return;
+
+  const contacts = gc();
+  // Snapshot affected contacts
+  const affectedIds = new Set(toApply.map(r => r.matchInfo.match.id));
+  const snapshot = {
+    date: new Date().toLocaleString(),
+    affected: affectedIds.size,
+    contacts: contacts.filter(c => affectedIds.has(c.id))
+  };
+  localStorage.setItem('eg_pasteback_undo', JSON.stringify(snapshot));
+
+  // Apply changes
+  const stamp = '[Pasted '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+']';
+  let applied = 0;
+  for(const r of toApply){
+    const idx = contacts.findIndex(c => c.id === r.matchInfo.match.id);
+    if(idx < 0)continue;
+    for(const ch of r.changes){
+      if(ch.key === 'notes'){
+        const existing = contacts[idx].notes || '';
+        contacts[idx].notes = existing ? (stamp+' '+r.row.notes.trim()+'\n\n'+existing) : (stamp+' '+r.row.notes.trim());
+      } else {
+        contacts[idx][ch.key] = r.row[ch.key];
+      }
+    }
+    applied++;
+  }
+  sc(contacts);
+  toast(`Updated ${applied} contacts. Undo available in danger zone.`);
+  // Reset state
+  _pbPreviewData = null;
+  document.getElementById('pb-csv').value = '';
+  document.getElementById('pb-preview').style.display = 'none';
+  rPasteBack(); // refresh undo status
+}
+
+// Undo last paste-back
+function pbUndo(){
+  const raw = localStorage.getItem('eg_pasteback_undo');
+  if(!raw){toast('Nothing to undo');return;}
+  let snap;
+  try{ snap = JSON.parse(raw); }catch(e){toast('Snapshot is corrupt — cannot undo');return;}
+  if(!confirm(`Undo last paste-back? This will restore ${snap.affected} contacts to their state before the paste-back on ${snap.date}.`))return;
+
+  const contacts = gc();
+  const snapById = new Map(snap.contacts.map(c => [c.id, c]));
+  let restored = 0;
+  for(let i=0;i<contacts.length;i++){
+    const original = snapById.get(contacts[i].id);
+    if(original){ contacts[i] = original; restored++; }
+  }
+  sc(contacts);
+  localStorage.removeItem('eg_pasteback_undo');
+  toast(`Restored ${restored} contacts. Undo cleared.`);
+  rPasteBack();
 }
 
 
