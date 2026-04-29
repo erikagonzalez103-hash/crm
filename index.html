@@ -212,6 +212,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="ns" style="margin-top:auto;padding-bottom:16px">
     <div class="nl">Actions</div>
     <div class="ni" onclick="go('add')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a1 1 0 011 1v4h4a1 1 0 010 2H9v4a1 1 0 01-2 0V9H3a1 1 0 010-2h4V3a1 1 0 011-1z"/></svg>Add contact</div>
+    <div class="ni" onclick="go('settings')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.2v2M8 12.8v2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M1.2 8h2M12.8 8h2M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg>Settings</div>
     <div class="ni" onclick="exportCSV()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V2M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>Export CSV</div>
   </div>
 </div>
@@ -373,6 +374,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="lib-tab" id="tab-cgc" onclick="switchLibTab('cgc')">Commercial GC <span style="background:#185FA5;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">6</span></div>
         <div class="lib-tab" id="tab-edc" onclick="switchLibTab('edc')">City EDC <span style="background:#BA7517;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">4</span></div>
         <div class="lib-tab" id="tab-custom" onclick="switchLibTab('custom')">Custom copy <span id="custom-count-badge" style="background:var(--ac);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px;display:none">0</span></div>
+        <div class="lib-tab" id="tab-validator" onclick="switchLibTab('validator')">CTA check <span id="validator-count-badge" style="background:var(--dn);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px;display:none">0</span></div>
         <div class="lib-tab" id="tab-add" onclick="switchLibTab('add')">+ Add new copy</div>
       </div>
       <div id="lib-standard" style="display:grid;grid-template-columns:170px 1fr;gap:16px">
@@ -384,6 +386,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div id="lib-cgc" style="display:none"><div id="lib-cgc-content"></div></div>
       <div id="lib-edc" style="display:none"><div id="lib-edc-content"></div></div>
       <div id="lib-custom" style="display:none"><div id="custom-blocks-list"></div></div>
+      <div id="lib-validator" style="display:none"><div id="validator-content"></div></div>
       <div id="lib-add" style="display:none">
         <div class="panel" style="max-width:600px">
           <div class="ptitle">Add new copy block</div>
@@ -573,6 +576,54 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <button class="btn btn-p" onclick="saveContact()">Save contact</button>
           <button class="btn" onclick="go('contacts')">Cancel</button>
         </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="s-settings">
+      <div class="panel" style="max-width:680px">
+        <div class="ptitle">Email signature</div>
+        <p style="font-size:12px;color:var(--mu);margin-bottom:14px;line-height:1.6">Your official Eridion signature. When the toggle below is on, the CRM will replace the inline signature at the end of any email body with this one before opening in your mail client — so every send is consistent.</p>
+
+        <div class="ff" style="margin-bottom:14px">
+          <label class="flbl">Plain-text signature *</label>
+          <textarea class="rbox" id="sig-text" rows="7" placeholder="Erika Harrison&#10;Co-Founder, Eridion Glass&#10;318.458.1786 | erika@eridionglass.com&#10;www.eridionglass.com"></textarea>
+          <div style="font-size:10px;color:var(--mu);margin-top:4px;line-height:1.5">Plain text only — this is what gets injected into mailto links. For HTML/branded signatures, set those up directly in Gmail/Outlook (the CRM can't push HTML through mailto).</div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:var(--bg);border-radius:8px;margin-bottom:14px">
+          <input type="checkbox" id="sig-active" style="margin-top:2px;cursor:pointer;width:16px;height:16px">
+          <div style="flex:1">
+            <label for="sig-active" style="font-size:12px;font-weight:600;cursor:pointer;display:block;margin-bottom:3px">Apply this signature when opening emails</label>
+            <div style="font-size:11px;color:var(--mu);line-height:1.5">When ON, the CRM strips the closing block from each copy body (anything starting with "Best,", "Warmly,", or "Erika/Dion Harrison" through end) and replaces it with your saved signature above.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:24px">
+          <button class="btn btn-p" onclick="saveSignature()">Save signature</button>
+          <button class="btn" onclick="previewSignature()">Preview on a sample</button>
+        </div>
+
+        <div id="sig-preview" style="display:none;margin-bottom:24px"></div>
+      </div>
+
+      <div class="panel" style="max-width:680px">
+        <div class="ptitle">Branded signature image <span style="font-size:10px;font-weight:400;color:var(--mu);margin-left:6px">Optional — for reference / Gmail setup</span></div>
+        <p style="font-size:12px;color:var(--mu);margin-bottom:14px;line-height:1.6">Upload your branded HTML or PNG signature here as a backup or to share with team members. The CRM stores it but doesn't inject it (mailto links are plain-text only). Use Gmail's signature settings to install the visual version once — it'll auto-append on every email you compose.</p>
+
+        <div class="uz" id="sig-uz" onclick="document.getElementById('sig-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--ac)'" ondrop="handleSigDrop(event)" ondragleave="this.style.borderColor=''">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--mu)" stroke-width="1.5" style="margin:0 auto"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="uz-lbl">Click to upload or drag &amp; drop</div>
+          <div class="uz-sub">PNG, JPG, or HTML (under 500KB)</div>
+        </div>
+        <input type="file" id="sig-file" accept=".png,.jpg,.jpeg,.html,.htm,image/*,text/html" style="display:none" onchange="handleSigUpload(this)">
+
+        <div id="sig-image-display" style="margin-top:14px"></div>
+      </div>
+
+      <div class="panel" style="max-width:680px;border-color:rgba(226,75,74,0.3)">
+        <div class="ptitle" style="color:var(--dn)">Reset signature</div>
+        <button class="btn btn-sm btn-danger" onclick="clearSignature()">Clear all signature data</button>
       </div>
     </div>
 
@@ -783,8 +834,8 @@ t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. Hoping our
 
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:'Touch 1 — intro',t2:'Touch 2 — value add',t3:'Touch 3 — check in',t4:'Touch 4 — last one'};
-const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact',rocketreach:'RocketReach Queue'};
-const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually',rocketreach:'Contacts missing email or phone — use your 100 monthly credits here first'};
+const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact',rocketreach:'RocketReach Queue',settings:'Settings'};
+const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually',rocketreach:'Contacts missing email or phone — use your 100 monthly credits here first',settings:'Email signature & application preferences'};
 const CH_LABELS={linkedin:'LinkedIn connect',email:'Email',phone:'Phone call',linkedin_dm:'LinkedIn DM'};
 const CH_CLASSES={linkedin:'bch-li',email:'bch-em',phone:'bch-ph',linkedin_dm:'bch-ld'};
 
@@ -1066,7 +1117,7 @@ document.getElementById('logmodal').addEventListener('click',e=>{if(e.target.id=
 function mailtoSeq(cid,touchNum){
   const c=gc().find(x=>x.id===cid);if(!c)return;
   const copy=getSeqCopyForContact(c,touchNum,window._logVariant);if(!copy)return;
-  const body=(copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn);
+  const body=applySig((copy.body||'').replace(/\[First Name\]/g,c.fn).replace(/\[Name\]/g,c.fn));
   window.open(`mailto:${c.email||''}?subject=${encodeURIComponent(copy.subject||'')}&body=${encodeURIComponent(body)}`);
 }
 
@@ -1227,11 +1278,12 @@ function go(id){
   if(id==='queue')rqueue();
   if(id==='contacts'){rcontacts();updateLastImportInfo();}
   if(id==='sequences')rsequences();
-  if(id==='library'){rlib();updateCustomBadge();}
+  if(id==='library'){rlib();updateCustomBadge();updateValidatorBadge();}
   if(id==='responses'){rpopsel();document.getElementById('rcontact-chip').style.display='none';document.getElementById('rout').innerHTML='';}
   if(id==='import')updateLastImportInfo();
   if(id==='rocketreach'){rRocketReachQueue();updateRRBadge();}
   if(id==='add'){const d=document.getElementById('a11');if(d)d.value=new Date().toISOString().slice(0,10);}
+  if(id==='settings')rSettings();
 }
 
 function rcontacts(){
@@ -1476,7 +1528,7 @@ function doResp(){if(!curC)return;const cs=gc(),c=cs.find(x=>x.id===curC);if(c){
 function mailto_(cid,tk){
   const c=gc().find(x=>x.id===cid);if(!c)return;
   const role=c.role||'CEO/Owner',block=(COPY[role]||COPY['CEO/Owner'])[tk];if(!block)return;
-  const body=(block.b||block).replace(/\[First Name\]/g,c.fn);
+  const body=applySig((block.b||block).replace(/\[First Name\]/g,c.fn));
   window.open(`mailto:${c.email||''}?subject=${encodeURIComponent(block.s||'')}&body=${encodeURIComponent(body)}`);
 }
 
@@ -1512,7 +1564,7 @@ function saveContact(){
 
 function switchLibTab(tab){
   currentLibTab=tab;
-  ['standard','fifa','lb','cgc','edc','custom','add'].forEach(t=>{
+  ['standard','fifa','lb','cgc','edc','custom','validator','add'].forEach(t=>{
     const el=document.getElementById('lib-'+t);
     if(el)el.style.display=t===tab?(t==='standard'?'grid':'block'):'none';
     const tab2=document.getElementById('tab-'+t);
@@ -1524,6 +1576,7 @@ function switchLibTab(tab){
   if(tab==='cgc')rCGCLib();
   if(tab==='edc')rEDCLib();
   if(tab==='custom')rCustomBlocks();
+  if(tab==='validator')rValidator();
   if(tab==='add')clearAddForm();
 }
 
@@ -1952,7 +2005,7 @@ function analyze(){
     <div class="cprev" style="max-height:280px" id="rdraft-prev">${reply.replace(/</g,'&lt;')}</div>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
       <button class="btn btn-p btn-sm" onclick="clip(\`${reply.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy reply</button>
-      ${c&&c.email?`<button class="btn btn-sm btn-li" onclick="window.open('mailto:${c.email}?subject='+encodeURIComponent('Re: Eridion Glass')+'&body='+encodeURIComponent(document.getElementById('rdraft-prev').innerText))">Open in email ↗</button>`:''}
+      ${c&&c.email?`<button class="btn btn-sm btn-li" onclick="window.open('mailto:${c.email}?subject='+encodeURIComponent('Re: Eridion Glass')+'&body='+encodeURIComponent(applySig(document.getElementById('rdraft-prev').innerText)))">Open in email ↗</button>`:''}
       <button class="btn btn-sm" onclick="document.getElementById('rout').innerHTML=''">Clear</button>
     </div>
   </div>`;
@@ -2086,7 +2139,7 @@ Draft the message now.`;
       <div class="cprev" style="max-height:280px" id="rdraft-prev">${draft.replace(/</g,'&lt;')}</div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <button class="btn btn-p btn-sm" onclick="clip(\`${draft.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button>
-        ${c&&c.email?`<button class="btn btn-sm btn-li" onclick="window.open('mailto:${c.email}?subject='+encodeURIComponent('Re: Eridion Glass')+'&body='+encodeURIComponent(document.getElementById('rdraft-prev').innerText))">Open in email ↗</button>`:''}
+        ${c&&c.email?`<button class="btn btn-sm btn-li" onclick="window.open('mailto:${c.email}?subject='+encodeURIComponent('Re: Eridion Glass')+'&body='+encodeURIComponent(applySig(document.getElementById('rdraft-prev').innerText)))">Open in email ↗</button>`:''}
         <button class="btn btn-sm btn-warn" onclick="aiDraft()">Regenerate</button>
         <button class="btn btn-sm" onclick="document.getElementById('rout').innerHTML=''">Clear</button>
       </div>
@@ -2768,5 +2821,320 @@ function exportRRList(){
 }
 
 
-rdash();
+// ── CTA VALIDATOR ────────────────────────────────────────────────────────────
+// Strips the closing block (signature) so it doesn't pollute CTA detection.
+const SIG_STRIP_RE=/\n+(Best,?\s*\n|Warmly,?\s*\n|Cheers,?\s*\n|Thanks,?\s*\n|Thank you,?\s*\n|Sincerely,?\s*\n|Regards,?\s*\n|—\s*)?\s*(Erika|Dion)\s+Harrison[\s\S]*$/i;
+function stripSig(body){
+  if(!body)return '';
+  return body.replace(SIG_STRIP_RE,'').replace(/\s+$/,'').trim();
+}
+
+const CTA_PATTERNS=[
+  /\bhappy to\b/i,
+  /\bi'?d (love|like|welcome|appreciate|enjoy)\b/i,
+  /\bwe'?d (love|like|welcome|appreciate|genuinely)\b/i,
+  /\bi would (love|like|welcome|appreciate)\b/i,
+  /\bwould (a|love|like|welcome|be worth|you)\b/i,
+  /\blove to (be|have|hear|jump|chat|connect|get|earn|introduce|talk|learn|see|offer|share|send)\b/i,
+  /\bworth (a|the|five|fifteen|ten|\d+|your)\b/i,
+  /\blet me know\b/i,
+  /\bplease (let me know|keep us|reach|feel free|consider|include|complete)\b/i,
+  /\bkeep (us|me|eridion) in mind\b/i,
+  /\bopen to (a|chat|connect|exploring|the|having|hearing|talking)\b/i,
+  /\bcell is \d/i,
+  /\bi'?ll (follow up|reach out|circle back|check|call|email)\b/i,
+  /\b(call|email|text|message) (me|us|back)\b/i,
+  /\b(quick|brief|short|five|ten|fifteen|\d+)[- ]?(minute|min) (call|chat|conversation|intro|coffee)\b/i,
+  /\b(quick|brief) (call|chat|conversation|intro|note|hello|coffee|word)\b/i,
+  /\bwe'?re here\b/i,
+  /\bbe on your (sub list|list|radar|approved|short|preferred)\b/i,
+  /\b(love|like|want) to be (in|on|a|connected|considered|added|included)\b/i,
+  /\bif (you|your office|your team|glass|a project|anything|something|the timing|that|it|we)\b/i,
+  /\bwhen (you|glass|a project|something|the timing|it)\b/i,
+  /\bis there (a|an|any) (vendor|sub|prequal|approved|registration|process|way)\b/i,
+  /\bare you (still|currently|already)\b/i,
+  /\bcomplimentary (spec review|review|consult|quote|estimate)\b/i,
+  /\bcomplete any prequalification\b/i,
+  /\bjump on a (quick )?call\b/i,
+  /\bsend (a|over|our|the|you a|you our)\b/i,
+  /\bcould (we|i) (send|jump|chat|grab|set)\b/i,
+  /\bturn around a (number|quote|bid)/i,
+  /\bget us prequalified\b/i,
+  /\bget (eridion|us) on your\b/i
+];
+
+function hasCTA(body){
+  const stripped=stripSig(body);
+  if(!stripped)return false;
+  return CTA_PATTERNS.some(p=>p.test(stripped));
+}
+
+function runCTACheck(){
+  const results=[];
+  Object.values(SEQUENCES).forEach(seq=>{
+    seq.touches.forEach(t=>{
+      if(t.channel==='linkedin')return;
+      const bodies=[];
+      if(t.body)bodies.push({label:'',body:t.body});
+      if(t.body_cold)bodies.push({label:' (cold variant)',body:t.body_cold});
+      if(t.body_warm)bodies.push({label:' (warm variant)',body:t.body_warm});
+      bodies.forEach(({label,body})=>{
+        results.push({source:'sequence',sourceName:seq.name,sourceColor:seq.color,
+          location:`Touch ${t.num}${label}`,label:t.label,channel:t.channel,
+          subject:t.subject||'',body,hasCTA:hasCTA(body)});
+      });
+    });
+  });
+  Object.entries(FIFA_COPY_OVERRIDES).forEach(([co,touches])=>{
+    Object.entries(touches).forEach(([num,t])=>{
+      if(!t.body)return;
+      results.push({source:'fifa-override',sourceName:`FIFA override · ${co}`,sourceColor:'#534AB7',
+        location:`Touch ${num}`,label:t.subject||'',channel:'email',
+        subject:t.subject||'',body:t.body,hasCTA:hasCTA(t.body)});
+    });
+  });
+  Object.entries(COPY).forEach(([role,track])=>{
+    Object.entries(track).forEach(([key,val])=>{
+      if(key==='li')return;
+      const body=val.b||'';if(!body)return;
+      results.push({source:'standard',sourceName:role,sourceColor:'#1D9E75',
+        location:key.toUpperCase(),label:val.s||'',channel:'email',
+        subject:val.s||'',body,hasCTA:hasCTA(body)});
+    });
+  });
+  getCustomBlocks().forEach(b=>{
+    if(!b.body)return;
+    results.push({source:'custom',sourceName:b.name||'(unnamed)',sourceColor:'#BA7517',
+      location:b.touch||'',label:b.role||'',channel:b.channel||'email',
+      subject:b.subject||'',body:b.body,hasCTA:hasCTA(b.body),customId:b.id});
+  });
+  return results;
+}
+
+function updateValidatorBadge(){
+  const r=runCTACheck();
+  const missing=r.filter(x=>!x.hasCTA).length;
+  const badge=document.getElementById('validator-count-badge');
+  if(!badge)return;
+  if(missing){badge.textContent=missing;badge.style.display='inline';}
+  else badge.style.display='none';
+}
+
+function rValidator(){
+  const all=runCTACheck();
+  const missing=all.filter(x=>!x.hasCTA);
+  const passed=all.length-missing.length;
+  const el=document.getElementById('validator-content');
+
+  const groups={};
+  missing.forEach(m=>{
+    const k=`${m.source}::${m.sourceName}`;
+    if(!groups[k])groups[k]={source:m.source,sourceName:m.sourceName,sourceColor:m.sourceColor,items:[]};
+    groups[k].items.push(m);
+  });
+  const groupList=Object.values(groups);
+
+  const summaryColor=missing.length?'#E24B4A':'#1D9E75';
+  const summaryBg=missing.length?'#FCEBEB':'#E1F5EE';
+
+  const summary=`<div style="background:${summaryBg};border:.5px solid ${summaryColor};border-radius:10px;padding:14px 16px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="font-size:18px">${missing.length?'⚠️':'✅'}</div>
+      <div style="font-size:13px;font-weight:600;color:${summaryColor}">${missing.length?`${missing.length} copy block${missing.length===1?'':'s'} missing a clear CTA`:'All copy blocks have a CTA — looking good!'}</div>
+    </div>
+    <div style="font-size:11px;color:var(--mu);line-height:1.6">Scanned <strong>${all.length}</strong> blocks across sequences, standard library, FIFA overrides, and custom copy. <strong>${passed}</strong> passed · <strong>${missing.length}</strong> need an ask.</div>
+  </div>`;
+
+  const explainer=`<div style="background:var(--bg);border-radius:8px;padding:11px 14px;margin-bottom:16px;font-size:11px;color:var(--mu);line-height:1.6">
+    <strong style="color:var(--tx)">What counts as a CTA?</strong> Any line that prompts a response — "happy to jump on a quick call," "I'd love to learn what's in your pipeline," "let me know," "is there a vendor process," "we're here" (for soft final touches), or a voicemail leaving a callback number. Pure value-add or intro copy that ends only on a URL or signature won't pass. LinkedIn connection requests are excluded — they're intros, not asks.
+  </div>`;
+
+  if(!missing.length){
+    el.innerHTML=summary+explainer+`<div style="background:var(--sf);border:.5px solid var(--bd);border-radius:10px;padding:18px;text-align:center;font-size:12px;color:var(--mu)">No action needed. Every email body, voicemail script, and LinkedIn DM in your library closes with an ask. ✓</div>`;
+    return;
+  }
+
+  const groupsHtml=groupList.map(g=>{
+    const itemsHtml=g.items.map(it=>{
+      const stripped=stripSig(it.body);
+      const lines=stripped.split('\n').filter(l=>l.trim());
+      const lastLine=(lines.slice(-2).join(' ⏎ ')||'(empty)').slice(0,200);
+      const subjLine=it.subject?`<div style="font-size:10px;color:var(--mu);margin-bottom:4px">Subject: <strong style="color:var(--tx)">${it.subject.replace(/</g,'&lt;')}</strong></div>`:'';
+      const customEditBtn=it.source==='custom'&&it.customId?`<button class="btn btn-sm btn-p" onclick="editCustomBlockFromValidator(${JSON.stringify(it.customId)})">Edit copy →</button>`:'';
+      const bodyEsc=it.body.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+      return `<div style="border-left:3px solid var(--dn);background:#FCEBEB;padding:10px 12px;border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:600">${it.location}</span>
+          ${it.label?`<span style="font-size:11px;color:var(--mu)">— ${it.label.replace(/</g,'&lt;')}</span>`:''}
+          ${bch(it.channel)}
+        </div>
+        ${subjLine}
+        <div style="font-size:11px;color:var(--mu);font-style:italic;line-height:1.5;margin-bottom:8px">Last lines before sig: "${lastLine.replace(/</g,'&lt;')}"</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="clip(\`${bodyEsc}\`)">Copy full body</button>
+          <button class="btn btn-sm" onclick="toggleValidatorBody(this)">Show full body</button>
+          ${customEditBtn}
+        </div>
+        <div style="display:none;margin-top:8px;padding:10px;background:var(--sf);border-radius:6px;font-size:11px;line-height:1.6;white-space:pre-wrap;max-height:200px;overflow-y:auto">${it.body.replace(/</g,'&lt;')}</div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:18px">
+      <div style="font-size:12px;font-weight:600;color:${g.sourceColor};margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">${g.sourceName} <span style="color:var(--mu);font-weight:400;text-transform:none;letter-spacing:0">· ${g.items.length} block${g.items.length===1?'':'s'}</span></div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+
+  const note=groupList.some(g=>g.source!=='custom')?`<div style="background:#FAEEDA;border:.5px solid #BA7517;border-radius:8px;padding:11px 14px;font-size:11px;color:#854F0B;line-height:1.6;margin-top:8px">
+    <strong>Note:</strong> Standard library, sequence, and FIFA override copy is hard-coded in the source. To fix those, paste the full body of any flagged block into Claude with the location label and ask for a CTA-added rewrite — Claude can then patch the source.
+  </div>`:'';
+
+  el.innerHTML=summary+explainer+groupsHtml+note;
+}
+
+function toggleValidatorBody(btn){
+  const div=btn.parentElement.nextElementSibling;
+  const showing=div.style.display!=='none';
+  div.style.display=showing?'none':'block';
+  btn.textContent=showing?'Show full body':'Hide body';
+}
+
+function editCustomBlockFromValidator(id){
+  switchLibTab('custom');
+  setTimeout(()=>{
+    if(typeof editCustomBlock==='function'){editCustomBlock(id);return;}
+    const node=document.querySelector(`[data-cb-id="${id}"]`);
+    if(node){const b=node.querySelector('.btn-p, button[onclick*="edit"]');if(b)b.click();}
+  },150);
+}
+
+// ── EMAIL SIGNATURE ──────────────────────────────────────────────────────────
+const DEFAULT_SIG='Erika Harrison\nCo-Founder, Eridion Glass\n318.458.1786 | erika@eridionglass.com\nwww.eridionglass.com';
+
+function getSig(){
+  return {
+    text:localStorage.getItem('eg_sig_text')||'',
+    image:localStorage.getItem('eg_sig_image')||'',
+    imageName:localStorage.getItem('eg_sig_image_name')||'',
+    active:localStorage.getItem('eg_sig_active')==='1'
+  };
+}
+
+function applySig(body){
+  const s=getSig();
+  if(!s.active||!s.text||!body)return body;
+  const stripped=stripSig(body);
+  return stripped+'\n\n'+s.text;
+}
+
+function rSettings(){
+  const s=getSig();
+  const ta=document.getElementById('sig-text');
+  if(ta)ta.value=s.text||DEFAULT_SIG;
+  const ck=document.getElementById('sig-active');
+  if(ck)ck.checked=s.active;
+  rSigImageDisplay();
+  const prev=document.getElementById('sig-preview');
+  if(prev){prev.style.display='none';prev.innerHTML='';}
+}
+
+function rSigImageDisplay(){
+  const s=getSig();
+  const el=document.getElementById('sig-image-display');
+  if(!el)return;
+  if(!s.image){el.innerHTML='';return;}
+  const isImg=s.image.startsWith('data:image');
+  const isHtml=s.image.startsWith('data:text/html');
+  let preview='';
+  if(isImg)preview=`<img src="${s.image}" alt="Signature" style="max-width:100%;max-height:200px;border:.5px solid var(--bd);border-radius:6px;background:#fff;padding:8px">`;
+  else if(isHtml){
+    try{
+      const html=atob(s.image.split(',')[1]||'');
+      preview=`<div style="border:.5px solid var(--bd);border-radius:6px;padding:12px;background:#fff;max-height:200px;overflow:auto">${html}</div>`;
+    }catch(e){preview='<div style="font-size:11px;color:var(--mu)">HTML preview unavailable</div>';}
+  }else{
+    preview='<div style="font-size:11px;color:var(--mu)">File saved (preview not available for this type)</div>';
+  }
+  el.innerHTML=`<div style="font-size:11px;color:var(--mu);margin-bottom:6px">Saved file: <strong style="color:var(--tx)">${s.imageName||'signature'}</strong></div>
+    ${preview}
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-sm" onclick="downloadSigImage()">Download for Gmail setup ↓</button>
+      <button class="btn btn-sm btn-danger" onclick="clearSigImage()">Remove</button>
+    </div>`;
+}
+
+function saveSignature(){
+  const text=(document.getElementById('sig-text').value||'').trim();
+  const active=document.getElementById('sig-active').checked;
+  if(!text&&active){alert('Add signature text before turning the toggle on, or turn the toggle off.');return;}
+  localStorage.setItem('eg_sig_text',text);
+  localStorage.setItem('eg_sig_active',active?'1':'0');
+  toast('Signature saved'+(active?' & active':''));
+}
+
+function previewSignature(){
+  const text=(document.getElementById('sig-text').value||'').trim();
+  const sample=`Hi Alan,\n\nFollowing up on my note from last week — wanted to share a recent project that came together for a custom builder in Highland Park. Frameless shower, staircase glass, and a Colorback feature wall, all on schedule.\n\nwww.eridionglass.com/colorback\n\nIf you have a project with a glass scope coming up, I'd love to offer a complimentary spec review.\n\nBest,\nErika Harrison\nCo-Founder, Eridion Glass\nwww.eridionglass.com`;
+  const stripped=stripSig(sample);
+  const result=text?stripped+'\n\n'+text:sample;
+  const prev=document.getElementById('sig-preview');
+  prev.innerHTML=`<div style="background:var(--bg);border-radius:8px;padding:14px">
+    <div style="font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Preview — sample email body with signature applied</div>
+    <div style="font-size:12px;line-height:1.6;white-space:pre-wrap;background:var(--sf);padding:12px;border-radius:6px;border:.5px solid var(--bd)">${result.replace(/</g,'&lt;')}</div>
+    <div style="font-size:10px;color:var(--mu);margin-top:6px">The CRM stripped the existing closing block ("Best, Erika Harrison...") and replaced it with your saved signature.</div>
+  </div>`;
+  prev.style.display='block';
+}
+
+function handleSigUpload(input){
+  const f=input.files[0];if(!f)return;
+  if(f.size>500*1024){alert('File must be under 500KB.');input.value='';return;}
+  const r=new FileReader();
+  r.onload=()=>{
+    localStorage.setItem('eg_sig_image',r.result);
+    localStorage.setItem('eg_sig_image_name',f.name);
+    rSigImageDisplay();
+    toast('Signature image saved');
+  };
+  r.onerror=()=>{toast('Upload failed');};
+  r.readAsDataURL(f);
+  input.value='';
+}
+
+function handleSigDrop(e){
+  e.preventDefault();
+  const f=e.dataTransfer.files[0];if(!f)return;
+  const input=document.getElementById('sig-file');
+  const dt=new DataTransfer();dt.items.add(f);input.files=dt.files;
+  handleSigUpload(input);
+}
+
+function downloadSigImage(){
+  const s=getSig();
+  if(!s.image){toast('No image saved');return;}
+  const a=document.createElement('a');
+  a.href=s.image;
+  a.download=s.imageName||'eridion_signature';
+  a.click();
+}
+
+function clearSigImage(){
+  if(!confirm('Remove saved signature image?'))return;
+  localStorage.removeItem('eg_sig_image');
+  localStorage.removeItem('eg_sig_image_name');
+  rSigImageDisplay();
+  toast('Image removed');
+}
+
+function clearSignature(){
+  if(!confirm('Clear all signature data (text, image, and toggle state)?'))return;
+  localStorage.removeItem('eg_sig_text');
+  localStorage.removeItem('eg_sig_image');
+  localStorage.removeItem('eg_sig_image_name');
+  localStorage.removeItem('eg_sig_active');
+  rSettings();
+  toast('Signature cleared');
+}
+
+
+rdash();updateValidatorBadge();
 </script>
