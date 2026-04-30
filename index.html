@@ -1,15 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eridion Glass — Outreach CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--nav:#1a2332;--nt:#8a9bb0;--ac:#1D9E75;--al:#E1F5EE;--ad:#0F6E56;--sf:#fff;--bg:#f4f5f7;--bd:rgba(0,0,0,0.08);--tx:#1a1a1a;--mu:#666;--ht:#999;--dn:#E24B4A;--in:#185FA5;--amber:#BA7517;--amber-bg:#FAEEDA;--pink:#D4537E;--pink-bg:#FBEAF0;--lb:#2D6A4F;--lb-bg:#D8F3DC;--lb-border:#52B788}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+:root{--nav:#1F2A4A;--nav-soft:#2a3760;--nt:#9aa5bd;--ac:#43B047;--al:#E8F5E9;--ad:#369138;--sf:#fff;--bg:#F5F5F5;--bd:rgba(0,0,0,0.08);--tx:#3C3C3C;--mu:#7C7C7C;--ht:#999;--dn:#E24B4A;--in:#185FA5;--amber:#BA7517;--amber-bg:#FAEEDA;--pink:#D4537E;--pink-bg:#FBEAF0;--lb:#2D6A4F;--lb-bg:#D8F3DC;--lb-border:#52B788}
+body{font-family:'Manrope','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;-webkit-font-smoothing:antialiased}
 .app{display:grid;grid-template-columns:215px 1fr;height:100vh;overflow:hidden}
 .nav{background:var(--nav);display:flex;flex-direction:column;overflow-y:auto}
 .nav-hd{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
@@ -63,21 +65,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cprev{background:var(--bg);border-radius:7px;padding:11px;font-size:11px;color:var(--tx);line-height:1.65;max-height:110px;overflow-y:auto;white-space:pre-wrap;margin-bottom:10px;border:.5px solid var(--bd)}
 .qacts{display:flex;gap:7px;flex-wrap:wrap}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
-.bwarm{background:#E1F5EE;color:#0F6E56}
+.bwarm{background:#E8F5E9;color:#369138}
 .bcold{background:#E6F1FB;color:#185FA5}
 .bt1{background:#EEEDFE;color:#534AB7}
 .bt2{background:#FAEEDA;color:#854F0B}
 .bt3{background:#FAECE7;color:#993C1D}
 .bt4{background:#FCEBEB;color:#A32D2D}
 .bdnc{background:#FCEBEB;color:#A32D2D}
-.bresp{background:#E1F5EE;color:#0F6E56}
+.bresp{background:#E8F5E9;color:#369138}
 .bt2t{background:#E6F1FB;color:#185FA5}
 .bt3t{background:#F1EFE8;color:#5F5E5A}
 .bcustom{background:#EEEDFE;color:#534AB7}
 .bseq{background:#EEEDFE;color:#3C3489}
 .blb{background:var(--lb-bg);color:var(--lb)}
 .bch-li{background:#E6F1FB;color:#0C447C}
-.bch-em{background:#E1F5EE;color:#0F6E56}
+.bch-em{background:#E8F5E9;color:#369138}
 .bch-ph{background:#FAEEDA;color:#633806}
 .bch-ld{background:#FBEAF0;color:#72243E}
 .beo{background:#FFF3CD;color:#854F0B;border:.5px solid #F59E0B}
@@ -85,7 +87,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ctbl th{font-size:10px;font-weight:600;color:var(--mu);text-align:left;padding:8px 10px;border-bottom:.5px solid var(--bd);background:var(--bg);text-transform:uppercase;letter-spacing:.05em}
 .ctbl td{padding:10px;border-bottom:.5px solid var(--bd);font-size:12px;color:var(--tx);vertical-align:middle}
 .ctbl tr:hover td{background:var(--bg)}
-.ctbl tr.selected td{background:#E1F5EE}
+.ctbl tr.selected td{background:#E8F5E9}
 .panel{background:var(--sf);border:.5px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:12px}
 .ptitle{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
 .tl-item{display:flex;gap:10px;padding:8px 0;border-bottom:.5px solid var(--bd)}
@@ -132,7 +134,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .lib-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .lib-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--bd);background:var(--sf);color:var(--mu);transition:all .12s}
 .lib-tab.active{background:var(--nav);color:#fff;border-color:var(--nav)}
-.seq-bar{background:linear-gradient(135deg,#1a2332,#2d3f5c);border-radius:10px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.seq-bar{background:linear-gradient(135deg,#1F2A4A,#2a3760);border-radius:10px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .seq-bar.lb-bar{background:linear-gradient(135deg,#1b4332,#2d6a4f)}
 .seq-bar-info{color:#fff}
 .seq-bar-title{font-size:13px;font-weight:600;margin-bottom:3px}
@@ -153,7 +155,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .seq-touch-num.done{background:var(--ac);color:#fff}
 .seq-touch-num.lb{background:var(--lb-bg);color:var(--lb)}
 .seq-panel-bd{padding:12px 16px}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2332;color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;z-index:999;white-space:nowrap;pointer-events:none;animation:fadeup .2s ease}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1F2A4A;color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;z-index:999;white-space:nowrap;pointer-events:none;animation:fadeup .2s ease}
 @keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .log-modal{background:var(--sf);border-radius:12px;padding:20px;width:560px;max-height:640px;overflow-y:auto;border:.5px solid var(--bd)}
 .copy-variant-tabs{display:flex;gap:6px;margin-bottom:10px}
@@ -167,7 +169,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .qcard.edc-card{border-left:3px solid #BA7517}
 .av.cgc{background:#E6F1FB;color:#0C447C}
 .av.edc{background:#FAEEDA;color:#633806}
-.seq-bar.cgc-bar{background:linear-gradient(135deg,#0c2a4a,#185FA5)}
+.seq-bar.cgc-bar{background:linear-gradient(135deg,#1F2A4A,#185FA5)}
 .seq-bar.edc-bar{background:linear-gradient(135deg,#3d2800,#BA7517)}
 .btn-cgc{background:#E6F1FB;color:#0C447C;border-color:#185FA5}
 .btn-cgc:hover{background:#cce3f5}
@@ -180,8 +182,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .seq-panel-hd.cgc{background:linear-gradient(to right,#eef4fb,var(--sf))}
 .seq-panel-hd.edc{background:linear-gradient(to right,#fdf5e6,var(--sf))}
 .jericho-modal{background:var(--sf);border-radius:12px;padding:20px;width:640px;max-height:720px;overflow-y:auto;border:.5px solid var(--bd)}
-.jericho-card{background:#0f1a2a;color:#e2f4ed;border-radius:10px;padding:18px;font-family:'Courier New',monospace;font-size:11px;line-height:1.8;white-space:pre-wrap;max-height:380px;overflow-y:auto;border:.5px solid #1D9E75}
-.research-bar{background:#E1F5EE;border:.5px solid var(--ac);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.jericho-card{background:#1F2A4A;color:#e2f4ed;border-radius:10px;padding:18px;font-family:'Courier New',monospace;font-size:11px;line-height:1.8;white-space:pre-wrap;max-height:380px;overflow-y:auto;border:.5px solid #43B047}
+.research-bar{background:#E8F5E9;border:.5px solid var(--ac);border-radius:8px;padding:12px 14px;margin-bottom:10px}
 .research-row{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:11px;border-bottom:.5px solid rgba(0,0,0,0.06)}
 .research-row:last-child{border-bottom:none}
 .research-status{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px}
@@ -190,32 +192,206 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .rs-done{background:var(--ac);color:#fff}
 .rs-err{background:#FCEBEB;color:var(--dn)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ═════════ NEW BRAND TREATMENT ════════════════════════════════════════════════ */
+
+/* Brand logo mark — green gradient cube with E */
+.brand-mark{
+  width:32px;height:32px;border-radius:7px;
+  background:linear-gradient(135deg,var(--ac) 0%,var(--ad) 100%);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:15px;flex-shrink:0;
+  box-shadow:0 2px 4px rgba(67,176,71,0.25);
+}
+
+/* Refined sidebar nav items with active green accent */
+.ni{position:relative}
+.ni span{flex:1}
+.ni.active{background:rgba(67,176,71,0.14);color:#fff}
+.ni.active::before{
+  content:'';position:absolute;left:0;top:8px;bottom:8px;
+  width:3px;background:var(--ac);border-radius:0 3px 3px 0;
+}
+
+/* Topbar refinement with brand-tinted title */
+.topbar{padding:14px 22px;background:#fff}
+.tb-title{color:var(--nav);font-weight:700;letter-spacing:-0.01em;font-size:16px}
+
+/* Primary button uses Nintendo green with subtle shadow */
+.btn-p{background:var(--ac);color:#fff;border-color:var(--ac);box-shadow:0 1px 2px rgba(67,176,71,0.25);font-weight:600}
+.btn-p:hover{background:var(--ad);border-color:var(--ad)}
+
+/* Mobile bottom tab bar — desktop default hidden */
+.m-tabs{display:none}
+.more-sheet-ov{display:none}
+
+/* ═════════ MOBILE RESPONSIVE (≤768px) ════════════════════════════════════════ */
+@media (max-width:768px){
+  /* Single-column app, no sidebar */
+  .app{grid-template-columns:1fr}
+  .nav{display:none} /* Hide desktop sidebar */
+
+  /* Reserve space at the bottom for the tab bar */
+  .main{padding-bottom:64px}
+  .content{padding:14px}
+
+  /* Topbar becomes branded navy mobile header */
+  .topbar{
+    background:var(--nav);color:#fff;
+    padding:14px 16px 14px;
+    border-bottom:none;
+  }
+  .tb-title{color:#fff;font-size:18px;font-weight:700}
+  .tb-sub{color:rgba(255,255,255,0.7);font-size:11px}
+  .tba .btn{background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.18)}
+  .tba .btn-p{background:var(--ac);color:#fff;border-color:var(--ac)}
+
+  /* Stat cards — keep all 4 but make them tap-friendly */
+  .metrics{grid-template-columns:repeat(2,1fr);gap:8px}
+  .metric{padding:10px 12px}
+  .mval{font-size:18px}
+
+  /* Cards full-bleed, larger tap area */
+  .qcard{margin-bottom:8px;border-radius:12px}
+  .qcard-hd{padding:14px}
+  .qcard-bd{padding:14px}
+
+  /* Forms wrap to single column */
+  .frow{grid-template-columns:1fr;gap:10px}
+
+  /* Tables become cards-ish */
+  .ctbl{font-size:11px}
+  .ctbl th,.ctbl td{padding:8px 6px}
+
+  /* Modals: full-screen sheets with handle */
+  .modal-ov{padding:0;align-items:flex-end}
+  .modal,.jericho-modal,.log-modal{
+    width:100%;max-width:100%;
+    max-height:92vh;
+    border-radius:18px 18px 0 0;
+    padding:18px 16px;
+  }
+  .modal::before,.jericho-modal::before,.log-modal::before{
+    content:'';display:block;width:36px;height:4px;
+    background:#D0D0D0;border-radius:2px;margin:0 auto 12px;
+  }
+
+  /* Bigger tap targets: any inline btn-sm */
+  .btn-sm{padding:8px 12px;font-size:12px}
+  .btn{min-height:38px}
+
+  /* Show the bottom tab bar */
+  .m-tabs{
+    display:flex;
+    position:fixed;bottom:0;left:0;right:0;
+    background:#fff;border-top:1px solid var(--bd);
+    padding:6px 4px max(10px,env(safe-area-inset-bottom)) 4px;
+    box-shadow:0 -2px 12px rgba(0,0,0,0.04);
+    z-index:100;
+  }
+  .m-tab{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    gap:3px;padding:6px 2px;cursor:pointer;
+    color:var(--mu);position:relative;
+    min-height:50px;justify-content:center;
+  }
+  .m-tab svg{width:22px;height:22px}
+  .m-tab span{font-size:10px;font-weight:600}
+  .m-tab.active{color:var(--nav)}
+  .m-tab.active svg{stroke:var(--nav)}
+  .m-tab-badge{
+    position:absolute;top:2px;right:calc(50% - 18px);
+    background:var(--ac);color:#fff;font-size:9px;font-weight:700;
+    padding:1px 5px;border-radius:8px;min-width:14px;text-align:center;
+  }
+
+  /* Show the More sheet when active */
+  .more-sheet-ov.open{
+    display:flex;position:fixed;inset:0;
+    background:rgba(0,0,0,0.4);z-index:200;
+    align-items:flex-end;
+    animation:fadein .15s ease;
+  }
+  .more-sheet{
+    background:#fff;width:100%;
+    border-radius:18px 18px 0 0;
+    padding:18px 14px max(20px,env(safe-area-inset-bottom));
+    animation:slideup .2s ease;
+  }
+  .more-sheet-handle{
+    width:36px;height:4px;background:#D0D0D0;
+    border-radius:2px;margin:0 auto 12px;
+  }
+  .more-sheet-title{
+    font-size:11px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--mu);
+    text-align:center;margin-bottom:10px;
+  }
+  .more-sheet-list{display:flex;flex-direction:column;gap:2px}
+  .more-sheet-item{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 14px;border-radius:10px;
+    color:var(--tx);font-size:14px;font-weight:500;
+    cursor:pointer;
+  }
+  .more-sheet-item span{flex:1}
+  .more-sheet-item svg{color:var(--nav);flex-shrink:0}
+  .more-sheet-item:active{background:var(--bg)}
+  .more-sheet-item .m-arrow{color:var(--mu);font-size:18px;font-weight:400}
+  .more-sheet-divider{height:1px;background:var(--bd);margin:6px 14px}
+
+  /* Library tabs scroll horizontally on mobile */
+  .lib-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .lib-tabs::-webkit-scrollbar{display:none}
+  .lib-tab{flex-shrink:0}
+
+  /* Sequence bar stacks on mobile */
+  .seq-bar{flex-direction:column;align-items:flex-start;gap:10px}
+  .seq-steps{align-self:stretch;justify-content:flex-start}
+
+  /* Bulk action bar wraps */
+  .bulk-bar{flex-wrap:wrap}
+}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+/* Small refinement: rounder cards on desktop too */
+.qcard{border-radius:12px}
+.metric{border-radius:10px}
+.panel{border-radius:12px}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="nav">
   <div class="nav-hd">
-    <div class="nav-brand">Eridion Glass</div>
-    <div class="nav-sub">Outreach CRM</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="brand-mark">E</div>
+      <div>
+        <div class="nav-brand">Eridion Glass</div>
+        <div class="nav-sub">Outreach CRM</div>
+      </div>
+    </div>
   </div>
   <div class="ns">
     <div class="nl">Main</div>
-    <div class="ni active" onclick="go('dashboard')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Dashboard</div>
-    <div class="ni" onclick="go('queue')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 4h12v1.5H2zm0 3h12v1.5H2zm0 3h8v1.5H2z"/></svg>Today's queue<span class="nbadge" id="qbadge">0</span></div>
-    <div class="ni" onclick="go('contacts')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="3"/><path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6H2z"/></svg>Contacts</div>
-    <div class="ni" onclick="go('sequences')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H2zm0 4h10v2H2zm0 4h7v2H2z"/><circle cx="13" cy="11" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M12 11l.8.8 1.5-1.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>Sequences<span class="nbadge" id="seqbadge" style="background:#534AB7">0</span></div>
-    <div class="ni" onclick="go('responses')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>Response intake</div>
-    <div class="ni" onclick="go('library')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3h8v1H4zm0 3h8v1H4zm0 3h5v1H4z"/></svg>Copy library</div>
-    <div class="ni" onclick="go('rocketreach')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 3 3.5.5-2.5 2.5.6 3.5L8 9l-3.1 1.5.6-3.5L3 4.5l3.5-.5z"/></svg>RocketReach queue<span class="nbadge" id="rrbadge" style="background:#BA7517">0</span></div>
-    <div class="ni" onclick="go('import')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>Import from Excel</div>
+    <div class="ni active" data-screen="dashboard" onclick="go('dashboard')"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg><span>Dashboard</span></div>
+    <div class="ni" data-screen="queue" onclick="go('queue')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><path d="M5.5 8l1.8 1.8 3.2-3.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Today's queue</span><span class="nbadge" id="qbadge">0</span></div>
+    <div class="ni" data-screen="contacts" onclick="go('contacts')"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="3"/><path d="M2 13c0-3.3 2.7-6 6-6s6 2.7 6 6H2z"/></svg><span>Contacts</span></div>
+    <div class="ni" data-screen="responses" onclick="go('responses')"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg><span>Replies</span></div>
+  </div>
+  <div class="ns">
+    <div class="nl">More</div>
+    <div class="ni" data-screen="sequences" onclick="go('sequences')"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H2zm0 4h10v2H2zm0 4h7v2H2z"/><circle cx="13" cy="11" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M12 11l.8.8 1.5-1.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg><span>Sequences</span><span class="nbadge" id="seqbadge" style="background:#534AB7">0</span></div>
+    <div class="ni" data-screen="library" onclick="go('library')"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3h8v1H4zm0 3h8v1H4zm0 3h5v1H4z"/></svg><span>Copy library</span></div>
+    <div class="ni" data-screen="add" onclick="go('add')"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a1 1 0 011 1v4h4a1 1 0 010 2H9v4a1 1 0 01-2 0V9H3a1 1 0 010-2h4V3a1 1 0 011-1z"/></svg><span>Add contact</span></div>
+    <div class="ni" data-screen="import" onclick="go('import')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg><span>Import from Excel</span></div>
+    <div class="ni" data-screen="pasteback" onclick="go('pasteback')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h7l3 3v9H3z"/><path d="M10 2v3h3M5 8h6M5 11h6" stroke-linecap="round"/></svg><span>Paste-back</span></div>
+    <div class="ni" data-screen="rocketreach" onclick="go('rocketreach')"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 3 3.5.5-2.5 2.5.6 3.5L8 9l-3.1 1.5.6-3.5L3 4.5l3.5-.5z"/></svg><span>RocketReach queue</span><span class="nbadge" id="rrbadge" style="background:#BA7517">0</span></div>
   </div>
   <div class="ns" style="margin-top:auto;padding-bottom:16px">
-    <div class="nl">Actions</div>
-    <div class="ni" onclick="go('add')"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a1 1 0 011 1v4h4a1 1 0 010 2H9v4a1 1 0 01-2 0V9H3a1 1 0 010-2h4V3a1 1 0 011-1z"/></svg>Add contact</div>
-    <div class="ni" onclick="go('pasteback')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h7l3 3v9H3z"/><path d="M10 2v3h3M5 8h6M5 11h6" stroke-linecap="round"/></svg>Paste-back enrichment</div>
-    <div class="ni" onclick="go('settings')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.2v2M8 12.8v2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M1.2 8h2M12.8 8h2M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg>Settings</div>
-    <div class="ni" onclick="exportCSV()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V2M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>Export CSV</div>
+    <div class="ni" data-screen="settings" onclick="go('settings')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.2v2M8 12.8v2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M1.2 8h2M12.8 8h2M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg><span>Settings</span></div>
+    <div class="ni" data-screen="export" onclick="go('export')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V2M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg><span>Export CSV</span></div>
   </div>
 </div>
 
@@ -682,6 +858,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
+    <!-- EXPORT CSV -->
+    <div class="screen" id="s-export">
+      <div class="panel" style="max-width:680px">
+        <div class="ptitle">Download all contacts</div>
+        <p style="font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.6">Export your full CRM as a CSV file. Use this to back up your data, share with collaborators, or open in Excel for analysis.</p>
+
+        <div id="export-stats" style="background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:14px">
+          <!-- Populated by rExport() -->
+        </div>
+
+        <div class="ff" style="margin-bottom:16px">
+          <label class="flbl">What to include</label>
+          <select class="fsel" id="export-filter" onchange="rExport()">
+            <option value="all">All contacts</option>
+            <option value="active">Active sequences only</option>
+            <option value="responded">Responded only</option>
+            <option value="dnc">Do-not-contact only</option>
+            <option value="tier1">Tier 1 only</option>
+            <option value="tier2">Tier 2 only</option>
+            <option value="tier3">Tier 3 only</option>
+          </select>
+        </div>
+
+        <button class="btn btn-p" onclick="doExportCSV()" style="width:100%;padding:12px;font-size:14px">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px"><path d="M8 10V2M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>
+          Download CSV
+        </button>
+
+        <div id="export-status" style="margin-top:14px;font-size:12px;color:var(--mu);text-align:center"></div>
+      </div>
+
+      <div class="panel" style="max-width:680px;background:var(--bg)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:8px">CSV columns</div>
+        <div style="font-size:11px;color:var(--tx);line-height:1.7">First Name · Last Name · Company · Role · Email · LinkedIn · LinkedIn Account · LinkedIn Status · Email Only · Tier · Source · Touches Sent · Last Touch Date · Sequence · Seq Touch · Responded · Do Not Contact · Notes</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -709,6 +922,50 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-title">Log touch & advance sequence</div>
     <div id="log-body"></div>
     <div class="modal-acts" id="log-acts"></div>
+  </div>
+</div>
+
+<!-- MOBILE BOTTOM TAB BAR (only shown on mobile via CSS) -->
+<div class="m-tabs">
+  <div class="m-tab active" data-screen="dashboard" onclick="go('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12L12 4l9 8M5 11v9h14v-9" stroke-linejoin="round"/></svg>
+    <span>Home</span>
+  </div>
+  <div class="m-tab" data-screen="queue" onclick="go('queue')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Today</span>
+    <span class="m-tab-badge" id="qbadge-mobile" style="display:none">0</span>
+  </div>
+  <div class="m-tab" data-screen="contacts" onclick="go('contacts')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    <span>Contacts</span>
+  </div>
+  <div class="m-tab" data-screen="responses" onclick="go('responses')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 4.4-4 8-9 8-1.5 0-2.9-.3-4.2-.9L3 21l1.4-4.3C3.5 15.5 3 14 3 12c0-4.4 4-8 9-8s9 3.6 9 8z" stroke-linejoin="round"/></svg>
+    <span>Replies</span>
+  </div>
+  <div class="m-tab" onclick="toggleMoreSheet()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></svg>
+    <span>More</span>
+  </div>
+</div>
+
+<!-- MOBILE MORE SHEET -->
+<div class="more-sheet-ov" id="moresheet" onclick="if(event.target===this)toggleMoreSheet()">
+  <div class="more-sheet">
+    <div class="more-sheet-handle"></div>
+    <div class="more-sheet-title">More</div>
+    <div class="more-sheet-list">
+      <div class="more-sheet-item" onclick="go('sequences');toggleMoreSheet()"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H2zm0 4h10v2H2zm0 4h7v2H2z"/></svg><span>Sequences</span><span class="m-arrow">›</span></div>
+      <div class="more-sheet-item" onclick="go('library');toggleMoreSheet()"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3h8v1H4zm0 3h8v1H4zm0 3h5v1H4z"/></svg><span>Copy library</span><span class="m-arrow">›</span></div>
+      <div class="more-sheet-item" onclick="go('add');toggleMoreSheet()"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a1 1 0 011 1v4h4a1 1 0 010 2H9v4a1 1 0 01-2 0V9H3a1 1 0 010-2h4V3a1 1 0 011-1z"/></svg><span>Add contact</span><span class="m-arrow">›</span></div>
+      <div class="more-sheet-item" onclick="go('import');toggleMoreSheet()"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg><span>Import from Excel</span><span class="m-arrow">›</span></div>
+      <div class="more-sheet-item" onclick="go('pasteback');toggleMoreSheet()"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h7l3 3v9H3z"/><path d="M10 2v3h3M5 8h6M5 11h6" stroke-linecap="round"/></svg><span>Paste-back</span><span class="m-arrow">›</span></div>
+      <div class="more-sheet-item" onclick="go('rocketreach');toggleMoreSheet()"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 3 3.5.5-2.5 2.5.6 3.5L8 9l-3.1 1.5.6-3.5L3 4.5l3.5-.5z"/></svg><span>RocketReach queue</span><span class="m-arrow">›</span></div>
+      <div class="more-sheet-divider"></div>
+      <div class="more-sheet-item" onclick="go('settings');toggleMoreSheet()"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.2v2M8 12.8v2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M1.2 8h2M12.8 8h2M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg><span>Settings</span><span class="m-arrow">›</span></div>
+      <div class="more-sheet-item" onclick="go('export');toggleMoreSheet()"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V2M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg><span>Export CSV</span><span class="m-arrow">›</span></div>
+    </div>
   </div>
 </div>
 
@@ -889,8 +1146,8 @@ t4:{s:"Last note from Eridion Glass",b:"Hi [First Name],\n\nLast one. If glass e
 
 const TD={t1:0,t2:14,t3:28,t4:45};
 const TL={t1:'Touch 1 — intro',t2:'Touch 2 — value add',t3:'Touch 3 — check in',t4:'Touch 4 — last one'};
-const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact',rocketreach:'RocketReach Queue',pasteback:'Paste-back enrichment',settings:'Settings'};
-const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually',rocketreach:'Contacts missing email or phone — use your 100 monthly credits here first',pasteback:'Bulk-update existing contacts from an enriched CSV (RocketReach, research, etc.)',settings:'Email signature & application preferences'};
+const SCREENS={dashboard:'Dashboard',queue:'Today\'s queue',contacts:'Contacts',sequences:'Sequences',responses:'Response intake',library:'Copy library',import:'Import from Excel',add:'Add contact',rocketreach:'RocketReach Queue',pasteback:'Paste-back enrichment',settings:'Settings',export:'Export CSV'};
+const SUBS={dashboard:'Your outreach at a glance',queue:'Contacts due for outreach today',contacts:'All contacts and their status',sequences:'Active sequence tracking',responses:'Paste an inbound message for AI reply suggestions',library:'Standard + FIFA + Builder Warm + custom copy',import:'Upload your Excel or CSV contact list',add:'Add a new contact manually',rocketreach:'Contacts missing email or phone — use your 100 monthly credits here first',pasteback:'Bulk-update existing contacts from an enriched CSV (RocketReach, research, etc.)',settings:'Email signature & application preferences',export:'Download all contacts as a spreadsheet'};
 const CH_LABELS={linkedin:'LinkedIn connect',email:'Email',phone:'Phone call',linkedin_dm:'LinkedIn DM'};
 const CH_CLASSES={linkedin:'bch-li',email:'bch-em',phone:'bch-ph',linkedin_dm:'bch-ld'};
 
@@ -1271,6 +1528,9 @@ function rdash(){
   document.getElementById('m2').textContent=resp.length;
   document.getElementById('m3').textContent=(touched.length?Math.round(resp.length/touched.length*100):0)+'%';
   document.getElementById('qbadge').textContent=allDue.length;
+  // Sync mobile tab badge
+  const mb=document.getElementById('qbadge-mobile');
+  if(mb){mb.textContent=allDue.length;mb.style.display=allDue.length>0?'inline-block':'none';}
   updateSeqBadge();
   const dq=document.getElementById('d-queue');
   const preview=[...seqDue.slice(0,2),...stdDue.slice(0,Math.max(0,2-seqDue.length))];
@@ -1324,10 +1584,14 @@ let currentLibTab='standard';
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.m-tab').forEach(n=>n.classList.remove('active'));
   const s=document.getElementById('s-'+id);if(s)s.classList.add('active');
   document.getElementById('stitle').textContent=SCREENS[id]||id;
   document.getElementById('ssub').textContent=SUBS[id]||'';
-  document.querySelectorAll('.ni').forEach(n=>{if((n.getAttribute('onclick')||'').includes("'"+id+"'"))n.classList.add('active')});
+  document.querySelectorAll('.ni').forEach(n=>{if(n.getAttribute('data-screen')===id || (n.getAttribute('onclick')||'').includes("'"+id+"'"))n.classList.add('active')});
+  document.querySelectorAll('.m-tab').forEach(n=>{if(n.getAttribute('data-screen')===id)n.classList.add('active')});
+  // Auto-scroll content area to top for mobile UX
+  const contentEl=document.querySelector('.content');if(contentEl)contentEl.scrollTop=0;
   selectedIds.clear();
   if(id==='dashboard')rdash();
   if(id==='queue')rqueue();
@@ -1340,6 +1604,13 @@ function go(id){
   if(id==='add'){const d=document.getElementById('a11');if(d)d.value=new Date().toISOString().slice(0,10);}
   if(id==='settings')rSettings();
   if(id==='pasteback')rPasteBack();
+  if(id==='export')rExport();
+}
+
+function toggleMoreSheet(){
+  const ov=document.getElementById('moresheet');
+  if(!ov)return;
+  ov.classList.toggle('open');
 }
 
 function rcontacts(){
@@ -1550,7 +1821,7 @@ function renderModal(id){
       ${isSeq&&nt?`<button class="btn btn-sm ${lb?'btn-lb':cgcM?'btn-cgc':edcM?'btn-edc':'btn-seq'}" onclick="closeModal();openLogModal('${id}')">Log touch ✓</button>`:''}
       ${isSeq&&!eo?`<button class="btn btn-sm btn-eo" onclick="closeModal();markEmailOnly('${id}')">Set email only</button>`:''}
       <button class="btn btn-sm btn-p" onclick="editMode=true;renderModal('${id}')">Edit contact</button>
-      <button class="btn btn-sm" style="background:#0f1a2a;color:#1D9E75;border-color:#1D9E75" onclick="closeModal();prepareJerichoHandoff('${id}')">📋 Prep Dion Visit</button>
+      <button class="btn btn-sm" style="background:#1F2A4A;color:#43B047;border-color:#43B047" onclick="closeModal();prepareJerichoHandoff('${id}')">📋 Prep Dion Visit</button>
       <button class="btn btn-sm" onclick="closeModal()">Close</button>`;
   }
 }
@@ -2204,7 +2475,7 @@ Draft the message now.`;
     document.getElementById('rout').innerHTML=`<div class="panel" style="border-color:rgba(226,75,74,0.3)">
       <div style="font-size:12px;color:var(--dn);font-weight:600;margin-bottom:6px">AI draft needs a worker endpoint</div>
       <div style="font-size:11px;color:var(--mu);line-height:1.7;margin-bottom:10px">Add this route to your Order Tracker Cloudflare Worker (<code>frosty-base-f01e</code>) to enable AI drafts on GitHub Pages:</div>
-      <div style="background:#1a2332;color:#e2e8f0;border-radius:8px;padding:12px;font-size:10px;font-family:monospace;line-height:1.7;overflow-x:auto;margin-bottom:10px">if(url.pathname==='/api/reply'&&request.method==='POST'){<br>&nbsp;&nbsp;const body=await request.json();<br>&nbsp;&nbsp;const r=await fetch('https://api.anthropic.com/v1/messages',{<br>&nbsp;&nbsp;&nbsp;&nbsp;method:'POST',<br>&nbsp;&nbsp;&nbsp;&nbsp;headers:{'Content-Type':'application/json','x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},<br>&nbsp;&nbsp;&nbsp;&nbsp;body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,...body})<br>&nbsp;&nbsp;});<br>&nbsp;&nbsp;const d=await r.json();<br>&nbsp;&nbsp;return new Response(JSON.stringify({text:d.content?.[0]?.text||''}),{headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}});<br>}</div>
+      <div style="background:#1F2A4A;color:#e2e8f0;border-radius:8px;padding:12px;font-size:10px;font-family:monospace;line-height:1.7;overflow-x:auto;margin-bottom:10px">if(url.pathname==='/api/reply'&&request.method==='POST'){<br>&nbsp;&nbsp;const body=await request.json();<br>&nbsp;&nbsp;const r=await fetch('https://api.anthropic.com/v1/messages',{<br>&nbsp;&nbsp;&nbsp;&nbsp;method:'POST',<br>&nbsp;&nbsp;&nbsp;&nbsp;headers:{'Content-Type':'application/json','x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},<br>&nbsp;&nbsp;&nbsp;&nbsp;body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,...body})<br>&nbsp;&nbsp;});<br>&nbsp;&nbsp;const d=await r.json();<br>&nbsp;&nbsp;return new Response(JSON.stringify({text:d.content?.[0]?.text||''}),{headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}});<br>}</div>
       <div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="analyze()">Run template draft instead →</button></div>
     </div>`;
   }finally{
@@ -2353,11 +2624,74 @@ function doImport(clean,overwrites,total){
 }
 
 function exportCSV(){
-  const cs=gc();if(!cs.length){alert('No contacts to export yet.');return;}
+  // Legacy entry point — now navigates to the screen instead of downloading directly
+  go('export');
+}
+
+function rExport(){
+  const filt=(document.getElementById('export-filter')||{}).value||'all';
+  const cs=getFilteredForExport(filt);
+  const total=gc().length;
+  const stats=document.getElementById('export-stats');
+  if(stats){
+    if(!total){
+      stats.innerHTML='<div style="color:var(--mu);font-size:12px">No contacts in CRM yet — nothing to export. Add contacts first.</div>';
+    } else {
+      const active=cs.filter(c=>c.seq_id&&c.seq_active).length;
+      const responded=cs.filter(c=>c.responded).length;
+      const dnc=cs.filter(c=>c.dnc).length;
+      stats.innerHTML=`
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx);margin-bottom:6px">
+          <span>Contacts to export</span>
+          <strong style="color:var(--nav);font-size:18px">${cs.length}</strong>
+        </div>
+        <div style="font-size:11px;color:var(--mu);line-height:1.7">${active} in active sequences · ${responded} responded · ${dnc} marked DNC</div>
+      `;
+    }
+  }
+  const status=document.getElementById('export-status');
+  if(status)status.textContent='';
+}
+
+function getFilteredForExport(filt){
+  const cs=gc();
+  if(filt==='active')return cs.filter(c=>c.seq_id&&c.seq_active);
+  if(filt==='responded')return cs.filter(c=>c.responded);
+  if(filt==='dnc')return cs.filter(c=>c.dnc);
+  if(filt==='tier1')return cs.filter(c=>c.tier==='tier1');
+  if(filt==='tier2')return cs.filter(c=>c.tier==='tier2');
+  if(filt==='tier3')return cs.filter(c=>c.tier==='tier3');
+  return cs;
+}
+
+function doExportCSV(){
+  const filt=(document.getElementById('export-filter')||{}).value||'all';
+  const cs=getFilteredForExport(filt);
+  if(!cs.length){
+    const status=document.getElementById('export-status');
+    if(status){status.textContent='No contacts match this filter — nothing to export.';status.style.color='var(--dn)';}
+    return;
+  }
   const hd=['First Name','Last Name','Company','Role','Email','LinkedIn','LinkedIn Account','LinkedIn Status','Email Only','Tier','Source','Touches Sent','Last Touch Date','Sequence','Seq Touch','Responded','Do Not Contact','Notes'];
   const rows=cs.map(c=>{const seqDone=(c.seq_log||[]).length;return[c.fn,c.ln||'',c.co||'',c.role||'',c.email||'',c.li||'',c.li_account||'personal',c.li_status||'cold',c.email_only?'Yes':'',c.tier,c.src||'',(c.ts||[]).join(';'),c.ltd?fd(c.ltd):'',c.seq_id||'',seqDone,c.responded?'Yes':'',c.dnc?'Yes':'',c.notes||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')});
   const csv=[hd.join(','),...rows].join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='eridion_contacts_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('CSV exported!');
+  const filename='eridion_contacts_'+new Date().toISOString().slice(0,10)+'.csv';
+  // Use Blob + URL.createObjectURL — works reliably on iOS Safari
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}); // BOM for Excel
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+  const status=document.getElementById('export-status');
+  if(status){
+    status.innerHTML=`<span style="color:var(--ad);font-weight:600">✓ Downloaded ${cs.length} contacts to ${filename}</span><br><span style="color:var(--mu);font-size:11px">Check your Downloads folder or Files app on iPhone.</span>`;
+    status.style.color='var(--tx)';
+  }
+  toast(`Exported ${cs.length} contacts!`);
 }
 
 function clip(txt){navigator.clipboard.writeText(txt).then(()=>toast('Copied!')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!');});}
@@ -2451,7 +2785,7 @@ Write the complete visit brief now. Use specific intel from their notes — be c
     document.getElementById('jericho-acts').innerHTML=`
       <button class="btn btn-sm" onclick="document.getElementById('jerichomodal').classList.remove('open')">Cancel</button>
       <button class="btn btn-sm btn-p" onclick="navigator.clipboard.writeText(document.getElementById('jericho-brief-text').innerText).then(()=>toast('Brief copied!'))">Copy brief</button>
-      <button class="btn btn-sm" style="background:#0f1a2a;color:#1D9E75;border-color:#1D9E75" id="jericho-send-btn" onclick="sendToJericho('${cid}',document.getElementById('jericho-brief-text').innerText)">📤 Send to Jericho</button>`;
+      <button class="btn btn-sm" style="background:#1F2A4A;color:#43B047;border-color:#43B047" id="jericho-send-btn" onclick="sendToJericho('${cid}',document.getElementById('jericho-brief-text').innerText)">📤 Send to Jericho</button>`;
   }catch(err){
     document.getElementById('jericho-body').innerHTML=`<div style="font-size:12px;color:var(--dn);font-weight:600;margin-bottom:8px">Brief generation failed</div><div style="font-size:11px;color:var(--mu);line-height:1.6">Check that /api/reply is deployed to your Cloudflare Worker.<br>Error: ${err.message}</div>`;
     document.getElementById('jericho-acts').innerHTML=`<button class="btn btn-sm" onclick="document.getElementById('jerichomodal').classList.remove('open')">Close</button>`;
@@ -2953,7 +3287,7 @@ function runCTACheck(){
     Object.entries(track).forEach(([key,val])=>{
       if(key==='li')return;
       const body=val.b||'';if(!body)return;
-      results.push({source:'standard',sourceName:role,sourceColor:'#1D9E75',
+      results.push({source:'standard',sourceName:role,sourceColor:'#43B047',
         location:key.toUpperCase(),label:val.s||'',channel:'email',
         subject:val.s||'',body,hasCTA:hasCTA(body)});
     });
@@ -2990,8 +3324,8 @@ function rValidator(){
   });
   const groupList=Object.values(groups);
 
-  const summaryColor=missing.length?'#E24B4A':'#1D9E75';
-  const summaryBg=missing.length?'#FCEBEB':'#E1F5EE';
+  const summaryColor=missing.length?'#E24B4A':'#43B047';
+  const summaryBg=missing.length?'#FCEBEB':'#E8F5E9';
 
   const summary=`<div style="background:${summaryBg};border:.5px solid ${summaryColor};border-radius:10px;padding:14px 16px;margin-bottom:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
