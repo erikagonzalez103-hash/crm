@@ -1924,8 +1924,16 @@ async function handleScanFile(input){
     // Send to vision API
     try{
       const extracted=await scanLinkedInScreenshot(dataUrl);
-      applyScanResults(extracted);
-      document.getElementById('scan-status').innerHTML=`<span style="color:var(--ad);font-weight:600">✓ Extracted: ${extracted.firstName||'(no name)'} ${extracted.lastName||''} — review &amp; complete the form below</span>`;
+      if(extracted.length===1){
+        // Single contact → use existing pre-fill flow
+        applyScanResults(extracted[0]);
+        const c=extracted[0];
+        document.getElementById('scan-status').innerHTML=`<span style="color:var(--ad);font-weight:600">✓ Extracted: ${c.firstName||'(no name)'} ${c.lastName||''} — review &amp; complete the form below</span>`;
+      } else {
+        // Multiple contacts → show batch picker
+        showBatchPicker(extracted);
+        document.getElementById('scan-status').innerHTML=`<span style="color:var(--ad);font-weight:600">✓ Detected ${extracted.length} contacts — review and pick which to add below</span>`;
+      }
     }catch(err){
       console.error('Scan error:',err);
       document.getElementById('scan-status').innerHTML=`<span style="color:var(--dn)">Scan failed: ${err.message||'unknown error'}. Fill the form manually.</span>`;
@@ -2000,17 +2008,12 @@ Rules:
   try{ parsed=JSON.parse(text); }
   catch(e){ throw new Error('AI returned invalid JSON. Try a clearer screenshot.'); }
   if(!parsed.contacts||!parsed.contacts.length)throw new Error('No contacts found in image');
-  // For now, return the first/highest-confidence contact
-  // TODO: future enhancement — show picker UI if multiple contacts
+  // Sort by confidence (high → low)
   const contacts=parsed.contacts.sort((a,b)=>{
     const order={high:0,medium:1,low:2};
     return (order[a.confidence]??3)-(order[b.confidence]??3);
   });
-  // If multiple high-confidence, surface that to user
-  if(contacts.length>1){
-    document.getElementById('scan-status').innerHTML=`<span style="color:var(--amber)">Multiple contacts detected (${contacts.length}). Pre-filling the first one. Add others one by one.</span>`;
-  }
-  return contacts[0];
+  return contacts;
 }
 
 function applyScanResults(c){
@@ -2068,6 +2071,154 @@ function applyScanResults(c){
   s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';
   document.head.appendChild(s);
 })();
+
+// ─── BATCH PICKER for multi-contact scans ─────────────────────────────────────
+
+function suggestRoleFromTitle(title){
+  if(!title)return '';
+  const t=title.toLowerCase();
+  if(/ceo|owner|founder|principal|president(?!.*construction)/.test(t))return 'CEO/Owner';
+  if(/cfo|finance/.test(t))return 'Purchasing'; // Finance/CFO maps to Purchasing for vendor decisions
+  if(/coo|chief operating/.test(t))return 'Operations';
+  if(/purchasing|procurement|buyer/.test(t))return 'Purchasing';
+  if(/operations/.test(t))return 'Operations';
+  if(/superintendent|supervisor|construction manager|project manager|site/.test(t))return 'Supervisor';
+  if(/design|interior|architect/.test(t))return 'Designer';
+  if(/preconstruction|precon/.test(t))return 'Preconstruction Manager';
+  if(/business development|bd|sales/.test(t))return 'VP Business Development';
+  if(/economic development|edc/.test(t))return 'EDC Director';
+  return '';
+}
+
+let _batchScanData=null; // Holds the array of detected contacts for the batch flow
+
+function showBatchPicker(contacts){
+  _batchScanData=contacts;
+  // Hide the regular Add Contact form panel while batch mode is active
+  const addPanel=document.querySelector('#s-add > .panel:not(:first-child)');
+  if(addPanel)addPanel.style.display='none';
+
+  const roleOpts=['CEO/Owner','Purchasing','Operations','Supervisor','Designer','Woman-Owned','DBA','VP Business Development','Preconstruction Manager','Project Executive','EDC Director'];
+  const seqOpts=[['','None'],['fifa_14day','FIFA 14-day sprint'],['luxury_builder_warm','Luxury Builder Warm'],['commercial_gc_warm','Commercial GC Warm'],['city_edc_warm','City EDC Warm']];
+  const tierOpts=[['tier3','Tier 3 — never contacted'],['tier2','Tier 2 — touched, no response'],['tier1','Tier 1 — warm / responded']];
+  const srcOpts=['DFW Custom','DBA','Boutique','FIFA/World Cup','Referral','LGN','Manual'];
+
+  const rowsHtml=contacts.map((c,i)=>{
+    const conf=c.confidence||'medium';
+    const confColor=conf==='high'?'var(--ad)':(conf==='low'?'var(--amber)':'var(--mu)');
+    const confBg=conf==='high'?'rgba(67,176,71,0.12)':(conf==='low'?'rgba(186,117,23,0.12)':'rgba(124,124,124,0.12)');
+    const checked=conf!=='low'?'checked':'';
+    const suggestedRole=suggestRoleFromTitle(c.title);
+    const roleSelect=`<select class="fsel" id="bp-role-${i}" style="font-size:11px;padding:6px 8px">${roleOpts.map(r=>`<option value="${r}"${r===suggestedRole?' selected':''}>${r}</option>`).join('')}</select>`;
+    return `
+    <div class="bp-row" id="bp-row-${i}" style="background:#fff;border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+      <input type="checkbox" id="bp-chk-${i}" ${checked} style="margin-top:4px;width:18px;height:18px;flex-shrink:0;accent-color:var(--ac)">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+          <input class="fi" id="bp-fn-${i}" value="${(c.firstName||'').replace(/"/g,'&quot;')}" placeholder="First" style="flex:1;min-width:80px;font-size:13px;font-weight:600;padding:5px 8px">
+          <input class="fi" id="bp-ln-${i}" value="${(c.lastName||'').replace(/"/g,'&quot;')}" placeholder="Last" style="flex:1;min-width:80px;font-size:13px;font-weight:600;padding:5px 8px">
+          <span style="background:${confBg};color:${confColor};font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em">${conf}</span>
+        </div>
+        <input class="fi" id="bp-co-${i}" value="${(c.company||'').replace(/"/g,'&quot;')}" placeholder="Company" style="width:100%;font-size:12px;padding:5px 8px;margin-bottom:6px">
+        <div style="font-size:11px;color:var(--mu);margin-bottom:6px;line-height:1.4">${c.title?`Title: ${c.title}`:'<em>No title detected</em>'}${c.connectionDate?` · Connected ${c.connectionDate}`:''}</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-size:10px;color:var(--mu);font-weight:600">Role track:</span>
+          ${roleSelect}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const html=`
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--bd)">
+      <div style="font-size:12px;font-weight:700;color:var(--nav);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Batch settings (apply to all selected)</div>
+      <div class="frow" style="gap:8px;margin-bottom:8px">
+        <div class="ff"><label class="flbl">Tier</label><select class="fsel" id="bp-tier">${tierOpts.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+        <div class="ff"><label class="flbl">Source</label><select class="fsel" id="bp-src">${srcOpts.map(s=>`<option value="${s}"${s==='Manual'?' selected':''}>${s}</option>`).join('')}</select></div>
+      </div>
+      <div class="frow" style="gap:8px;margin-bottom:8px">
+        <div class="ff"><label class="flbl">Sequence</label><select class="fsel" id="bp-seq">${seqOpts.map(([v,l])=>`<option value="${v}"${v==='luxury_builder_warm'?' selected':''}>${l}</option>`).join('')}</select></div>
+        <div class="ff"><label class="flbl">LinkedIn account</label><select class="fsel" id="bp-liact"><option value="personal">Erika Harrison (personal)</option><option value="company">Eridion Glass LLC</option></select></div>
+      </div>
+      <div class="ff" style="margin-bottom:14px"><label class="flbl">Optional bulk note (added to all)</label><input class="fi" id="bp-bulknote" placeholder="e.g., 'Found via 'People you may know' May 2026'"></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--nav);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Detected contacts (${contacts.length})</div>
+    <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Uncheck any you don't want to add. Edit names/companies if AI got them slightly wrong. Low-confidence contacts default unchecked.</div>
+    ${rowsHtml}
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-p" onclick="saveBatchContacts()" style="flex:1">Add selected contacts</button>
+      <button class="btn" onclick="cancelBatchPicker()">Cancel</button>
+    </div>
+  `;
+  document.getElementById('scan-preview').insertAdjacentHTML('beforeend','<div id="bp-container">'+html+'</div>');
+}
+
+function cancelBatchPicker(){
+  _batchScanData=null;
+  const cont=document.getElementById('bp-container');
+  if(cont)cont.remove();
+  // Re-show the regular Add Contact form
+  const addPanel=document.querySelector('#s-add > .panel:not(:first-child)');
+  if(addPanel)addPanel.style.display='';
+  document.getElementById('scan-status').textContent='';
+  document.getElementById('scan-preview').innerHTML='';
+  document.getElementById('scan-preview').style.display='none';
+}
+
+function saveBatchContacts(){
+  if(!_batchScanData)return;
+  const cs=gc();
+  const tier=document.getElementById('bp-tier').value;
+  const src=document.getElementById('bp-src').value;
+  const seqId=document.getElementById('bp-seq').value;
+  const liAct=document.getElementById('bp-liact').value;
+  const bulkNote=document.getElementById('bp-bulknote').value.trim();
+  const seqStart=new Date().toISOString().slice(0,10);
+
+  let added=0,skipped=0;
+  for(let i=0;i<_batchScanData.length;i++){
+    const chk=document.getElementById('bp-chk-'+i);
+    if(!chk||!chk.checked){skipped++;continue;}
+    const fn=document.getElementById('bp-fn-'+i).value.trim();
+    if(!fn){skipped++;continue;}
+    const ln=document.getElementById('bp-ln-'+i).value.trim();
+    const co=document.getElementById('bp-co-'+i).value.trim();
+    const role=document.getElementById('bp-role-'+i).value;
+    const orig=_batchScanData[i];
+    // Build notes from scan + bulk note
+    const noteParts=[];
+    if(orig.connectionDate)noteParts.push(`Connected on LinkedIn ${orig.connectionDate}.`);
+    if(orig.title)noteParts.push(`Title: ${orig.title}.`);
+    if(orig.confidence==='low')noteParts.push(`[Low-confidence scan — verify details.]`);
+    if(bulkNote)noteParts.push(bulkNote);
+    const notes=noteParts.join(' ');
+
+    const c={
+      id:'c'+Date.now()+Math.random().toString(36).slice(2,6),
+      fn,ln,co,role,
+      email:'',
+      li:orig.linkedinUrl||'',
+      phone:'',addr:'',
+      li_account:liAct,
+      li_status:'warm', // batch-scan default — they're already connected
+      email_only:false,
+      tier,src,
+      notes,
+      ts:[],ltd:null,dnc:false,responded:false,
+      ca:new Date().toISOString()
+    };
+    if(seqId){c.seq_id=seqId;c.seq_start=seqStart;c.seq_active=true;c.seq_current_touch=1;c.seq_log=[];}
+    cs.push(c);
+    addA(c.id,'Contact added (batch scan)',c.co);
+    added++;
+  }
+  sc(cs);
+  toast(`Added ${added} contacts${skipped>0?` (skipped ${skipped})`:''}`);
+  // Reset state
+  cancelBatchPicker();
+  // Show Contacts screen so user can see what was added
+  go('contacts');
+}
 
 function saveContact(){
   const fn=document.getElementById('a1').value.trim();
