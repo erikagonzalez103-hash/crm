@@ -668,6 +668,28 @@ body{font-family:'Manrope','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',s
 
     <!-- ADD CONTACT -->
     <div class="screen" id="s-add">
+      <!-- AI scan from LinkedIn screenshot -->
+      <div class="panel" style="max-width:560px;background:linear-gradient(135deg,rgba(67,176,71,0.06) 0%,rgba(31,42,74,0.04) 100%);border:1px solid rgba(67,176,71,0.25);margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--ac) 0%,var(--ad) 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.8"><rect x="2" y="3" width="12" height="10" rx="1"/><circle cx="6" cy="7" r="1.2" fill="#fff"/><path d="M2 11l3-3 3 3 2-2 4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--nav);letter-spacing:-0.01em">Scan from LinkedIn screenshot</div>
+            <div style="font-size:11px;color:var(--mu)">Upload a LinkedIn profile or connection screenshot — AI extracts name, title, company.</div>
+          </div>
+        </div>
+        <input type="file" id="scan-file" accept="image/*" style="display:none" onchange="handleScanFile(this)">
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-p" onclick="document.getElementById('scan-file').click()" id="scan-btn" style="flex:1">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:middle;margin-right:6px"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>
+            Choose screenshot
+          </button>
+        </div>
+        <div id="scan-status" style="margin-top:10px;font-size:11px;color:var(--mu);min-height:14px"></div>
+        <div id="scan-preview" style="display:none;margin-top:10px"></div>
+      </div>
+
       <div class="panel" style="max-width:560px">
         <div class="ptitle">Add new contact</div>
         <div class="frow">
@@ -1872,6 +1894,180 @@ function sent(cid,tk){
 }
 
 function skip(cid){addA(cid,'Skipped for today','');toast('Skipped');rqueue();}
+
+// ═══════════ AI SCAN FROM LINKEDIN SCREENSHOT ════════════════════════════════
+
+async function handleScanFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  if(!file.type.startsWith('image/')){
+    document.getElementById('scan-status').innerHTML='<span style="color:var(--dn)">Please choose an image file (PNG, JPG, etc.)</span>';
+    return;
+  }
+  if(file.size>5*1024*1024){
+    document.getElementById('scan-status').innerHTML='<span style="color:var(--dn)">Image too large (max 5MB) — try cropping the screenshot to just the relevant section</span>';
+    return;
+  }
+  // Show thumbnail
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const dataUrl=e.target.result;
+    const preview=document.getElementById('scan-preview');
+    preview.style.display='block';
+    preview.innerHTML=`<img src="${dataUrl}" style="max-width:100%;max-height:160px;border-radius:6px;border:1px solid var(--bd)">`;
+    // Disable button, show scanning state
+    const btn=document.getElementById('scan-btn');
+    btn.disabled=true;
+    btn.style.opacity='0.6';
+    btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-right-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:8px"></span>Scanning…';
+    document.getElementById('scan-status').innerHTML='<span style="color:var(--mu)">AI is reading the screenshot…</span>';
+    // Send to vision API
+    try{
+      const extracted=await scanLinkedInScreenshot(dataUrl);
+      applyScanResults(extracted);
+      document.getElementById('scan-status').innerHTML=`<span style="color:var(--ad);font-weight:600">✓ Extracted: ${extracted.firstName||'(no name)'} ${extracted.lastName||''} — review &amp; complete the form below</span>`;
+    }catch(err){
+      console.error('Scan error:',err);
+      document.getElementById('scan-status').innerHTML=`<span style="color:var(--dn)">Scan failed: ${err.message||'unknown error'}. Fill the form manually.</span>`;
+    }finally{
+      btn.disabled=false;
+      btn.style.opacity='1';
+      btn.innerHTML='<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:middle;margin-right:6px"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg>Choose another screenshot';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function scanLinkedInScreenshot(dataUrl){
+  // Strip the "data:image/X;base64," prefix to get raw base64
+  const m=dataUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
+  if(!m)throw new Error('Could not parse image data');
+  const mediaType=m[1];
+  const base64=m[2];
+  const systemPrompt=`You are an expert at extracting contact information from LinkedIn screenshots. The user is a B2B salesperson adding a new contact to their CRM. Extract the contact details from the screenshot they provide.
+
+The screenshot may be:
+- A LinkedIn profile page
+- A LinkedIn connection request notification
+- A LinkedIn search result row
+- A LinkedIn message header
+- Multiple contacts in a list (in which case extract ALL of them)
+
+Return ONLY a JSON object (no markdown, no preamble, no explanation) in this exact format:
+{
+  "contacts": [
+    {
+      "firstName": "string",
+      "lastName": "string",
+      "company": "string",
+      "title": "string (full title as shown, e.g. 'VP Construction Services')",
+      "linkedinUrl": "string or null (only if visible)",
+      "connectionDate": "string or null (e.g. 'May 5, 2026' if shown)",
+      "confidence": "high|medium|low"
+    }
+  ]
+}
+
+Rules:
+- If a person looks like a marketing/sales consultant or lead-gen agency (red flag titles like "Scaling Pipeline", "Revenue Capture", "I Build Systems For..."), still extract them but set confidence to "low" with a reason.
+- If you can't determine company or title clearly, leave the field empty (empty string), never guess.
+- For company name, use the cleanest version (e.g. "Olivia Clarke Homes" not "Olivia Clarke Homes | Custom Luxury Builder").
+- Title field: keep it as-shown.
+- Output JSON only.`;
+
+  const resp=await fetch(WORKER_BASE+'/api/reply',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      system:systemPrompt,
+      messages:[{
+        role:'user',
+        content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:'Extract contact info from this LinkedIn screenshot. Return JSON only.'}
+        ]
+      }]
+    })
+  });
+  if(!resp.ok)throw new Error('API returned '+resp.status);
+  const data=await resp.json();
+  let text=data.text||'';
+  // Strip markdown code fences if present
+  text=text.replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'').trim();
+  let parsed;
+  try{ parsed=JSON.parse(text); }
+  catch(e){ throw new Error('AI returned invalid JSON. Try a clearer screenshot.'); }
+  if(!parsed.contacts||!parsed.contacts.length)throw new Error('No contacts found in image');
+  // For now, return the first/highest-confidence contact
+  // TODO: future enhancement — show picker UI if multiple contacts
+  const contacts=parsed.contacts.sort((a,b)=>{
+    const order={high:0,medium:1,low:2};
+    return (order[a.confidence]??3)-(order[b.confidence]??3);
+  });
+  // If multiple high-confidence, surface that to user
+  if(contacts.length>1){
+    document.getElementById('scan-status').innerHTML=`<span style="color:var(--amber)">Multiple contacts detected (${contacts.length}). Pre-filling the first one. Add others one by one.</span>`;
+  }
+  return contacts[0];
+}
+
+function applyScanResults(c){
+  // Pre-fill the form fields, leaving role/sequence/etc. for the user
+  if(c.firstName)document.getElementById('a1').value=c.firstName;
+  if(c.lastName)document.getElementById('a2').value=c.lastName;
+  if(c.company)document.getElementById('a3').value=c.company;
+  if(c.linkedinUrl)document.getElementById('a6').value=c.linkedinUrl;
+  // Default LinkedIn status to "warm" since they're scanning a screenshot of a connection
+  document.getElementById('a-listat').value='warm';
+  // Default source to LinkedIn-flavored if they're scanning
+  const src=document.getElementById('a8');
+  // Try to find a "Manual" or fallback option
+  for(let i=0;i<src.options.length;i++){
+    if(src.options[i].value==='Manual'){src.selectedIndex=i;break;}
+  }
+  // Auto-fill notes with the connection context
+  const notesField=document.getElementById('a9');
+  const noteParts=[];
+  if(c.connectionDate)noteParts.push(`Connected on LinkedIn ${c.connectionDate}.`);
+  if(c.title)noteParts.push(`Title: ${c.title}.`);
+  if(c.confidence==='low')noteParts.push(`[Low-confidence scan — verify details.]`);
+  if(noteParts.length){
+    const existing=notesField.value.trim();
+    notesField.value=existing?(noteParts.join(' ')+'\n\n'+existing):noteParts.join(' ');
+  }
+  // Suggest role based on title keywords (best-guess; user can override)
+  if(c.title){
+    const t=c.title.toLowerCase();
+    const roleSel=document.getElementById('a4');
+    let suggestedRole='';
+    if(/ceo|owner|founder|principal|president(?!.*construction)/.test(t))suggestedRole='CEO/Owner';
+    else if(/purchasing|procurement|buyer/.test(t))suggestedRole='Purchasing';
+    else if(/operations|coo/.test(t))suggestedRole='Operations';
+    else if(/superintendent|supervisor|construction manager|project manager|site/.test(t))suggestedRole='Supervisor';
+    else if(/design|interior|architect/.test(t))suggestedRole='Designer';
+    else if(/preconstruction|precon/.test(t))suggestedRole='Preconstruction Manager';
+    else if(/business development|bd|sales/.test(t))suggestedRole='VP Business Development';
+    else if(/economic development|edc/.test(t))suggestedRole='EDC Director';
+    if(suggestedRole){
+      for(let i=0;i<roleSel.options.length;i++){
+        if(roleSel.options[i].value===suggestedRole){roleSel.selectedIndex=i;break;}
+      }
+    }
+  }
+  // Scroll the form into view on mobile
+  document.getElementById('a1').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// CSS keyframe for the spinner
+(function(){
+  if(document.getElementById('scan-spinner-css'))return;
+  const s=document.createElement('style');
+  s.id='scan-spinner-css';
+  s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(s);
+})();
 
 function saveContact(){
   const fn=document.getElementById('a1').value.trim();
