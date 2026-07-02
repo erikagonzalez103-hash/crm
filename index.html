@@ -2118,24 +2118,18 @@ Rules:
 - Title field: keep it as-shown.
 - Output JSON only.`;
 
-  const resp=await fetch(WORKER_BASE+'/api/reply',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:1000,
-      system:systemPrompt,
-      messages:[{
-        role:'user',
-        content:[
-          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-          {type:'text',text:'Extract contact info from this LinkedIn screenshot. Return JSON only.'}
-        ]
-      }]
-    })
-  });
-  if(!resp.ok)throw new Error('API returned '+resp.status);
-  const data=await resp.json();
+  const data=await callReplyEndpoint({
+    model:'claude-sonnet-4-20250514',
+    max_tokens:1000,
+    system:systemPrompt,
+    messages:[{
+      role:'user',
+      content:[
+        {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+        {type:'text',text:'Extract contact info from this LinkedIn screenshot. Return JSON only.'}
+      ]
+    }]
+  },null);
   let text=data.text||'';
   // Strip markdown code fences if present
   text=text.replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'').trim();
@@ -2902,28 +2896,21 @@ Scenario: Erika is ${scenarioLabels[scenario]}.${priorExchangeBlurb}${contextBlu
 
 Draft the message now.`;
 
-  // Try Cloudflare Worker first (works on GitHub Pages), fall back to direct API (works in Claude.ai)
-  const WORKER_URL='https://frosty-base-f01e.erikagonzalez103.workers.dev/api/reply';
+  const payload={system:systemPrompt,messages:[{role:'user',content:userPrompt}]};
 
-  const payload=JSON.stringify({system:systemPrompt,messages:[{role:'user',content:userPrompt}]});
-
-  let resp,usedWorker=false;
+  let draft='';
   try{
-    resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:payload});
-    if(resp.ok)usedWorker=true;
-    else throw new Error('Worker returned '+resp.status);
-  }catch(workerErr){
-    // Worker not yet configured — try direct Anthropic API (Claude.ai environment only)
     try{
-      resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:payload});
-    }catch(e){resp=null;}
-  }
-
-  try{
-    if(!resp||!resp.ok)throw new Error('No response');
-    const data=await resp.json();
-    // Worker returns {text} directly; direct API returns {content:[{text}]}
-    const draft=(usedWorker?(data.text||''):(data.content&&data.content[0]&&data.content[0].text)||'')||'';
+      // Hardened worker call (works on GitHub Pages) — retries transient failures
+      const data=await callReplyEndpoint(payload,m=>{if(btn)btn.textContent=m;});
+      draft=data.text||'';
+    }catch(workerErr){
+      // Worker exhausted its retries — direct Anthropic API works only inside Claude.ai
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const d=await resp.json();
+      draft=(d.content&&d.content[0]&&d.content[0].text)||'';
+      if(!draft)throw workerErr;
+    }
 
     // Save context if checked
     if(saveCtx&&c&&contextRaw){
@@ -2955,10 +2942,9 @@ Draft the message now.`;
     </div>`;
   }catch(err){
     document.getElementById('rout').innerHTML=`<div class="panel" style="border-color:rgba(226,75,74,0.3)">
-      <div style="font-size:12px;color:var(--dn);font-weight:600;margin-bottom:6px">AI draft needs a worker endpoint</div>
-      <div style="font-size:11px;color:var(--mu);line-height:1.7;margin-bottom:10px">Add this route to your Order Tracker Cloudflare Worker (<code>frosty-base-f01e</code>) to enable AI drafts on GitHub Pages:</div>
-      <div style="background:#1F2A4A;color:#e2e8f0;border-radius:8px;padding:12px;font-size:10px;font-family:monospace;line-height:1.7;overflow-x:auto;margin-bottom:10px">if(url.pathname==='/api/reply'&&request.method==='POST'){<br>&nbsp;&nbsp;const body=await request.json();<br>&nbsp;&nbsp;const r=await fetch('https://api.anthropic.com/v1/messages',{<br>&nbsp;&nbsp;&nbsp;&nbsp;method:'POST',<br>&nbsp;&nbsp;&nbsp;&nbsp;headers:{'Content-Type':'application/json','x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},<br>&nbsp;&nbsp;&nbsp;&nbsp;body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,...body})<br>&nbsp;&nbsp;});<br>&nbsp;&nbsp;const d=await r.json();<br>&nbsp;&nbsp;return new Response(JSON.stringify({text:d.content?.[0]?.text||''}),{headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}});<br>}</div>
-      <div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="analyze()">Run template draft instead →</button></div>
+      <div style="font-size:12px;color:var(--dn);font-weight:600;margin-bottom:6px">AI draft failed</div>
+      <div style="font-size:11px;color:var(--mu);line-height:1.7;margin-bottom:10px">${String(err.message||err).replace(/</g,'&lt;')}</div>
+      <div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="aiDraft()">Try again</button><button class="btn btn-sm" onclick="analyze()">Run template draft instead →</button></div>
     </div>`;
   }finally{
     btn.disabled=false;btn.textContent='✦ AI draft';
@@ -3185,6 +3171,118 @@ function toast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());c
 
 const WORKER_BASE='https://frosty-base-f01e.erikagonzalez103.workers.dev';
 
+// ═══ HARDENED CLAUDE CALL — timeout, retries, real error surfacing ═══
+// The worker proxies Anthropic verbatim: always HTTP 200 with the API's JSON
+// (errors arrive as {error:{type,message}}), or {error:'API proxy failed: …'}
+// (a string) when the worker itself fails. Transient conditions — rate limit,
+// overload, network blips, timeouts, HTML error pages — are retried with
+// backoff. Permanent ones (bad key, invalid request) fail immediately.
+const TRANSIENT_API_ERRORS=['rate_limit_error','overloaded_error','api_error','timeout_error'];
+
+async function callClaude(body,onStatus,retries){
+  if(retries===undefined)retries=2;
+  let lastErr='';
+  for(let attempt=0;attempt<=retries;attempt++){
+    if(attempt>0){
+      const waitS=attempt===1?5:20;
+      if(onStatus)onStatus('AI busy ('+lastErr+') — retrying in '+waitS+'s, attempt '+(attempt+1)+' of '+(retries+1)+'…');
+      await new Promise(r=>setTimeout(r,waitS*1000));
+      if(onStatus)onStatus('Retrying…');
+    }
+    const controller=typeof AbortController!=='undefined'?new AbortController():null;
+    const timer=controller?setTimeout(()=>controller.abort(),120000):null;
+    try{
+      const response=await fetch(WORKER_BASE+'/api/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body),
+        signal:controller?controller.signal:undefined
+      });
+      if(timer)clearTimeout(timer);
+      const rawText=await response.text();
+      let apiResp;
+      try{apiResp=JSON.parse(rawText);}
+      catch(e){lastErr='service returned a non-JSON page (HTTP '+response.status+')';continue;}
+      const errObj=apiResp&&apiResp.error;
+      if(errObj){
+        const etype=typeof errObj==='object'?(errObj.type||''):'';
+        const emsg=typeof errObj==='object'?(errObj.message||'API error'):String(errObj);
+        if(TRANSIENT_API_ERRORS.indexOf(etype)!==-1||typeof errObj==='string'||response.status>=500){
+          lastErr=etype?etype.replace(/_/g,' '):emsg;
+          continue;
+        }
+        const friendly=etype==='authentication_error'
+          ?'the worker’s Anthropic API key was rejected — check ANTHROPIC_API_KEY on the worker'
+          :emsg;
+        const permErr=new Error(friendly);
+        permErr.permanent=true;
+        throw permErr;
+      }
+      return apiResp;
+    }catch(err){
+      if(timer)clearTimeout(timer);
+      if(err.permanent)throw err;
+      if(err&&err.name==='AbortError'){lastErr='timed out after 2 minutes';continue;}
+      lastErr='network error — worker unreachable';
+      continue;
+    }
+  }
+  throw new Error('gave up after '+(retries+1)+' attempts — last problem: '+lastErr+'. This is usually a temporary rate limit; wait a minute and try again.');
+}
+
+// Pull the first JSON value (object or array) out of the model's reply (tolerates ```json fences).
+function extractJSONFromResponse(apiResp){
+  let textContent=(apiResp.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  textContent=textContent.replace(/```json|```/g,'');
+  const objStart=textContent.indexOf('{'),arrStart=textContent.indexOf('[');
+  let start;
+  if(objStart===-1)start=arrStart;
+  else if(arrStart===-1)start=objStart;
+  else start=Math.min(objStart,arrStart);
+  if(start===-1)throw new Error('the AI reply contained no JSON — try again');
+  const open=textContent[start],close=open==='{'?'}':']';
+  let depth=0,end=-1;
+  for(let i=start;i<textContent.length;i++){
+    if(textContent[i]===open)depth++;
+    else if(textContent[i]===close){depth--;if(depth===0){end=i;break;}}
+  }
+  return JSON.parse(end!==-1?textContent.substring(start,end+1):textContent.substring(start));
+}
+
+// Same hardening for the worker's /api/reply endpoint. It returns {text} on
+// success — but it swallows Anthropic API errors into an EMPTY text with
+// HTTP 200, so empty text is treated as transient and retried too.
+async function callReplyEndpoint(body,onStatus,retries){
+  if(retries===undefined)retries=2;
+  let lastErr='';
+  for(let attempt=0;attempt<=retries;attempt++){
+    if(attempt>0){
+      const waitS=attempt===1?5:20;
+      if(onStatus)onStatus(`AI busy (${lastErr}) — retrying in ${waitS}s, attempt ${attempt+1} of ${retries+1}…`);
+      await new Promise(r=>setTimeout(r,waitS*1000));
+      if(onStatus)onStatus('Retrying…');
+    }
+    const controller=typeof AbortController!=='undefined'?new AbortController():null;
+    const timer=controller?setTimeout(()=>controller.abort(),120000):null;
+    try{
+      const response=await fetch(WORKER_BASE+'/api/reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller?controller.signal:undefined});
+      if(timer)clearTimeout(timer);
+      const rawText=await response.text();
+      let data;
+      try{data=JSON.parse(rawText);}
+      catch(e){lastErr=`service returned a non-JSON page (HTTP ${response.status})`;continue;}
+      if(data&&data.error){lastErr=String(typeof data.error==='object'?(data.error.message||'API error'):data.error);continue;}
+      if(!data||!String(data.text||'').trim()){lastErr='empty AI response (usually a rate limit or exhausted API credits)';continue;}
+      return data;
+    }catch(err){
+      if(timer)clearTimeout(timer);
+      if(err&&err.name==='AbortError'){lastErr='timed out after 2 minutes';continue;}
+      lastErr='network error — worker unreachable';continue;
+    }
+  }
+  throw new Error(`gave up after ${retries+1} attempts — last problem: ${lastErr}.`);
+}
+
 async function prepareJerichoHandoff(cid){
   const c=gc().find(x=>x.id===cid);if(!c)return;
   const acts=ga().filter(a=>a.cid===cid);
@@ -3247,12 +3345,10 @@ ${actHistory}
 Write the complete visit brief now. Use specific intel from their notes — be concrete, not generic.`;
 
   try{
-    const resp=await fetch(WORKER_BASE+'/api/reply',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:systemPrompt,messages:[{role:'user',content:userPrompt}]})
-    });
-    const data=await resp.json();
+    const data=await callReplyEndpoint(
+      {model:'claude-sonnet-4-20250514',max_tokens:1200,system:systemPrompt,messages:[{role:'user',content:userPrompt}]},
+      m=>{const jb=document.getElementById('jericho-body');if(jb)jb.innerHTML=`<div style="font-size:12px;color:var(--mu)">${m.replace(/</g,'&lt;')}</div>`;}
+    );
     const brief=data.text||'';
     if(!brief)throw new Error('Empty response');
 
@@ -3269,7 +3365,7 @@ Write the complete visit brief now. Use specific intel from their notes — be c
       <button class="btn btn-sm btn-p" onclick="navigator.clipboard.writeText(document.getElementById('jericho-brief-text').innerText).then(()=>toast('Brief copied!'))">Copy brief</button>
       <button class="btn btn-sm" style="background:#1F2A4A;color:#43B047;border-color:#43B047" id="jericho-send-btn" onclick="sendToJericho('${cid}',document.getElementById('jericho-brief-text').innerText)">📤 Send to Jericho</button>`;
   }catch(err){
-    document.getElementById('jericho-body').innerHTML=`<div style="font-size:12px;color:var(--dn);font-weight:600;margin-bottom:8px">Brief generation failed</div><div style="font-size:11px;color:var(--mu);line-height:1.6">Check that /api/reply is deployed to your Cloudflare Worker.<br>Error: ${err.message}</div>`;
+    document.getElementById('jericho-body').innerHTML=`<div style="font-size:12px;color:var(--dn);font-weight:600;margin-bottom:8px">Brief generation failed</div><div style="font-size:11px;color:var(--mu);line-height:1.6">${String(err.message||err).replace(/</g,'&lt;')}</div>`;
     document.getElementById('jericho-acts').innerHTML=`<button class="btn btn-sm" onclick="document.getElementById('jerichomodal').classList.remove('open')">Close</button>`;
   }
 }
@@ -3350,7 +3446,7 @@ async function runAIResearchThenImport(contacts){
     if(msgEl)msgEl.textContent='Researching...';
     document.getElementById('research-summary').textContent=done+' of '+contacts.length+' complete...';
     try{
-      const notes=await researchContact(c);
+      const notes=await researchContact(c,m=>{if(msgEl)msgEl.textContent=m;});
       if(notes){
         c.notes=(c.notes?c.notes+'\n\n':'')+notes;
         // If fn looks like a company name, try to extract person name from notes
@@ -3370,6 +3466,7 @@ async function runAIResearchThenImport(contacts){
     }catch(err){
       if(statusEl){statusEl.className='research-status rs-err';statusEl.textContent='!';}
       if(msgEl)msgEl.textContent='Skipped — importing as-is';
+      toast('AI research failed: '+err.message);
       errors++;done++;
     }
     enriched.push(c);
@@ -3381,23 +3478,18 @@ async function runAIResearchThenImport(contacts){
   checkDupesEnriched(enriched);
 }
 
-async function researchContact(contact){
+async function researchContact(contact,onStatus){
   const name=(contact.fn+' '+(contact.ln||'')).trim();
   const company=contact.co||'';
   if(!name&&!company)return null;
 
-  const resp=await fetch(WORKER_BASE+'/api/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:500,
-      tools:[{"type":"web_search_20250305","name":"web_search"}],
-      system:'You are a B2B prospect researcher for Eridion Glass, a Dallas-based WBE glass and mirror subcontractor. Research the contact and return a concise plain-text intel note (no markdown). Include: confirmed LinkedIn URL if found, likely email format, education/university, career history, civic involvement, associations, and any relevant project intel. 3-6 lines max. If nothing found, return empty string.',
-      messages:[{role:'user',content:'Research: '+name+(company?' at '+company:'')+'. Role: '+(contact.role||'')+'. DFW Texas area. Return intel note only.'}]
-    })
-  });
-  const data=await resp.json();
+  const data=await callClaude({
+    model:'claude-sonnet-4-20250514',
+    max_tokens:500,
+    tools:[{"type":"web_search_20250305","name":"web_search"}],
+    system:'You are a B2B prospect researcher for Eridion Glass, a Dallas-based WBE glass and mirror subcontractor. Research the contact and return a concise plain-text intel note (no markdown). Include: confirmed LinkedIn URL if found, likely email format, education/university, career history, civic involvement, associations, and any relevant project intel. 3-6 lines max. If nothing found, return empty string.',
+    messages:[{role:'user',content:'Research: '+name+(company?' at '+company:'')+'. Role: '+(contact.role||'')+'. DFW Texas area. Return intel note only.'}]
+  },onStatus||null);
   let text='';
   if(data.content&&Array.isArray(data.content)){
     data.content.forEach(b=>{if(b.type==='text'&&b.text)text+=b.text;});
@@ -3529,7 +3621,7 @@ function runCompanyExpansion(){
       if(msgEl)msgEl.textContent='Finding contacts...';
       document.getElementById('expansion-summary').textContent=done+' of '+unique.length+' done — '+totalFound+' contacts found...';
       try{
-        const contacts=await expandCompany(co.name,co.leadType);
+        const contacts=await expandCompany(co.name,co.leadType,m=>{if(msgEl)msgEl.textContent=m;});
         if(contacts&&contacts.length){
           allContacts.push(...contacts);totalFound+=contacts.length;
           if(statusEl){statusEl.className='research-status rs-done';statusEl.textContent='✓';}
@@ -3550,6 +3642,7 @@ function runCompanyExpansion(){
           ts:[],ltd:null,dnc:false,responded:false,ca:new Date().toISOString(),li_account:'personal',li_status:'cold',email_only:false});
         if(statusEl){statusEl.className='research-status rs-err';statusEl.textContent='!';}
         if(msgEl)msgEl.textContent='Research failed — placeholder created';
+        toast('Company research failed: '+err.message);
         totalFound++;errors++;
       }
       done++;
@@ -3562,33 +3655,21 @@ function runCompanyExpansion(){
   })();
 }
 
-async function expandCompany(companyName,leadType){
+async function expandCompany(companyName,leadType,onStatus){
   const defaultRole=getRoleForLeadType(leadType||'');
   const seqId=getSeqForLeadType(leadType||'');
   const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 
-  const resp=await fetch(WORKER_BASE+'/api/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:900,
-      tools:[{"type":"web_search_20250305","name":"web_search"}],
-      system:`You are a B2B prospect researcher for Eridion Glass, a Dallas-based WBE glass and mirror subcontractor. Your job is to find REAL named individuals at the company — check the company website About/Team page, LinkedIn company page, and news mentions. Search aggressively. For small DFW builders and design firms, the owner's name is almost always findable on their website. Prioritize: Owner/Founder/Principal, Project Manager, Purchasing Manager, Designer. Return ONLY a valid JSON array — no markdown, no explanation, no code fences. Each object must have exactly these fields: {"fn":"first name","ln":"last name","title":"their actual job title","role":"CEO/Owner|Purchasing|Operations|Supervisor|Designer|VP Business Development","linkedin":"linkedin.com/in/handle or empty string","email_guess":"firstname@companydomain.com or empty string","phone_guess":"direct phone if found else empty string","notes":"3-5 lines: school/university, career background, personal interests, civic involvement, relevant projects, any useful outreach angle"}. Search the company website team/about page FIRST. Return [] only if truly no individuals can be found after thorough searching.`,
-      messages:[{role:'user',content:'Company: '+companyName+'\nLead Type: '+(leadType||'Custom Home Builder')+'\nLocation: DFW Texas area\n\nSearch their website about/team page, LinkedIn, and any news mentions. Find 2-3 real decision-makers. JSON array only — no other text.'}]
-    })
-  });
-  const data=await resp.json();
-  let text='';
-  if(data.content&&Array.isArray(data.content)){
-    data.content.forEach(b=>{if(b.type==='text'&&b.text)text+=b.text;});
-  }else if(data.text)text=data.text;
+  const data=await callClaude({
+    model:'claude-sonnet-4-20250514',
+    max_tokens:900,
+    tools:[{"type":"web_search_20250305","name":"web_search"}],
+    system:`You are a B2B prospect researcher for Eridion Glass, a Dallas-based WBE glass and mirror subcontractor. Your job is to find REAL named individuals at the company — check the company website About/Team page, LinkedIn company page, and news mentions. Search aggressively. For small DFW builders and design firms, the owner's name is almost always findable on their website. Prioritize: Owner/Founder/Principal, Project Manager, Purchasing Manager, Designer. Return ONLY a valid JSON array — no markdown, no explanation, no code fences. Each object must have exactly these fields: {"fn":"first name","ln":"last name","title":"their actual job title","role":"CEO/Owner|Purchasing|Operations|Supervisor|Designer|VP Business Development","linkedin":"linkedin.com/in/handle or empty string","email_guess":"firstname@companydomain.com or empty string","phone_guess":"direct phone if found else empty string","notes":"3-5 lines: school/university, career background, personal interests, civic involvement, relevant projects, any useful outreach angle"}. Search the company website team/about page FIRST. Return [] only if truly no individuals can be found after thorough searching.`,
+    messages:[{role:'user',content:'Company: '+companyName+'\nLead Type: '+(leadType||'Custom Home Builder')+'\nLocation: DFW Texas area\n\nSearch their website about/team page, LinkedIn, and any news mentions. Find 2-3 real decision-makers. JSON array only — no other text.'}]
+  },onStatus||null);
 
   let contacts=[];
-  try{
-    const match=text.match(/\[\s*[\s\S]*?\]/);
-    if(match)contacts=JSON.parse(match[0]);
-  }catch(e){return[];}
+  try{contacts=extractJSONFromResponse(data);}catch(e){return[];}
   if(!Array.isArray(contacts)||!contacts.length)return[];
 
   return contacts.slice(0,3).map(p=>({
