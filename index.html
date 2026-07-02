@@ -1022,10 +1022,32 @@ body{font-family:'Manrope','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',s
 <script>
 // ── SEQUENCE DEFINITIONS ──────────────────────────────────────────────────────
 const SEQUENCES={
+  referral_quarterly:{
+    id:'referral_quarterly',
+    name:'Referral Partner',
+    color:'#0F6E56',
+    description:'Quarterly relationship cadence for people who SEND work rather than buy it: interior designers, supplier reps (FHC/Sky/M3), large glazing houses that decline small packages, and GC PMs. Low pressure, high consistency — the goal is staying top-of-mind, not closing.',
+    touches:[
+      {num:1,day_offset:0,channel:'email',label:'Intro — how we can be useful to each other',
+       subject:'Eridion Glass — a resource for your projects',
+       body:'Hi [Name],\n\nI\'m Erika Harrison, co-founder of Eridion Glass here in Dallas — self-performing, WBE-certified glass and mirror sub focused on luxury residential and light commercial.\n\nI\'m reaching out because our work touches yours: when a project needs frameless showers, mirror walls, or railing glass done right, I\'d love to be the name that comes to mind. And it goes both ways — when clients ask us for referrals in your lane, I want names I trust.\n\nCoffee sometime? No agenda beyond putting faces to names.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com'},
+      {num:2,day_offset:90,channel:'email',label:'Quarterly check-in — recent work',
+       subject:'A few things we\'ve finished lately',
+       body:'Hi [Name],\n\nQuick quarterly hello — a few projects we\'ve wrapped recently that might be relevant to your world: [recent jobs — pull from HQ radar/jobs feed].\n\nAnything on your board where a glass sub who answers the phone would help? Happy to look at drawings, no obligation.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786'},
+      {num:3,day_offset:180,channel:'email',label:'Quarterly check-in — useful resource',
+       subject:'A spec detail that keeps saving our clients money',
+       body:'Hi [Name],\n\nSharing something useful rather than asking for anything: [seasonal detail — e.g. glass heights / curb prep / lead-time realities]. If it ever helps to sanity-check a bath or storefront detail before it prices, that\'s a free phone call.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786'},
+      {num:4,day_offset:270,channel:'email',label:'Quarterly check-in — year wrap',
+       subject:'Thanks for this year — keep us in your corner',
+       body:'Hi [Name],\n\nAs the year winds down I wanted to say thanks for the conversations — and to say plainly: if a project needs glass done cleanly next year, we want the call. We\'ll keep earning it.\n\nErika Harrison\nEridion Glass, LLC\nwww.eridionglass.com'}
+    ]
+  },
+
   fifa_14day:{
     id:'fifa_14day',
     name:'FIFA 14-day sprint',
     color:'#534AB7',
+    archived:true, /* Retired 2026-07: cold sprint produced zero replies — kept for history, hidden from assignment */
     description:'Compressed 7-touch sequence for time-sensitive World Cup construction outreach',
     touches:[
       {num:1,day_offset:0,channel:'linkedin',label:'LinkedIn connection request',subject:'',
@@ -1828,7 +1850,7 @@ const SEQ_BTN_CLASS={
 
 function renderBulkBar(){
   const el=document.getElementById('bulk-seq-btns');if(!el)return;
-  const seqBtns=Object.values(SEQUENCES).map(s=>{
+  const seqBtns=Object.values(SEQUENCES).filter(s=>!s.archived).map(s=>{
     const cls=SEQ_BTN_CLASS[s.id]||'btn-seq';
     return`<button class="btn btn-sm ${cls}" onclick="bulkAssignSeq('${s.id}')">+ ${s.name}</button>`;
   }).join('');
