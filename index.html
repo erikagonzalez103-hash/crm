@@ -410,6 +410,14 @@ body{font-family:'Manrope','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',s
     <div class="ni" data-screen="rocketreach" onclick="go('rocketreach')"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 3 3.5.5-2.5 2.5.6 3.5L8 9l-3.1 1.5.6-3.5L3 4.5l3.5-.5z"/></svg><span>RocketReach queue</span><span class="nbadge" id="rrbadge" style="background:#BA7517">0</span></div>
   </div>
   <div class="ns" style="margin-top:auto;padding-bottom:16px">
+    <div style="padding:6px 14px;display:flex;flex-direction:column;gap:6px">
+      <div id="crm-sync-badge" title="Cloud sync status" style="font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#8899AA">Local only</div>
+      <div style="display:flex;gap:6px">
+        <button onclick="exportCrmBackup()" title="Download all contacts + activities as JSON" style="flex:1;font-family:inherit;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 6px;color:#8899AA;cursor:pointer">&#8595; Backup</button>
+        <button onclick="document.getElementById('crm-backup-input').click()" title="Restore from a backup file" style="flex:1;font-family:inherit;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 6px;color:#8899AA;cursor:pointer">&#8593; Restore</button>
+        <input type="file" id="crm-backup-input" accept=".json,application/json" style="display:none" onchange="importCrmBackup(this)">
+      </div>
+    </div>
     <div class="ni" data-screen="settings" onclick="go('settings')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.2v2M8 12.8v2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M1.2 8h2M12.8 8h2M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg><span>Settings</span></div>
     <div class="ni" data-screen="export" onclick="go('export')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V2M5 7l3 3 3-3M3 13h10" stroke-linecap="round"/></svg><span>Export CSV</span></div>
   </div>
@@ -1041,6 +1049,27 @@ const SEQUENCES={
     ]
   },
 
+  architect_warm:{
+    id:'architect_warm',
+    name:'Architect Warm',
+    color:'#3E7CB1',
+    description:'Relationship sequence for architects whose plans we\'ve already worked on — the warmest cold list Eridion has. One architect refers many builders.',
+    touches:[
+      {num:1,day_offset:0,channel:'email',label:'Intro citing the project we co-delivered',
+       subject:'Your drawings, our glass — [Project/Address]',
+       body:'Hi [Name],\n\nWe recently completed the glass and mirror scope on one of your projects ([Project/Address]) and I wanted to introduce myself properly — I\'m Erika Harrison, co-founder of Eridion Glass here in Dallas.\n\nWorking from your drawings was a pleasure: the elevations were clear, the glass callouts were buildable, and the result photographed beautifully. That\'s not always the case, and it\'s worth saying when it is.\n\nWe\'re a self-performing, WBE-certified glass and mirror sub focused on luxury residential — frameless showers, mirror walls, railing glass. If a future set ever needs a glass reality-check at design stage, I\'m happy to be that phone call.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com'},
+      {num:2,day_offset:10,channel:'email',label:'Follow-up with a related case',
+       subject:'A shower detail your clients might like',
+       body:'Hi [Name],\n\nFollowing up on my note last week — I wanted to share a detail we\'ve been executing a lot lately: full-height frameless enclosures with the glass dying into a ceiling recess, no header bar. It reads as invisible in photos and clients love it.\n\nIf you\'re detailing a primary bath right now, happy to send the spec conditions (curb, blocking, glass heights) that make it work first try — no strings attached.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com'},
+      {num:3,day_offset:24,channel:'email',label:'Invite — coffee or job-site walkthrough',
+       subject:'Coffee, or a walkthrough of one of our installs?',
+       body:'Hi [Name],\n\nI\'d love to put a face to the name. Two easy options:\n\n1. Coffee near your office — 30 minutes, I\'ll bring photos and shut up on schedule.\n2. A walkthrough of a recent install — seeing frameless work in place beats any portfolio PDF.\n\nEither one useful? Pick a week and I\'ll work around you.\n\nErika Harrison\nEridion Glass, LLC\n318.458.1786\nerika@eridionglass.com'},
+      {num:4,day_offset:45,channel:'email',label:'Closing note — on the resource list',
+       subject:'Last note — keep us in your back pocket',
+       body:'Hi [Name],\n\nLast note from me, promise. If nothing\'s active right now, no problem at all — I just want Eridion on your resource list for when a project needs a glass sub who treats the drawings with respect.\n\nWhen that day comes: 318.458.1786, or just reply to this thread. We\'ll be here.\n\nErika Harrison\nEridion Glass, LLC\nwww.eridionglass.com'}
+    ]
+  },
+
   luxury_builder_warm:{
     id:'luxury_builder_warm',
     name:'Luxury Builder Warm',
@@ -1194,13 +1223,77 @@ const CH_LABELS={linkedin:'LinkedIn connect',email:'Email',phone:'Phone call',li
 const CH_CLASSES={linkedin:'bch-li',email:'bch-em',phone:'bch-ph',linkedin_dm:'bch-ld'};
 
 const gc=()=>{try{return JSON.parse(localStorage.getItem('eg_c')||'[]')}catch(e){return[]}};
-const sc=c=>localStorage.setItem('eg_c',JSON.stringify(c));
+const sc=c=>{localStorage.setItem('eg_c',JSON.stringify(c));scheduleCrmSync();};
 const ga=()=>{try{return JSON.parse(localStorage.getItem('eg_a')||'[]')}catch(e){return[]}};
-const sa=a=>localStorage.setItem('eg_a',JSON.stringify(a));
+const sa=a=>{localStorage.setItem('eg_a',JSON.stringify(a));scheduleCrmSync();};
 const getBatch=()=>{try{return JSON.parse(localStorage.getItem('eg_last_batch')||'null')}catch(e){return null}};
 const setBatch=b=>localStorage.setItem('eg_last_batch',JSON.stringify(b));
 const getCustomBlocks=()=>{try{return JSON.parse(localStorage.getItem('eg_custom_copy')||'[]')}catch(e){return[]}};
-const setCustomBlocks=b=>localStorage.setItem('eg_custom_copy',JSON.stringify(b));
+const setCustomBlocks=b=>{localStorage.setItem('eg_custom_copy',JSON.stringify(b));scheduleCrmSync();};
+
+// ─── CLOUD SYNC + BACKUP (Phase 3) ─────────────────────────────────────
+// Contacts/activities live in Worker KV (crm:data) so Francisco can run the
+// outreach queue, architect capture, and customer auto-promotion server-side.
+// localStorage stays the offline cache; last-write-wins with empty guards.
+const CRM_WORKER='https://frosty-base-f01e.erikagonzalez103.workers.dev';
+const CRM_SYNC_KEYS=['eg_c','eg_a','eg_custom_copy'];
+const CRM_META_KEY='eg_crm_synced_at';
+function crmSnapshot(){const s={};CRM_SYNC_KEYS.forEach(k=>{try{const r=localStorage.getItem(k);if(r!=null)s[k]=JSON.parse(r)}catch(e){}});return s}
+function crmSnapHasData(s){return !!(s&&Array.isArray(s['eg_c'])&&s['eg_c'].length>0)}
+function setCrmSyncStatus(state,detail){const el=document.getElementById('crm-sync-badge');if(!el)return;el.title=detail||'';el.style.color=state==='ok'?'#52C48A':state==='syncing'?'#E9B44C':state==='offline'?'#E07070':'#8899AA';el.textContent=state==='ok'?'Cloud ✓':state==='syncing'?'Saving…':state==='offline'?'Offline — local only':'Local only'}
+let _crmTimer=null,_crmInFlight=false,_crmQueued=false,_crmReady=false,_crmDirty=false,_crmCloudHadData=false;
+function scheduleCrmSync(){if(!_crmReady){_crmDirty=true;return}clearTimeout(_crmTimer);_crmTimer=setTimeout(pushCrmSync,1500);setCrmSyncStatus('syncing')}
+function pushCrmSync(){
+  if(_crmInFlight){_crmQueued=true;return}
+  _crmInFlight=true;
+  const payload={updatedAt:new Date().toISOString(),stores:crmSnapshot()};
+  if(_crmCloudHadData&&!crmSnapHasData(payload.stores)){_crmInFlight=false;setCrmSyncStatus('local','This browser has no contacts; cloud copy left untouched.');return}
+  fetch(CRM_WORKER+'/crm/data',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);try{localStorage.setItem(CRM_META_KEY,payload.updatedAt)}catch(e){};setCrmSyncStatus('ok','Last saved '+new Date().toLocaleTimeString())})
+    .catch(e=>setCrmSyncStatus('offline','Cloud save failed: '+e.message))
+    .then(()=>{_crmInFlight=false;if(_crmQueued){_crmQueued=false;scheduleCrmSync()}})
+}
+function pullCrmSync(){
+  fetch(CRM_WORKER+'/crm/data')
+    .then(r=>{if(r.status===404)return null;if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+    .then(data=>{
+      let localAt='';try{localAt=localStorage.getItem(CRM_META_KEY)||''}catch(e){}
+      _crmCloudHadData=!!(data&&crmSnapHasData(data.stores));
+      if(data&&data.stores&&data.updatedAt&&data.updatedAt>localAt&&(_crmCloudHadData||!crmSnapHasData(crmSnapshot()))){
+        Object.keys(data.stores).forEach(k=>{if(CRM_SYNC_KEYS.indexOf(k)===-1)return;try{localStorage.setItem(k,JSON.stringify(data.stores[k]))}catch(e){}});
+        try{localStorage.setItem(CRM_META_KEY,data.updatedAt)}catch(e){}
+        location.reload();return;
+      }
+      _crmReady=true;
+      setCrmSyncStatus(data?'ok':'local',data?'In sync with cloud':'First sync pending');
+      scheduleCrmSync();
+    })
+    .catch(e=>{_crmReady=true;setCrmSyncStatus('offline','Could not reach cloud: '+e.message);if(_crmDirty)scheduleCrmSync()})
+}
+function exportCrmBackup(){
+  const payload={app:'eridion-crm',version:1,exportedAt:new Date().toISOString(),stores:crmSnapshot()};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='eridion-crm-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+}
+function importCrmBackup(input){
+  const f=input.files&&input.files[0];input.value='';if(!f)return;
+  const reader=new FileReader();
+  reader.onload=function(){
+    try{
+      const data=JSON.parse(reader.result);
+      if(!data||data.app!=='eridion-crm'||!data.stores){alert('That file is not an Eridion CRM backup.');return}
+      const n=(data.stores['eg_c']||[]).length;
+      if(!confirm('Restore backup from '+(data.exportedAt||'unknown date')+'?\n\n'+n+' contacts.\n\nThis REPLACES the CRM data in this browser and in the cloud.'))return;
+      Object.keys(data.stores).forEach(k=>{if(CRM_SYNC_KEYS.indexOf(k)===-1)return;try{localStorage.setItem(k,JSON.stringify(data.stores[k]))}catch(e){}});
+      try{localStorage.setItem(CRM_META_KEY,new Date().toISOString())}catch(e){}
+      location.reload();
+    }catch(e){alert('Could not read backup: '+e.message)}
+  };
+  reader.readAsText(f);
+}
+window.addEventListener('load',pullCrmSync);
 const addA=(cid,action,note,channel)=>{const a=ga();a.unshift({id:Date.now(),cid,action,note,date:new Date().toISOString(),channel:channel||'email'});sa(a.slice(0,300))};
 const ini=n=>n.split(' ').map(x=>x[0]||'').join('').toUpperCase().slice(0,2);
 const fd=iso=>iso?new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'Never';
